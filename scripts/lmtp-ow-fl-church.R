@@ -56,15 +56,34 @@ n_cores <- parallel::detectCores()
 # super learner libraries
 sl_lib <- c("SL.glmnet",
             "SL.ranger", #
-            #"SL.xgboost", # good but time intensive
-            "SL.earth"
+            "SL.xgboost"#, # good but time intensive
+           # "SL.earth"
             ) #
+
+#Improve speed (if needed)
+  
+# sl_lib_args <- list(
+#   SL.glmnet = list(nalpha = 5, nlambda = 20),
+#   SL.ranger = list(num.threads = 4),
+#   SL.xgboost = list(nthread = 4, 
+#                     nrounds = 50, 
+#                     early_stopping_rounds = 10, 
+#                     max_depth = 6, 
+#                     colsample_bytree = 0.8, 
+#                     subsample = 0.8, 
+#                     eta = 0.01, 
+#                     tree_method = 'hist')
+# )
 
 # superlearner libraries
 library(SuperLearner)
 library(ranger)
 library(xgboost)
 library(glmnet)
+
+# boost spped
+SL.xgboost = list(tree_method = 'gpu_hist')
+
 
 # check options
 listWrappers()
@@ -839,6 +858,8 @@ C
 
 # smoker binary
 #Do you currently smoke?
+
+timing_info <- system.time({
 t2_smoker_binary <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -857,10 +878,15 @@ t2_smoker_binary <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
+}
+)
+
 
 t2_smoker_binary
 here_save(t2_smoker_binary, "t2_smoker_binary")
 
+# print timing info
+print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
 #Do you currently smoke?
 t2_smoker_binary_null  <- lmtp_tmle(
   data = df_clean,
@@ -883,11 +909,6 @@ t2_smoker_binary_null  <- lmtp_tmle(
 
 t2_smoker_binary_null
 here_save(t2_smoker_binary_null, "t2_smoker_binary_null")
-
-
-constrast_t2_smoker_binary <- lmtp_contrast(t2_smoker_binary,
-                                            ref = t2_smoker_binary_null,
-                                            type = "rr") 
 
 
 #"How often do you have a drink containing alcohol?"
@@ -1197,8 +1218,6 @@ here_save(t2_bodysat_z_null,
 # During the last 30 days, how often did.... you feel nervous?
 # During the last 30 days, how often did.... you feel restless or fidgety?
 # During the last 30 days, how often did.... you feel worthless?
-
-
 t2_kessler6_sum_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1225,8 +1244,6 @@ here_save(t2_kessler6_sum_z, "t2_kessler6_sum_z")
 # During the last 30 days, how often did.... you feel nervous?
 # During the last 30 days, how often did.... you feel restless or fidgety?
 # During the last 30 days, how often did.... you feel worthless?
-
-
 t2_kessler6_sum_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1248,7 +1265,6 @@ here_save( t2_kessler6_sum_z_null, "t2_kessler6_sum_z_null")
 
 
 # During the last 30 days, how often did.... you feel exhausted?
-
 t2_hlth_fatigue_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1376,9 +1392,10 @@ t2_sexual_satisfaction_z_null <- lmtp_tmle(
 t2_sexual_satisfaction_z_null
 here_save( t2_sexual_satisfaction_z_null, "t2_sexual_satisfaction_z_null")
 
+
+
 # I do not have enough power or control over\nimportant parts of my life.
 # Other people have too much power or control over\nimportant parts of my life.
-
 t2_power_no_control_composite_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1398,9 +1415,10 @@ t2_power_no_control_composite_z<- lmtp_tmle(
 t2_power_no_control_composite_z
 here_save(t2_power_no_control_composite_z, "t2_power_no_control_composite_z")
 
+
+
 # I do not have enough power or control over\nimportant parts of my life.
 # Other people have too much power or control over\nimportant parts of my life.
-
 t2_power_no_control_composite_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1421,10 +1439,10 @@ t2_power_no_control_composite_z_null
 here_save( t2_power_no_control_composite_z_null, "t2_power_no_control_composite_z_null")
 
 
+
 #  On the whole am satisfied with myself.
 #  Take a positive attitude toward myself
 #  Am inclined to feel that I am a failure.
-
 t2_self_esteem_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1448,7 +1466,6 @@ here_save(t2_self_esteem_z, "t2_self_esteem_z")
 #  On the whole am satisfied with myself.
 #  Take a positive attitude toward myself
 #  Am inclined to feel that I am a failure.
-
 t2_self_esteem_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1640,7 +1657,6 @@ here_save(t2_impermeability_group_z_null, "t2_impermeability_group_z_null")
 
 # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # I am hardly ever satisfied with my performance.
-
 t2_perfectionism_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1664,7 +1680,6 @@ here_save(t2_perfectionism_z, "t2_perfectionism_z")
 
 # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # I am hardly ever satisfied with my performance.
-
 t2_perfectionism_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1689,7 +1704,6 @@ here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
 # reflective models --------------------------------------------------------------
 
 ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-
 t2_gratitude_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1731,7 +1745,6 @@ here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
 
 
 # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-
 t2_vengeful_rumin_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1752,7 +1765,6 @@ t2_vengeful_rumin_z
 here_save(t2_vengeful_rumin_z, "t2_vengeful_rumin_z")
 
 # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-
 t2_vengeful_rumin_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1940,7 +1952,8 @@ t2_pwb_standard_living_z_null
 here_save(t2_pwb_standard_living_z_null, "t2_pwb_standard_living_z_null")
 
 
-
+# My life has a clear sense of purpose.
+# I have a good sense of what makes my life meaningful.
 t2_lifemeaning_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1962,6 +1975,8 @@ t2_lifemeaning_z
 here_save(t2_lifemeaning_z, "t2_lifemeaning_z")
 
 
+# My life has a clear sense of purpose.
+# I have a good sense of what makes my life meaningful.
 t2_lifemeaning_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1982,7 +1997,8 @@ t2_lifemeaning_z_null
 here_save(t2_lifemeaning_z_null, "t2_lifemeaning_z_null")
 
 
-
+# I am satisfied with my life.
+# In most ways my life is close to ideal.
 t2_lifesat_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2002,7 +2018,8 @@ t2_lifesat_z<- lmtp_tmle(
 t2_lifesat_z
 here_save(t2_lifesat_z, "t2_lifesat_z")
 
-
+# I am satisfied with my life.
+# In most ways my life is close to ideal.
 t2_lifesat_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2026,7 +2043,9 @@ here_save( t2_lifesat_z_null, "t2_lifesat_z_null")
 
 # social models -----------------------------------------------------------
 
-
+# There are people I can depend on to help me if I really need it.
+# There is no one I can turn to for guidance in times of stress (r)
+# There is no one I can turn to for guidance in times of stress.
 t2_support_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2047,6 +2066,9 @@ t2_support_z
 here_save(t2_support_z, "t2_support_z")
 
 
+# There are people I can depend on to help me if I really need it.
+# There is no one I can turn to for guidance in times of stress (r)
+# There is no one I can turn to for guidance in times of stress.
 t2_support_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2067,6 +2089,7 @@ t2_support_z_null
 here_save(t2_support_z_null, "t2_support_z_null")
 
 
+# I feel a sense of community with others in my local neighbourhood.
 t2_neighbourhood_community_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2087,6 +2110,7 @@ t2_neighbourhood_community_z
 here_save(t2_neighbourhood_community_z, "t2_neighbourhood_community_z")
 
 
+# I feel a sense of community with others in my local neighbourhood.
 t2_neighbourhood_community_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2108,7 +2132,9 @@ here_save(t2_neighbourhood_community_z_null, "t2_neighbourhood_community_z_null"
 
 
 
-
+# Know that people in my life accept and value me.
+# Feel like an outsider.
+# Know that people around me share my attitudes and beliefs.
 t2_belong_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2128,7 +2154,9 @@ t2_belong_z<- lmtp_tmle(
 t2_belong_z
 here_save(t2_belong_z, "t2_belong_z")
 
-
+# Know that people in my life accept and value me.
+# Feel like an outsider.
+# Know that people around me share my attitudes and beliefs.
 t2_belong_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
