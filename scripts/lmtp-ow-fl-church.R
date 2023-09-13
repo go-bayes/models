@@ -2099,6 +2099,7 @@ names_base_t2_pwb_your_relationships_z <-
                          outcome = "t2_pwb_your_relationships_z")
 names_base_t2_pwb_your_relationships_z
 
+
 # Your personal relationships.
 t2_pwb_your_relationships_z <- lmtp_tmle(
   data = df_clean,
@@ -2117,14 +2118,15 @@ t2_pwb_your_relationships_z <- lmtp_tmle(
 )
 
 t2_pwb_your_relationships_z
-here_save(t2_pwb_your_relationships_z, "t2_pwb_standard_living_z")
+here_save(t2_pwb_your_relationships_z, "t2_pwb_your_relationships_z")
+
 
 # Your personal relationships.
 t2_pwb_your_relationships_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
   baseline = names_base_t2_pwb_your_relationships_z,
-  outcome = "t2_pwb_your_future_security_z",
+  outcome = "t2_pwb_your_relationships_z",
   cens = C,
   shift = NULL,
   # mtp = TRUE,
@@ -3248,8 +3250,8 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 here_save(group_tab_social, "group_tab_social")
 
 # create plots -------------------------------------------------------------
-sub_title = "Church effect: +4 monthly")
-
+sub_title = "Church effect: +4 monthly"
+group_tab_health
 # graph health 
 plot_group_tab_health <- margot_plot(
   group_tab_health,
@@ -3271,6 +3273,7 @@ plot_group_tab_health <- margot_plot(
   x_lim_hi =  .5
 )
 
+plot_group_tab_health
 # save graph 
 ggsave(
   plot_group_tab_health,
@@ -3306,6 +3309,7 @@ plot_group_tab_body <- margot_plot(
   x_lim_hi =  .5
 )
 
+plot_group_tab_body
 # save graph 
 ggsave(
   plot_group_tab_body,
@@ -3343,7 +3347,7 @@ plot_group_tab_ego <- margot_plot(
   x_lim_hi =  .5
 )
 
-
+plot_group_tab_ego
 # save graph 
 ggsave(
   plot_group_tab_ego,
@@ -3361,7 +3365,7 @@ ggsave(
 
 # graph reflective 
 plot_group_tab_reflective <- margot_plot(
-  group_tab_ego,
+  group_tab_reflective,
   type = "RD",
   title = "Reflective effects",
   subtitle = sub_title,
@@ -3380,6 +3384,8 @@ plot_group_tab_reflective <- margot_plot(
   x_lim_hi =  .5
 )
 
+plot_group_tab_reflective
+
 # save graph 
 ggsave(
   plot_group_tab_reflective,
@@ -3397,7 +3403,7 @@ ggsave(
 
 # graph social 
 plot_group_tab_social <- margot_plot(
-  group_tab_ego,
+  group_tab_social,
   type = "RD",
   title = "Social effects",
   subtitle = sub_title,
@@ -3430,5 +3436,6 @@ ggsave(
   dpi = 600
 )
 
+plot_group_tab_social
 
 
