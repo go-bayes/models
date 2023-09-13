@@ -1,3 +1,8 @@
+# sept 13 2023
+# socialising with others
+# joseph bulbulia : joseph.bulbulia@gmail.com 
+
+
 # outcome-wide-analysis-template
 # Sept 11, 2023
 
@@ -31,13 +36,22 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
-  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-fl-church")
+  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lmtp-ow-fl-socialising")
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
 # set exposure here
-nzavs_exposure <- "religion_church_round"
+nzavs_exposure <- "hours_community_log"
+
+# define exposure 
+A <- "t1_hours_community"
+
+# define shift function (if less than 2.2 hour per week)
+f <- function(data, trt){
+  ifelse( data[[trt]] <=.5, 5,  data[[trt]] )
+}
+
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 5
@@ -412,18 +426,17 @@ dat_long  <- dat |>
     "hours_friends",
     "hours_family",
     "alert_level_combined_lead"
+    # Hours spent … socialising with family
+    # Hours spent … socialising with friends
+    # Hours spent … socialising with community groups
+    # Hours spent … socialising with religious groups (only for religion only studies)
   ) |>
   # select variables
   # mutate(across(where(is.double), as.numeric)) |>
   mutate(
-    hours_community_sqrt_raw = sqrt(hours_community),
-    hours_friends_sqrt_raw = sqrt(hours_friends),
-    hours_family_sqrt_raw = sqrt(hours_family)
-  ) |>
-  mutate(
-    hours_community_sqrt_round = ifelse(hours_community_sqrt_raw >= 8, 8, hours_community_sqrt_raw),
-    hours_friends_sqrt_round = ifelse(hours_friends_sqrt_raw >= 8, 8, hours_friends_sqrt_raw),
-    hours_family_sqrt_round = ifelse(hours_family_sqrt_raw >= 8, 8, hours_family_sqrt_raw),
+    hours_community_log = log(hours_community + 1),
+    hours_friends_log = sqrt(hours_friends + 1),
+    hours_family_log = sqrt(hours_family + 1)
   ) |>
   mutate(male = as.numeric(male) - 1) |>
   mutate(total_siblings_factor = ordered(round(
@@ -534,7 +547,7 @@ baseline_vars = c(
   # factors
   "eth_cat",
   #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-  # "bigger_doms", religious denomination
+  "bigger_doms", #religious denomination
   "sample_origin",
   "nz_dep2018",
   "nzsei13",
@@ -547,13 +560,14 @@ baseline_vars = c(
   "kessler6_sum",
   #  "support", #soc support
   #  "belong", # social belonging
-  # "smoker", # smoker
-  # "sfhealth",
+  #  "smoker", # smoker
+   "sfhealth",
   #
   # "alcohol_frequency", measured with error
   # "alcohol_intensity",
-  # "hours_family_sqrt_round",
-  # "hours_friends_sqrt_round",
+   "hours_family_log",
+   "hours_friends_log",
+   "hours_community_log",
   # "hours_community_sqrt_round",
   # "lifemeaning",
   "household_inc_log",
@@ -584,14 +598,14 @@ baseline_vars = c(
   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
   "religion_church_round",
   # "religion_religious", #
-  # "religion_spiritual_identification",
-  #  "religion_identification_level",
+   "religion_spiritual_identification",
+   "religion_identification_level",
   #  "religion_religious",
   #  "religion_church_binary",
   #  "religion_prayer_binary",
   #  "religion_scripture_binary",
   #  "religion_believe_god",
-  # "religion_believe_spirit",
+  #  "religion_believe_spirit",
   "sample_weights",
   "alert_level_combined_lead"
 )
@@ -604,7 +618,7 @@ baseline_vars
 baseline_vars
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("religion_church_round", "not_lost") #
+exposure_var = c("hours_community_log", "not_lost") #
 
 
 # outcomes
@@ -683,7 +697,7 @@ outcome_vars = c(
   #  "meaning_sense"# I have a good sense of what makes my life meaningful.
   "permeability_individual",
   #I believe I am capable, as an individual\nof improving my status in society.
-  "impermeability_group",
+  #"impermeability_group",
   #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
   "neighbourhood_community",
   #I feel a sense of community with others in my local neighbourhood.
@@ -765,7 +779,7 @@ df_clean <- df_wide_censored %>%
         !t0_not_lost &
         !t1_not_lost &
         !t0_sample_weights &
-        !t1_religion_church_round &
+        !t1_hours_community_log &
         !t0_smoker_binary &
         !t2_smoker_binary,
       ~ scale(.x),
@@ -777,8 +791,8 @@ df_clean <- df_wide_censored %>%
     t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
+    t1_hours_community_log,
     t1_not_lost,
-    t1_religion_church_round,
     t2_smoker_binary,
     ends_with("_z")
   ) |>
@@ -827,7 +841,7 @@ names_outcomes
 
 #### SET VARIABLE NAMES: Customise for each outcomewide model
 #  model
-A <- c("t1_religion_church_round")
+A <- c("t1_hours_community_log")
 C <- c("t1_not_lost")
 
 #L <- list(c("L1"), c("L2"))
@@ -836,22 +850,21 @@ W <- c(paste(names_base, collapse = ", "))
 # check
 print(W)
 
-table(df_clean$t1_religion_church_round)
+table(df_clean$t1_hours_community_log)
 
 # shift function -- what if everyone increased by .5 standard deviation, except those above 2
 
 # SHIFT FUNCTION
 # simple shift, everyone goes to church at least 4 times per week
 
-f <- function(data, trt) {
-  ifelse(data[[trt]] <= 4, 4,  data[[trt]])
-}
-
+# f <- function(data, trt) {
+#   ifelse(data[[trt]] <= .5, .5,  data[[trt]])
+# }
 # simple function # add 1 to all
 # f_1 <- function (data, trt) data[[trt]] + 1
 
 
-# chceck assignments
+# check assignments
 f
 A
 C
@@ -2099,6 +2112,7 @@ names_base_t2_pwb_your_relationships_z <-
                          outcome = "t2_pwb_your_relationships_z")
 names_base_t2_pwb_your_relationships_z
 
+
 # Your personal relationships.
 t2_pwb_your_relationships_z <- lmtp_tmle(
   data = df_clean,
@@ -2117,14 +2131,15 @@ t2_pwb_your_relationships_z <- lmtp_tmle(
 )
 
 t2_pwb_your_relationships_z
-here_save(t2_pwb_your_relationships_z, "t2_pwb_standard_living_z")
+here_save(t2_pwb_your_relationships_z, "t2_pwb_your_relationships_z")
+
 
 # Your personal relationships.
 t2_pwb_your_relationships_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
   baseline = names_base_t2_pwb_your_relationships_z,
-  outcome = "t2_pwb_your_future_security_z",
+  outcome = "t2_pwb_your_relationships_z",
   cens = C,
   shift = NULL,
   # mtp = TRUE,
@@ -2478,7 +2493,7 @@ contrast_t2_smoker_binary <-
 tab_contrast_t2_smoker_binary <-
   margot_tab_lmtp(contrast_t2_smoker_binary,
                   scale = "RR",
-                  new_name = "Smoker: monthly church + 4")
+                  new_name = "Smoker: socialising >=2 hours per week")
 
 tab_contrast_t2_smoker_binary
 
@@ -2501,7 +2516,7 @@ contrast_t2_sfhealth_z <- lmtp_contrast(t2_sfhealth_z,
 tab_contrast_t2_sfhealth_z <-
   margot_tab_lmtp(contrast_t2_sfhealth_z,
                   scale = "RD",
-                  new_name = "Short form health: monthly church + 4")
+                  new_name = "Short form health: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_sfhealth_z <-
@@ -2525,7 +2540,7 @@ contrast_t2_hours_exercise_log_z <-
 tab_contrast_t2_hours_exercise_log_z <-
   margot_tab_lmtp(contrast_t2_hours_exercise_log_z,
                   scale = "RD",
-                  new_name = "Hours excercise: monthly church + 4")
+                  new_name = "Hours excercise: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_hours_exercise_log_z <-
@@ -2550,7 +2565,7 @@ contrast_t2_alcohol_frequency_z <-
 tab_contrast_t2_alcohol_frequency_z <-
   margot_tab_lmtp(contrast_t2_alcohol_frequency_z ,
                   scale = "RD",
-                  new_name = "Alcohol frequency: monthly church + 4")
+                  new_name = "Alcohol frequency: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_alcohol_frequency_z <-
@@ -2578,7 +2593,7 @@ contrast_t2_alcohol_intensity_z <-
 tab_contrast_t2_alcohol_intensity_z <-
   margot_tab_lmtp(contrast_t2_alcohol_intensity_z,
                   scale = "RD",
-                  new_name = "Alcohol intensity: monthly church + 4")
+                  new_name = "Alcohol intensity: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_alcohol_intensity_z <-
@@ -2602,7 +2617,7 @@ contrast_t2_hours_sleep_z <-
 tab_contrast_t2_hours_sleep_z <-
   margot_tab_lmtp(contrast_t2_hours_sleep_z,
                   scale = "RD",
-                  new_name = "Hours sleep: monthly church + 4")
+                  new_name = "Hours sleep: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_hours_sleep_z <-
@@ -2622,7 +2637,7 @@ contrast_t2_bmi_z <- lmtp_contrast(t2_hlth_bmi_z,
                                    type = "additive")
 
 tab_contrast_t2_bmi_z <-
-  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI: monthly church + 4")
+  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_bmi_z <-
@@ -2643,7 +2658,7 @@ contrast_t2_bodysat_z <- lmtp_contrast(t2_bodysat_z,
 
 contrast_t2_bodysat_z
 tab_contrast_t2_bodysat_z <-
-  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction: monthly church + 4")
+  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_bodysat_z <-
@@ -2665,7 +2680,7 @@ contrast_t2_kessler6_sum_z <-
 tab_contrast_t2_kessler6_sum_z <-
   margot_tab_lmtp(contrast_t2_kessler6_sum_z,
                   scale = "RD",
-                  new_name = "Kessler 6 distress: monthly church + 4")
+                  new_name = "Kessler 6 distress: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_kessler6_sum_z <-
@@ -2689,7 +2704,7 @@ contrast_t2_hlth_fatigue_z <-
 tab_contrast_t2_hlth_fatigue_z <-
   margot_tab_lmtp(contrast_t2_hlth_fatigue_z ,
                   scale = "RD",
-                  new_name = "Fatigue: monthly church + 4")
+                  new_name = "Fatigue: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_hlth_fatigue_z <-
@@ -2711,7 +2726,7 @@ contrast_t2_rumination_z <-
 tab_contrast_t2_rumination_z <-
   margot_tab_lmtp(contrast_t2_rumination_z ,
                   scale = "RD",
-                  new_name = "Rumination: monthly church + 4")
+                  new_name = "Rumination: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_rumination_z <-
@@ -2736,7 +2751,7 @@ contrast_t2_sexual_satisfaction_z <-
 tab_contrast_t2_sexual_satisfaction_z <-
   margot_tab_lmtp(contrast_t2_sexual_satisfaction_z,
                   scale = "RD",
-                  new_name = "Sexual satisfaction: monthly church + 4")
+                  new_name = "Sexual satisfaction: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_sexual_satisfaction_z <-
@@ -2764,7 +2779,7 @@ contrast_t2_power_no_control_composite_z <-
 tab_contrast_t2_power_no_control_composite_z <-
   margot_tab_lmtp(contrast_t2_power_no_control_composite_z,
                   scale = "RD",
-                  new_name = "Power no control: monthly church + 4")
+                  new_name = "Power no control: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_power_no_control_composite_z <-
@@ -2788,7 +2803,7 @@ contrast_t2_self_esteem_z <-
 tab_contrast_t2_self_esteem_z <-
   margot_tab_lmtp(contrast_t2_self_esteem_z,
                   scale = "RD",
-                  new_name = "Self esteem: monthly church + 4")
+                  new_name = "Self esteem: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_self_esteem_z <-
@@ -2812,7 +2827,7 @@ contrast_t2_perfectionism_z <-
 tab_contrast_t2_perfectionism_z <-
   margot_tab_lmtp(contrast_t2_perfectionism_z ,
                   scale = "RD",
-                  new_name = "Perfectionism: monthly church + 4")
+                  new_name = "Perfectionism: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_perfectionism_z <-
@@ -2838,7 +2853,7 @@ contrast_t2_self_control_have_lots_z <-
 tab_contrast_t2_self_control_have_lots_z <-
   margot_tab_lmtp(contrast_t2_self_control_have_lots_z ,
                   scale = "RD",
-                  new_name = "Self control have: monthly church + 4")
+                  new_name = "Self control have: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_self_control_have_lots_z <-
@@ -2862,7 +2877,7 @@ tab_contrast_t2_self_control_wish_more_reversed_z <-
   margot_tab_lmtp(
     contrast_t2_self_control_wish_more_reversed_z,
     scale = "RD",
-    new_name = "Self control wish more (reversed):  monthly church + 4"
+    new_name = "Self control wish more (reversed):  socialising >=2 hours per week"
   )
 
 
@@ -2887,7 +2902,7 @@ contrast_t2_permeability_individual_z <-
 tab_contrast_t2_permeability_individual_z <-
   margot_tab_lmtp(contrast_t2_permeability_individual_z ,
                   scale = "RD",
-                  new_name = "Permeability self: monthly church + 4")
+                  new_name = "Permeability self: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_permeability_individual_z <-
@@ -2920,7 +2935,7 @@ contrast_t2_gratitude_z <- lmtp_contrast(t2_gratitude_z,
 tab_contrast_t2_gratitude_z <-
   margot_tab_lmtp(contrast_t2_gratitude_z,
                   scale = "RD",
-                  new_name = "Gratitude: monthly church + 4")
+                  new_name = "Gratitude: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_gratitude_z <-
@@ -2943,7 +2958,7 @@ contrast_t2_vengeful_rumin_z <-
 tab_contrast_t2_vengeful_rumin_z <-
   margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
                   scale = "RD",
-                  new_name = "Vengefulness (forgiveness: monthly church + 4")
+                  new_name = "Vengefulness (forgiveness: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_vengeful_rumin_z <-
@@ -2968,7 +2983,7 @@ contrast_t2_pwb_your_health_z <-
 tab_contrast_t2_pwb_your_health_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_health_z,
                   scale = "RD",
-                  new_name = "PWB your health: monthly church + 4")
+                  new_name = "PWB your health: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_pwb_your_health_z <-
@@ -2992,7 +3007,7 @@ contrast_t2_pwb_your_future_security_z <-
 tab_contrast_t2_pwb_your_future_security_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_future_security_z,
                   scale = "RD",
-                  new_name = "PWB your future security: monthly church + 4")
+                  new_name = "PWB your future security: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_pwb_your_future_security_z <-
@@ -3019,7 +3034,7 @@ contrast_t2_pwb_your_relationships_z <-
 tab_contrast_t2_pwb_your_relationships_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_relationships_z ,
                   scale = "RD",
-                  new_name = "PWB your relationships: monthly church + 4")
+                  new_name = "PWB your relationships: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_pwb_your_relationships_z <-
@@ -3043,7 +3058,7 @@ contrast_t2_pwb_standard_living_z <-
 tab_contrast_t2_pwb_standard_living_z <-
   margot_tab_lmtp(contrast_t2_pwb_standard_living_z ,
                   scale = "RD",
-                  new_name = "PWB your standard living: monthly church + 4")
+                  new_name = "PWB your standard living: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_pwb_standard_living_z <-
@@ -3068,7 +3083,7 @@ contrast_t2_lifemeaning_z <-
 tab_contrast_t2_lifemeaning_z <-
   margot_tab_lmtp(contrast_t2_lifemeaning_z,
                   scale = "RD",
-                  new_name = "Meaning in life: monthly church + 4")
+                  new_name = "Meaning in life: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_lifemeaning_z <-
@@ -3088,7 +3103,7 @@ contrast_t2_lifesat_z <- lmtp_contrast(t2_lifesat_z,
 
 
 tab_contrast_t2_lifesat_z <-
-  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life: monthly church + 4")
+  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_lifesat_z <-
@@ -3109,7 +3124,7 @@ contrast_t2_support_z <- lmtp_contrast(t2_support_z,
                                        type = "additive")
 
 tab_contrast_t2_support_z <-
-  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support: monthly church + 4")
+  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_support_z <-
@@ -3134,7 +3149,7 @@ contrast_t2_neighbourhood_community_z <-
 tab_contrast_t2_neighbourhood_community_z <-
   margot_tab_lmtp(contrast_t2_neighbourhood_community_z,
                   scale = "RD",
-                  new_name = "Neighbourhood community: monthly church + 4")
+                  new_name = "Neighbourhood community: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_neighbourhood_community_z <-
@@ -3155,7 +3170,7 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 
 tab_contrast_t2_belong_z <-
-  margot_tab_lmtp(contrast_t2_belong_z, scale = "RD", new_name = "Social belonging: monthly church + 4")
+  margot_tab_lmtp(contrast_t2_belong_z, scale = "RD", new_name = "Social belonging: socialising >=2 hours per week")
 
 
 out_tab_contrast_t2_belong_z <-
@@ -3248,7 +3263,7 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 here_save(group_tab_social, "group_tab_social")
 
 # create plots -------------------------------------------------------------
-sub_title = "Church effect: +4 monthly")
+sub_title = "Socialising effect: at least 2 hours weekly")
 
 # graph health 
 plot_group_tab_health <- margot_plot(
@@ -3429,6 +3444,8 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
+
+
 
 
 
