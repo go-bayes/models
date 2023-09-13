@@ -47,9 +47,9 @@ nzavs_exposure <- "hours_community_log"
 # define exposure 
 A <- "t1_hours_community"
 
-# define shift function (if less than 2.2 hour per week)
+# define shift function (if less than 1 hour per week, make an hour)
 f <- function(data, trt){
-  ifelse( data[[trt]] <=.5, 5,  data[[trt]] )
+  ifelse( data[[trt]] <=.3, 3,  data[[trt]] )
 }
 
 
