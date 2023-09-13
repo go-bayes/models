@@ -547,7 +547,7 @@ baseline_vars = c(
   # factors
   "eth_cat",
   #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-  "bigger_doms", #religious denomination
+  #"bigger_doms", #religious denomination
   "sample_origin",
   "nz_dep2018",
   "nzsei13",
@@ -779,8 +779,8 @@ df_clean <- df_wide_censored %>%
         !t0_not_lost &
         !t1_not_lost &
         !t0_sample_weights &
-        !t1_hours_community_log &
         !t0_smoker_binary &
+        !t1_hours_community_log &
         !t2_smoker_binary,
       ~ scale(.x),
       .names = "{col}_z"
