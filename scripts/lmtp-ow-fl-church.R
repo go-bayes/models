@@ -841,7 +841,7 @@ table(df_clean$t1_religion_church_round)
 # shift function -- what if everyone increased by .5 standard deviation, except those above 2
 
 # SHIFT FUNCTION
-# simple shift, everyone goes to church at least 4 times per week
+# everyone goes to church at least 4 times per week
 
 f <- function(data, trt) {
   ifelse(data[[trt]] <= 4, 4,  data[[trt]])
@@ -3250,7 +3250,7 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 here_save(group_tab_social, "group_tab_social")
 
 # create plots -------------------------------------------------------------
-sub_title = "Church effect: +4 monthly"
+sub_title = "Religious service effect: + 4 monthly, N = 33,198"
 group_tab_health
 # graph health 
 plot_group_tab_health <- margot_plot(
