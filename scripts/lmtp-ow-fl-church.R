@@ -412,18 +412,17 @@ dat_long  <- dat |>
     "hours_friends",
     "hours_family",
     "alert_level_combined_lead"
+    # Hours spent … socialising with family
+    # Hours spent … socialising with friends
+    # Hours spent … socialising with community groups
+    # Hours spent … socialising with religious groups (only for religion only studies)
   ) |>
   # select variables
   # mutate(across(where(is.double), as.numeric)) |>
   mutate(
-    hours_community_sqrt_raw = sqrt(hours_community),
-    hours_friends_sqrt_raw = sqrt(hours_friends),
-    hours_family_sqrt_raw = sqrt(hours_family)
-  ) |>
-  mutate(
-    hours_community_sqrt_round = ifelse(hours_community_sqrt_raw >= 8, 8, hours_community_sqrt_raw),
-    hours_friends_sqrt_round = ifelse(hours_friends_sqrt_raw >= 8, 8, hours_friends_sqrt_raw),
-    hours_family_sqrt_round = ifelse(hours_family_sqrt_raw >= 8, 8, hours_family_sqrt_raw),
+    hours_community_log = log(hours_community + 1),
+    hours_friends_log = sqrt(hours_friends + 1),
+    hours_family_log = sqrt(hours_family + 1)
   ) |>
   mutate(male = as.numeric(male) - 1) |>
   mutate(total_siblings_factor = ordered(round(
@@ -527,6 +526,7 @@ colnames(dat)
 # set variables for baseline exposure and outcome -------------------------
 
 
+
 baseline_vars = c(
   "male",
   "age",
@@ -534,7 +534,7 @@ baseline_vars = c(
   # factors
   "eth_cat",
   #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-  # "bigger_doms", religious denomination
+  #"bigger_doms", #religious denomination
   "sample_origin",
   "nz_dep2018",
   "nzsei13",
@@ -547,13 +547,14 @@ baseline_vars = c(
   "kessler6_sum",
   #  "support", #soc support
   #  "belong", # social belonging
-  # "smoker", # smoker
+  #  "smoker", # smoker
   # "sfhealth",
   #
   # "alcohol_frequency", measured with error
   # "alcohol_intensity",
-  # "hours_family_sqrt_round",
-  # "hours_friends_sqrt_round",
+  "hours_family_log",
+  "hours_friends_log",
+  "hours_community_log",
   # "hours_community_sqrt_round",
   # "lifemeaning",
   "household_inc_log",
@@ -583,22 +584,20 @@ baseline_vars = c(
   # "religion_religious", # Do you identify with a religion and/or spiritual group?
   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
   "religion_church_round",
+  "hours_community_log",
   # "religion_religious", #
-  # "religion_spiritual_identification",
-  #  "religion_identification_level",
+  "religion_spiritual_identification",
+  "religion_identification_level",
   #  "religion_religious",
   #  "religion_church_binary",
   #  "religion_prayer_binary",
   #  "religion_scripture_binary",
   #  "religion_believe_god",
-  # "religion_believe_spirit",
+  #  "religion_believe_spirit",
   "sample_weights",
   "alert_level_combined_lead"
 )
 
-
-# check
-baseline_vars
 
 # check
 baseline_vars
@@ -619,7 +618,7 @@ outcome_vars = c(
   # health
   "sfhealth",
   # health
-  # "sfhealth_your_health",# "In general, would you say your health is...
+  "sfhealth_your_health",# "In general, would you say your health is...
   # "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
   # "sfhealth_expect_worse_health",
   "hlth_sleep_hours",
@@ -656,7 +655,7 @@ outcome_vars = c(
   #In general, I have a lot of self-control.
   "self_control_wish_more_reversed",
   #I wish I had more self-discipline.(r)
-  #  "emotion_regulation_out_control",
+  "emotion_regulation_out_control",
   # When I feel negative emotions, my emotions feel out of control. w10 - w13
   # "emotion_regulation_hide_neg_emotions",
   # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
@@ -683,7 +682,7 @@ outcome_vars = c(
   #  "meaning_sense"# I have a good sense of what makes my life meaningful.
   "permeability_individual",
   #I believe I am capable, as an individual\nof improving my status in society.
-  "impermeability_group",
+  #"impermeability_group",
   #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
   "neighbourhood_community",
   #I feel a sense of community with others in my local neighbourhood.
@@ -717,10 +716,10 @@ head(prep_coop_all$loggedEvents, 10)
 
 push_mods
 # save function -- will save to your "push_mod" directory
-here_save(prep_coop_all, "prep_coop_all")
+here_save(prep_coop_all, "prep_coop_all_1")
 
 # read function
-prep_coop_all <- here_read("prep_coop_all")
+prep_coop_all <- here_read("prep_coop_all_1")
 
 head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
@@ -765,8 +764,8 @@ df_clean <- df_wide_censored %>%
         !t0_not_lost &
         !t1_not_lost &
         !t0_sample_weights &
-        !t1_religion_church_round &
         !t0_smoker_binary &
+        !t1_religion_church_round &
         !t2_smoker_binary,
       ~ scale(.x),
       .names = "{col}_z"
@@ -777,8 +776,8 @@ df_clean <- df_wide_censored %>%
     t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
-    t1_not_lost,
     t1_religion_church_round,
+    t1_not_lost,
     t2_smoker_binary,
     ends_with("_z")
   ) |>
@@ -793,7 +792,6 @@ dim(df_clean)
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 dev.off()
 
-table(df_clean$t2_community_time_binary)
 
 
 # check path
@@ -1044,21 +1042,49 @@ here_save(t2_alcohol_intensity_z_null, "t2_alcohol_intensity_z_null")
 
 
 
-names_base_t2_sfhealth_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_sfhealth_z")
-names_base_t2_sfhealth_z
+# names_base_t2_sfhealth_z <-
+#   select_and_rename_cols(names_base = names_base,
+#                          baseline_vars = baseline_vars,
+#                          outcome = "t2_sfhealth_z")
+# names_base_t2_sfhealth_z
 
 # "In general, would you say your health is...
 # "I seem to get sick a little easier than other people."
 # "I expect my health to get worse." ****
 
-t2_sfhealth_z <- lmtp_tmle(
+# t2_sfhealth_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_sfhealth_z,
+#   outcome = "t2_sfhealth_z",
+#   cens = C,
+#   shift = f,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_sfhealth_z
+# here_save(t2_sfhealth_z, "t2_sfhealth_z")
+# 
+# 
+names_base_t2_sfhealth_your_health_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_sfhealth_your_health_z")
+names_base_t2_sfhealth_your_health_z
+
+
+# "In general, would you say your health is...
+t2_sfhealth_your_health_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_sfhealth_z,
-  outcome = "t2_sfhealth_z",
+  baseline = names_base_t2_sfhealth_your_health_z,
+  outcome = "t2_sfhealth_your_health_z",
   cens = C,
   shift = f,
   mtp = TRUE,
@@ -1070,18 +1096,17 @@ t2_sfhealth_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_sfhealth_z
-here_save(t2_sfhealth_z, "t2_sfhealth_z")
+t2_sfhealth_your_health_z
+here_save(t2_sfhealth_your_health_z, "t2_sfhealth_your_health_z")
+
 
 
 # "In general, would you say your health is...
-# "I seem to get sick a little easier than other people."
-# "I expect my health to get worse." ****
-t2_sfhealth_z_null <- lmtp_tmle(
+t2_sfhealth_your_health_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_sfhealth_z,
-  outcome = "t2_sfhealth_z",
+  baseline = names_base_t2_sfhealth_your_health_z,
+  outcome = "t2_sfhealth_your_health_z",
   cens = C,
   shift = NULL,
   # mtp = TRUE,
@@ -1093,9 +1118,8 @@ t2_sfhealth_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_sfhealth_z_null
-here_save(t2_sfhealth_z_null, "t2_sfhealth_z_null")
-
+t2_sfhealth_your_health_z_null
+here_save(t2_sfhealth_your_health_z_null, "t2_sfhealth_your_health_z_null")
 
 
 names_base_t2_hours_exercise_log_z <-
@@ -1780,6 +1804,59 @@ t2_permeability_individual_z_null <- lmtp_tmle(
 t2_permeability_individual_z_null
 here_save(t2_permeability_individual_z_null,
           "t2_permeability_individual_z_null")
+
+
+
+
+
+names_base_t2_emotion_regulation_out_control_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_emotion_regulation_out_control_z")
+names_base_t2_emotion_regulation_out_control_z
+
+
+# emotional regulation
+# When I feel negative emotions, my emotions feel out of control. w10 - w13
+t2_emotion_regulation_out_control_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_emotion_regulation_out_control_z,
+  outcome = "t2_emotion_regulation_out_control_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_emotion_regulation_out_control_z
+here_save(t2_emotion_regulation_out_control_z, "t2_emotion_regulation_out_control_z")
+
+
+
+t2_emotion_regulation_out_control_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_emotion_regulation_out_control_z,
+  outcome = "t2_emotion_regulation_out_control_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+t2_emotion_regulation_out_control_z_null
+here_save(t2_emotion_regulation_out_control_z_null, "t2_emotion_regulation_out_control_z_null")
+
 
 
 
@@ -2492,25 +2569,49 @@ out_tab_contrast_t2_smoker_binary <-
 out_tab_contrast_t2_smoker_binary
 
 # sf health
-t2_sfhealth_z <- here_read("t2_sfhealth_z")
-t2_sfhealth_z_null <- here_read("t2_sfhealth_z_null")
+# t2_sfhealth_z <- here_read("t2_sfhealth_z")
+# t2_sfhealth_z_null <- here_read("t2_sfhealth_z_null")
+# contrast_t2_sfhealth_z <- lmtp_contrast(t2_sfhealth_z,
+#                                         ref = t2_sfhealth_z_null,
+#                                         type = "additive")
+# 
+# tab_contrast_t2_sfhealth_z <-
+#   margot_tab_lmtp(contrast_t2_sfhealth_z,
+#                   scale = "RD",
+#                   new_name = "Short form health: monthly church + 4")
+# 
+# 
+# out_tab_contrast_t2_sfhealth_z <-
+#   lmtp_evalue_tab(tab_contrast_t2_sfhealth_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_sfhealth_z
 
 
-contrast_t2_sfhealth_z <- lmtp_contrast(t2_sfhealth_z,
-                                        ref = t2_sfhealth_z_null,
-                                        type = "additive")
 
-tab_contrast_t2_sfhealth_z <-
-  margot_tab_lmtp(contrast_t2_sfhealth_z,
+# sf health, your health
+t2_sfhealth_your_health_z <- here_read("t2_sfhealth_your_health_z")
+t2_sfhealth_your_health_z_null <- here_read("t2_sfhealth_your_health_z_null")
+
+
+contrast_t2_sfhealth_your_health_z <- lmtp_contrast(t2_sfhealth_your_health_z,
+                                                    ref = t2_sfhealth_your_health_z_null,
+                                                    type = "additive")
+
+tab_contrast_t2_sfhealth_your_health_z <-
+  margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
                   scale = "RD",
-                  new_name = "Short form health: monthly church + 4")
+                  new_name = "Short form health, your health: socialising >=2 hours per week")
 
 
-out_tab_contrast_t2_sfhealth_z <-
-  lmtp_evalue_tab(tab_contrast_t2_sfhealth_z,
+out_tab_contrast_t2_sfhealth_your_health_z <-
+  lmtp_evalue_tab(tab_contrast_t2_sfhealth_your_health_z,
                   scale = c("RD"))
 
-out_tab_contrast_t2_sfhealth_z
+out_tab_contrast_t2_sfhealth_your_health_z
+
+
+
 
 # excercise
 t2_hours_exercise_log_z <-
@@ -2897,6 +2998,35 @@ out_tab_contrast_t2_permeability_individual_z <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_permeability_individual_z
+
+
+
+# emotional regulation
+t2_emotion_regulation_out_control_z <-
+  here_read("t2_emotion_regulation_out_control_z")
+t2_emotion_regulation_out_control_z_null <-
+  here_read("t2_emotion_regulation_out_control_z_null")
+
+contrast_t2_emotion_regulation_out_control_z <-
+  lmtp_contrast(t2_emotion_regulation_out_control_z,
+                ref = t2_emotion_regulation_out_control_z_null,
+                type = "additive")
+
+tab_contrast_t2_emotion_regulation_out_control_z <-
+  margot_tab_lmtp(contrast_t2_emotion_regulation_out_control_z ,
+                  scale = "RD",
+                  new_name = "Emotional regulation (out of control): socialising >=2 hours per week")
+
+
+out_tab_contrast_t2_emotion_regulation_out_control_z <-
+  lmtp_evalue_tab(tab_contrast_t2_emotion_regulation_out_control_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_emotion_regulation_out_control_z
+
+
+
+
 
 # more a political view
 # t2_impermeability_group_z<- here_read("t2_impermeability_group_z")

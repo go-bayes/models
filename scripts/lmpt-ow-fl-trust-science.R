@@ -1,6 +1,6 @@
 # sept 13 2023
 # socialising with others
-# joseph bulbulia : joseph.bulbulia@gmail.com 
+# joseph bulbulia : joseph.bulbulia@gmail.com
 
 
 # outcome-wide-analysis-template
@@ -36,22 +36,25 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
-  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lmtp-ow-fl-socialising")
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-fl-trust-science"
+  )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
 # set exposure here
-nzavs_exposure <- "hours_community_log"
+nzavs_exposure <-
+  "trust_science_our_society_places_too_much_emphasis_reversed"
 
-# define exposure 
-A <- "t1_hours_community"
+# define exposure
+A <-
+  "t1_trust_science_our_society_places_too_much_emphasis_reversed_z"
 
-# define shift function (if less than 2.2 hour per week, make an hour)
-f <- function(data, trt){
-  ifelse( data[[trt]] <=.5, .5,  data[[trt]] )
+# define shift function (if any one is average make them average, otherwise leave alone)
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
 }
-
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 5
@@ -100,6 +103,10 @@ SL.xgboost = list(tree_method = 'gpu_hist')
 # check options
 listWrappers()
 
+n_unique(dat$id)
+
+
+
 # import data and wrangle-------------------------------------------------
 
 dat_long  <- dat |>
@@ -108,6 +115,11 @@ dat_long  <- dat |>
            mean(c(
              power_self_nocontrol, power_others_control
            ), na.rm = TRUE)) |>
+  rename(
+    trust_science_high_confidence_scientific_community = science_trust01,
+    trust_science_our_society_places_too_much_emphasis_reversed =
+      science_trust02r
+  ) |>
   ungroup() |>
   # ungroup
   select(
@@ -424,7 +436,11 @@ dat_long  <- dat |>
     "hours_community",
     "hours_friends",
     "hours_family",
-    "alert_level_combined_lead"
+    # "I have a high degree of confidence in the scientific community",
+    "trust_science_high_confidence_scientific_community",
+    #Our society places too much emphasis on science.
+    "trust_science_our_society_places_too_much_emphasis_reversed",
+    "alert_level_combined"
     # Hours spent … socialising with family
     # Hours spent … socialising with friends
     # Hours spent … socialising with community groups
@@ -437,7 +453,7 @@ dat_long  <- dat |>
     hours_friends_log = sqrt(hours_friends + 1),
     hours_family_log = sqrt(hours_family + 1)
   ) |>
-  mutate(male = as.numeric(male) - 1) |>
+  mutate(male = as.numeric(male)) |>
   mutate(total_siblings_factor = ordered(round(
     ifelse(total_siblings > 7, 7, total_siblings), 0
   ))) |>
@@ -452,29 +468,30 @@ dat_long  <- dat |>
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
-  dplyr::filter((wave == 2018 & year_measured  == 1) |
-                  (wave == 2019  &
+  dplyr::filter((wave == 2019 & year_measured  == 1) |
+                  (wave == 2020  &
                      year_measured  == 1) |
-                  (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
+                  (wave == 2021)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
   dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
                                                    !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
   dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   arrange(id) |>
-  filter((wave == 2018 & year_measured == 1) |
-           (wave == 2019 & year_measured == 1) |
-           (wave == 2020)) %>%
+  filter((wave == 2019 & year_measured == 1) |
+           (wave == 2020 & year_measured == 1) |
+           (wave == 2021)) %>%
   group_by(id) |>
-  mutate(k_18 = ifelse(wave == 2018 &
-                         meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
-  mutate(h_18 = mean(k_18, na.rm = TRUE)) %>%
   mutate(k_19 = ifelse(wave == 2019 &
                          meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
   mutate(h_19 = mean(k_19, na.rm = TRUE)) %>%
-  dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
+  mutate(k_20 = ifelse(wave == 2020 &
+                         meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
+  mutate(h_20 = mean(k_20, na.rm = TRUE)) %>%
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
-  ungroup() %>%
+  dplyr::filter(h_20 > 0) |>  # hack to enable repeat of baseline
+  ungroup() |> 
+  arrange(id, wave) |> 
   mutate(
     not_lost = ifelse(lead(year_measured) == 1, 1, 0),
     # not_lost = ifelse(lead(year_measured)== -1, 0, not_lost,
@@ -483,7 +500,6 @@ dat_long  <- dat |>
                         year_measured == 1, 1, not_lost),
     not_lost = ifelse(is.na(not_lost), 0, not_lost)
   ) |>
-  ungroup() |>
   dplyr::mutate(
     friends_money = ifelse(friends_money < 0, 0, friends_money),
     # someone gave neg number
@@ -497,7 +513,7 @@ dat_long  <- dat |>
   dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   arrange(id, wave) |>
   droplevels() |>
-  select(-h_18, -k_18, -h_19, -k_19) |>
+  select(-h_19, -k_19, -h_20, -k_20) |>
   data.frame() |>
   droplevels() |>
   arrange(id, wave) |>
@@ -525,16 +541,27 @@ mutate(
   data.frame()
 
 
-# check n
-n_unique(dat_long$id) #33148 # reports hours with community at baseline
+ # check n
+n_unique(dat_long$id) #32737 # reports hours with community at baseline
 
+nrow(dat_long)
 # double check path
 push_mods
 
 # check col names
-colnames(dat)
 
+dat_long_temp <- dat_long |>
+  filter(wave == 2020)
+ 
+table(dat_long_temp$not_lost)
 
+dat_long_temp2 <- dat_long |>
+  filter(wave == 2021 & is.na(lifemeaning))
+
+n_unique(dat_long_temp2$id)
+
+table(is.na(dat_long_temp2$lifemeaning))
+# mutate(wave = as.numeric(as.character(wave))-2019)
 
 # set variables for baseline exposure and outcome -------------------------
 
@@ -553,7 +580,7 @@ baseline_vars = c(
   "total_siblings_factor",
   "born_nz",
   "hlth_disability",
-  "hlth_bmi",
+#  "hlth_bmi",
   # bmi
   # "pwi", # pwi
   "kessler6_sum",
@@ -564,9 +591,9 @@ baseline_vars = c(
   #
   # "alcohol_frequency", measured with error
   # "alcohol_intensity",
-  "hours_family_log",
-  "hours_friends_log",
-  "hours_community_log",
+ # "hours_family_log",
+#  "hours_friends_log",
+#  "hours_community_log",
   # "hours_community_sqrt_round",
   # "lifemeaning",
   "household_inc_log",
@@ -578,13 +605,13 @@ baseline_vars = c(
   # Sample origin names combined
   "urban",
   "children_num",
-  "hours_children_log",
+#  "hours_children_log",
   # new
-  "hours_work_log",
+#  "hours_work_log",
   # new
-  "hours_housework_log",
+ # "hours_housework_log",
   #new
-  "hours_exercise_log",
+#  "hours_exercise_log",
   "agreeableness",
   "conscientiousness",
   "extraversion",
@@ -595,29 +622,30 @@ baseline_vars = c(
   # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
   # "religion_religious", # Do you identify with a religion and/or spiritual group?
   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-  "religion_church_round",
+  #  "religion_church_round",
   # "religion_religious", #
-  "religion_spiritual_identification",
+  #  "religion_spiritual_identification", Not measured
   "religion_identification_level",
   #  "religion_religious",
   #  "religion_church_binary",
   #  "religion_prayer_binary",
   #  "religion_scripture_binary",
-  #  "religion_believe_god",
-  #  "religion_believe_spirit",
+ # "religion_believe_god",
+  "religion_believe_spirit",
+  # "I have a high degree of confidence in the scientific community",
+ # "trust_science_high_confidence_scientific_community",
+  #Our society places too much emphasis on science.
+  "trust_science_our_society_places_too_much_emphasis_reversed",
   "sample_weights",
-  "alert_level_combined_lead"
+  "alert_level_combined"
 )
-
-
-# check
-baseline_vars
 
 # check
 baseline_vars
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("hours_community_log", "not_lost") #
+exposure_var = c("trust_science_our_society_places_too_much_emphasis_reversed",
+                 "not_lost") #
 
 
 # outcomes
@@ -632,7 +660,8 @@ outcome_vars = c(
   # health
   "sfhealth",
   # health
-  "sfhealth_your_health",# "In general, would you say your health is...
+  "sfhealth_your_health",
+  # "In general, would you say your health is...
   # "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
   # "sfhealth_expect_worse_health",
   "hlth_sleep_hours",
@@ -669,7 +698,7 @@ outcome_vars = c(
   #In general, I have a lot of self-control.
   "self_control_wish_more_reversed",
   #I wish I had more self-discipline.(r)
-   "emotion_regulation_out_control",
+  "emotion_regulation_out_control",
   # When I feel negative emotions, my emotions feel out of control. w10 - w13
   # "emotion_regulation_hide_neg_emotions",
   # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
@@ -692,8 +721,8 @@ outcome_vars = c(
   # "lifesat_satlife",# I am satisfied with my life.
   # "lifesat_ideal"#,# In most ways my life is close to ideal.
   "lifemeaning",
-  #  "meaning_purpose",# My life has a clear sense of purpose.
-  #  "meaning_sense"# I have a good sense of what makes my life meaningful.
+    "meaning_purpose",# My life has a clear sense of purpose.
+    "meaning_sense",# I have a good sense of what makes my life meaningful.
   "permeability_individual",
   #I believe I am capable, as an individual\nof improving my status in society.
   #"impermeability_group",
@@ -703,16 +732,19 @@ outcome_vars = c(
   "belong",
   "support"
 )
-# impute baseline data (we use censoring for the outcomes)
-#colnames(dat_long)
-# function imputes only baseline not outcome
 
+outcome_vars = c(
+  "lifemeaning",
+  "meaning_purpose",# My life has a clear sense of purpose.
+  "meaning_sense"# I have a good sense of what makes my life meaningful.
+)
 
 
 # make data wide and impute baseline missing values -----------------------
 
-
+margot_wide_impute_baseline
 # custom function
+rm(prep_coop_all)
 prep_coop_all <- margot_wide_impute_baseline(
   dat_long,
   baseline_vars = baseline_vars,
@@ -720,23 +752,76 @@ prep_coop_all <- margot_wide_impute_baseline(
   outcome_vars = outcome_vars
 )
 
+
 # check mi model
 outlist <-
   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
+
 length(outlist)
 
 # checks. We do not impute with weights: area of current research
-head(prep_coop_all$loggedEvents, 10)
+head(prep_coop_all$loggedEvents, 3)
+
+logged_events <- prep_coop_all$loggedEvents
+print(logged_events)
 
 push_mods
 # save function -- will save to your "push_mod" directory
-here_save(prep_coop_all, "prep_coop_all_1")
+here_save(prep_coop_all, "prep_coop_all")
 
 # read function
-prep_coop_all <- here_read("prep_coop_all_1")
+prep_coop_all <- here_read("prep_coop_all")
+
+table( prep_coop_all$t1_not_lost )
 
 head(prep_coop_all)
-naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
+
+
+# find  columns with NA in t0
+cols_with_na <- prep_coop_all %>%
+  select(starts_with("t2_")) %>%
+  summarise(across(everything(), ~any(is.na(.)))) %>%
+  pivot_longer(cols = everything(), names_to = "col_name", values_to = "has_na") %>%
+  filter(has_na == TRUE) %>%
+  pull(col_name)
+
+# show results
+print(cols_with_na)
+
+table(is.na(prep_coop_all$t2_lifemeaning))
+table(prep_coop_all$t1_not_lost)
+
+
+#hack 
+
+prep_coop_all_1 <- prep_coop_all |> 
+  mutate( t1_not_lost = ifelse( is.na( t2_lifemeaning), 0, 1))
+
+
+table(is.na(prep_coop_all_1$t2_lifemeaning))
+table(prep_coop_all_1$t1_not_lost)
+
+
+# find duplicate columns
+# dup_cols <- prep_coop_all %>%
+#   summarise(across(everything(), list(~digest::digest(.)))) %>%
+#   pivot_longer(cols = everything(), names_to = "col_name", values_to = "hash") %>%
+#   count(hash) %>%
+#   filter(n > 1) %>%
+#   left_join(
+#     dat %>%
+#       summarise(across(everything(), list(~digest::digest(.)))) %>%
+#       pivot_longer(cols = everything(), names_to = "col_name", values_to = "hash"),
+#     by = "hash"
+#   ) %>%
+#   pull(col_name)
+# 
+# # # show results
+# print(dup_cols)
+# head(prep_coop_all)
+
+
+naniar::vis_miss(prep_coop_all_1, warn_large_data = FALSE)
 dev.off()
 
 
@@ -748,12 +833,13 @@ colnames(prep_coop_all)
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
+
 df_wide_censored <-
-  prep_coop_all |>
+  prep_coop_all_1 |>
   mutate(
-    t0_eth_cat = as.factor(t0_eth_cat),
-    t0_smoker_binary = as.integer(ifelse(t0_smoker > 0, 1, 0)),
-    t2_smoker_binary = as.integer(ifelse(t2_smoker > 0, 1, 0)),
+    t0_eth_cat = as.factor(t0_eth_cat)#,
+ #   t0_smoker_binary = as.integer(ifelse(t0_smoker > 0, 1, 0))#,
+#    t2_smoker_binary = as.integer(ifelse(t2_smoker > 0, 1, 0)),
   ) |>
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
   relocate("t1_not_lost", .before = starts_with("t2_"))
@@ -777,22 +863,22 @@ df_clean <- df_wide_censored %>%
       where(is.numeric) &
         !t0_not_lost &
         !t1_not_lost &
-        !t0_sample_weights &
-        !t0_smoker_binary &
-        !t1_hours_community_log &
-        !t2_smoker_binary,
+        !t0_sample_weights,# &
+      #  !t0_smoker_binary & 
+      #  !t1_trust_science_our_society_places_too_much_emphasis_reversed,
+     #   !t2_smoker_binary,
       ~ scale(.x),
       .names = "{col}_z"
     )
   ) |>
   select(
     where(is.factor),
-    t0_smoker_binary,
+  #  t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
-    t1_hours_community_log,
+  #  t1_trust_science_our_society_places_too_much_emphasis_reversed,
     t1_not_lost,
-    t2_smoker_binary,
+ #   t2_smoker_binary,
     ends_with("_z")
   ) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
@@ -806,7 +892,7 @@ dim(df_clean)
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 dev.off()
 
-table(df_clean$t2_community_time_binary)
+table(df_clean$t1_trust_science_our_society_places_too_much_emphasis_reversed)
 
 
 # check path
@@ -820,7 +906,9 @@ df_clean <- here_read("df_clean")
 
 
 #check n
-nrow(df_clean)
+nrow(df_clean) #32737
+
+df_clean<- data.frame(df_clean)
 
 colnames(df_clean)
 # get names
@@ -828,7 +916,9 @@ names_base <-
   df_clean |> select(starts_with("t0"),
                      -t0_sample_weights,
                      -t0_not_lost,
-                     -t0_smoker_z) |> colnames()
+                     -t0_total_siblings_factor,
+                   #  -t0_smoker_z
+                     ) |> colnames()
 
 names_base
 names_outcomes <-
@@ -840,17 +930,18 @@ names_outcomes
 
 #### SET VARIABLE NAMES: Customise for each outcomewide model
 #  model
-A <- c("t1_hours_community_log")
+A  # check
 C <- c("t1_not_lost")
 
 #L <- list(c("L1"), c("L2"))
 W <- c(paste(names_base, collapse = ", "))
+head( df_clean$t1_trust_science_our_society_places_too_much_emphasis_reversed_z )
 
 # check
 print(W)
 
-table(df_clean$t1_hours_community_log)
-
+# check function
+f
 # shift function -- what if everyone increased by .5 standard deviation, except those above 2
 
 # SHIFT FUNCTION
@@ -867,6 +958,8 @@ table(df_clean$t1_hours_community_log)
 f
 A
 C
+
+
 
 # "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
 # MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
@@ -1081,11 +1174,11 @@ here_save(t2_alcohol_intensity_z_null, "t2_alcohol_intensity_z_null")
 #   learners_outcome = sl_lib,
 #   parallel = n_cores
 # )
-# 
+#
 # t2_sfhealth_z
 # here_save(t2_sfhealth_z, "t2_sfhealth_z")
-# 
-# 
+#
+#
 names_base_t2_sfhealth_your_health_z <-
   select_and_rename_cols(names_base = names_base,
                          baseline_vars = baseline_vars,
@@ -1849,7 +1942,8 @@ t2_emotion_regulation_out_control_z <- lmtp_tmle(
 )
 
 t2_emotion_regulation_out_control_z
-here_save(t2_emotion_regulation_out_control_z, "t2_emotion_regulation_out_control_z")
+here_save(t2_emotion_regulation_out_control_z,
+          "t2_emotion_regulation_out_control_z")
 
 
 
@@ -1869,7 +1963,10 @@ t2_emotion_regulation_out_control_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 t2_emotion_regulation_out_control_z_null
-here_save(t2_emotion_regulation_out_control_z_null, "t2_emotion_regulation_out_control_z_null")
+here_save(
+  t2_emotion_regulation_out_control_z_null,
+  "t2_emotion_regulation_out_control_z_null"
+)
 
 
 #
@@ -2285,21 +2382,24 @@ here_save(t2_pwb_standard_living_z_null,
           "t2_pwb_standard_living_z_null")
 
 
-
+select_and_rename_cols
 
 names_base_t2_lifemeaning_z <-
   select_and_rename_cols(names_base = names_base,
                          baseline_vars = baseline_vars,
                          outcome = "t2_lifemeaning_z")
+names_base
+names_base
+baseline_vars
 names_base_t2_lifemeaning_z
 
-
+df_clean$t2_lifemeaning_z
 # My life has a clear sense of purpose.
 # I have a good sense of what makes my life meaningful.
 t2_lifemeaning_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_lifemeaning_z,
+  baseline = names_base,
   outcome = "t2_lifemeaning_z",
   cens = C,
   shift = f,
@@ -2312,7 +2412,6 @@ t2_lifemeaning_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-
 t2_lifemeaning_z
 here_save(t2_lifemeaning_z, "t2_lifemeaning_z")
 
@@ -2322,7 +2421,7 @@ here_save(t2_lifemeaning_z, "t2_lifemeaning_z")
 t2_lifemeaning_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_lifemeaning_z,
+  baseline = names_base,
   outcome = "t2_lifemeaning_z",
   cens = C,
   shift = NULL,
@@ -2583,33 +2682,35 @@ out_tab_contrast_t2_smoker_binary
 # # sf health
 # t2_sfhealth_z <- here_read("t2_sfhealth_z")
 # t2_sfhealth_z_null <- here_read("t2_sfhealth_z_null")
-# 
-# 
+#
+#
 # contrast_t2_sfhealth_z <- lmtp_contrast(t2_sfhealth_z,
 #                                         ref = t2_sfhealth_z_null,
 #                                         type = "additive")
-# 
+#
 # tab_contrast_t2_sfhealth_z <-
 #   margot_tab_lmtp(contrast_t2_sfhealth_z,
 #                   scale = "RD",
 #                   new_name = "Short form health: socialising >=2 hours per week")
-# 
-# 
+#
+#
 # out_tab_contrast_t2_sfhealth_z <-
 #   lmtp_evalue_tab(tab_contrast_t2_sfhealth_z,
 #                   scale = c("RD"))
-# 
+#
 # out_tab_contrast_t2_sfhealth_z
 
 
 # sf health, your health
 t2_sfhealth_your_health_z <- here_read("t2_sfhealth_your_health_z")
-t2_sfhealth_your_health_z_null <- here_read("t2_sfhealth_your_health_z_null")
+t2_sfhealth_your_health_z_null <-
+  here_read("t2_sfhealth_your_health_z_null")
 
 
-contrast_t2_sfhealth_your_health_z <- lmtp_contrast(t2_sfhealth_your_health_z,
-                                        ref = t2_sfhealth_your_health_z_null,
-                                        type = "additive")
+contrast_t2_sfhealth_your_health_z <-
+  lmtp_contrast(t2_sfhealth_your_health_z,
+                ref = t2_sfhealth_your_health_z_null,
+                type = "additive")
 
 tab_contrast_t2_sfhealth_your_health_z <-
   margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
@@ -2996,9 +3097,11 @@ contrast_t2_emotion_regulation_out_control_z <-
                 type = "additive")
 
 tab_contrast_t2_emotion_regulation_out_control_z <-
-  margot_tab_lmtp(contrast_t2_emotion_regulation_out_control_z ,
-                  scale = "RD",
-                  new_name = "Emotional regulation (out of control): socialising >=2 hours per week")
+  margot_tab_lmtp(
+    contrast_t2_emotion_regulation_out_control_z ,
+    scale = "RD",
+    new_name = "Emotional regulation (out of control): socialising >=2 hours per week"
+  )
 
 
 out_tab_contrast_t2_emotion_regulation_out_control_z <-
@@ -3290,7 +3393,7 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 
 tab_contrast_t2_belong_z <-
-  margot_tab_lmtp(contrast_t2_belong_z, scale = "RD", 
+  margot_tab_lmtp(contrast_t2_belong_z, scale = "RD",
                   new_name = "Social belonging: socialising >=2 hours per week")
 
 
@@ -3308,7 +3411,7 @@ out_tab_contrast_t2_belong_z
 
 # bind individual tables
 tab_health <- rbind(
- # out_tab_contrast_t2_sfhealth_z,
+  # out_tab_contrast_t2_sfhealth_z,
   out_tab_contrast_t2_sfhealth_your_health_z,
   out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_alcohol_frequency_z,
@@ -3386,11 +3489,20 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 # save
 here_save(group_tab_social, "group_tab_social")
 
+
+
+group_tab_health <- here_read("group_tab_health")
+group_tab_body<- here_read("group_tab_body")
+group_tab_ego<- here_read("group_tab_ego")
+group_tab_reflective <- here_read("group_tab_reflective")
+group_tab_social <- here_read("group_tab_social")
+
+
 # create plots -------------------------------------------------------------
 sub_title = "Socialising effect: at least 2 hours weekly, N = 33,148"
 
 
-# graph health 
+# graph health
 plot_group_tab_health <- margot_plot(
   group_tab_health,
   type = "RD",
@@ -3399,8 +3511,8 @@ plot_group_tab_health <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
+  base_size = 12,
+  text_size = 3.0,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3412,7 +3524,7 @@ plot_group_tab_health <- margot_plot(
 )
 plot_group_tab_health
 dev.off()
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_health,
   path = here::here(here::here(push_mods, "figs")),
@@ -3425,9 +3537,9 @@ ggsave(
   dpi = 600
 )
 
+plot_group_tab_health
 
-
-# graph body 
+# graph body
 plot_group_tab_body <- margot_plot(
   group_tab_body,
   type = "RD",
@@ -3436,8 +3548,8 @@ plot_group_tab_body <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
+  base_size = 12,
+  text_size = 3.0,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3448,7 +3560,7 @@ plot_group_tab_body <- margot_plot(
   x_lim_hi =  .5
 )
 
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_body,
   path = here::here(here::here(push_mods, "figs")),
@@ -3473,8 +3585,8 @@ plot_group_tab_ego <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
+  base_size = 12,
+  text_size = 3.0,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3486,7 +3598,7 @@ plot_group_tab_ego <- margot_plot(
 )
 plot_group_tab_ego
 
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_ego,
   path = here::here(here::here(push_mods, "figs")),
@@ -3501,7 +3613,7 @@ ggsave(
 
 plot_group_tab_ego
 
-# graph reflective 
+# graph reflective
 plot_group_tab_reflective <- margot_plot(
   group_tab_ego,
   type = "RD",
@@ -3510,8 +3622,8 @@ plot_group_tab_reflective <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
+  base_size = 12,
+  text_size = 3.0,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3522,7 +3634,7 @@ plot_group_tab_reflective <- margot_plot(
   x_lim_hi =  .5
 )
 plot_group_tab_reflective
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_reflective,
   path = here::here(here::here(push_mods, "figs")),
@@ -3537,7 +3649,7 @@ ggsave(
 
 
 
-# graph social 
+# graph social
 plot_group_tab_social <- margot_plot(
   group_tab_social,
   type = "RD",
@@ -3546,8 +3658,8 @@ plot_group_tab_social <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
+  base_size = 12,
+  text_size = 3.0,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3560,7 +3672,7 @@ plot_group_tab_social <- margot_plot(
 
 plot_group_tab_social
 
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_social,
   path = here::here(here::here(push_mods, "figs")),
@@ -3572,8 +3684,3 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
-
-
-
-
-
