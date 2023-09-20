@@ -820,7 +820,8 @@ df_clean <- df_wide_censored %>%
   select(
     where(is.factor),
     t0_not_lost,
- #   t0_sample_weights,
+    #   t0_sample_weights,
+    t1_only_dog,
     t1_not_lost,
     ends_with("_z")
   ) |>
@@ -828,10 +829,11 @@ df_clean <- df_wide_censored %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
   relocate("t1_not_lost", .before = starts_with("t2_")) |>
- # mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
+  # mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
   data.frame()
 
 dim(df_clean)
+df_clean$t0_only_dog
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 dev.off()
 
@@ -869,6 +871,7 @@ names_outcomes
 
 #### SET VARIABLE NAMES: Customise for each outcomewide model
 #  model
+
 A
 C <- c("t1_not_lost")
 
@@ -903,6 +906,10 @@ names_base_t2_sfhealth_your_health_z <-
                          outcome = "t2_sfhealth_your_health_z")
 names_base_t2_sfhealth_your_health_z
 
+names_base
+
+df_clean$t1_only_dogs
+A
 # "In general, would you say your health is...
 t2_sfhealth_your_health_z <- lmtp_tmle(
   data = df_clean,
@@ -910,6 +917,7 @@ t2_sfhealth_your_health_z <- lmtp_tmle(
   baseline = names_base_t2_sfhealth_your_health_z,
   outcome = "t2_sfhealth_your_health_z",
   cens = C,
+  id = NULL,
   shift = static_binary_on,
   mtp = FALSE,
   folds = 5,
@@ -919,6 +927,7 @@ t2_sfhealth_your_health_z <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
+
 
 t2_sfhealth_your_health_z
 here_save(t2_sfhealth_your_health_z, "t2_sfhealth_your_health_z")
