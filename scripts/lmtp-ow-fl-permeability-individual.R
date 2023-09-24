@@ -1618,18 +1618,6 @@ t2_kessler_latent_anxiety_z_null <- lmtp_tmle(
 here_save(t2_kessler_latent_anxiety_z_null, "t2_kessler_latent_anxiety_z_null")
 
 
-# test
-tab_contrast_t2_kessler_latent_depression_z <-
-  margot_tab_lmtp(contrast_t2_kessler_latent_depression_z,
-                  scale = "RD",
-                  new_name = "Kessler 6 depression")
-
-
-out_tab_contrast_t2_kessler_latent_depression_z<-
-  lmtp_evalue_tab(tab_contrast_t2_kessler6_sum_z,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_kessler_latent_depression_z
 # depression 
 
 # During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
