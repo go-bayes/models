@@ -16,6 +16,11 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
+# experimental functions
+source(
+  "/Users/joseph/GIT/templates/functions/experimental_funs.R"
+)
+
 
 # WARNING: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
 # source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
@@ -36,20 +41,59 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
-  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lmtp-ow-fl-socialising")
+  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lmtp-ow-fl-permeability-individual")
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
 # set exposure here
-nzavs_exposure <- "hours_community_log"
+nzavs_exposure <- "permeability_individual"
 
+
+#eyeball distribution 
+
+dt_19 <- dat |> 
+  filter(year_measured == 1 & wave == 2019) 
+
+hist( 
+  dt_19$permeability_individual
+)
+
+mean_exposure <- mean( 
+  dt_19$permeability_individual, 
+  na.rm = TRUE
+)
+
+mean_exposure
+
+sd_exposure <- sd( 
+  dt_19$permeability_individual, 
+  na.rm = TRUE
+)
+
+half_sd <- sd_exposure/2
+max_score <- max( dt_19$permeability_individual, na.rm=TRUE) 
+
+# define exposures --------------------------------------------------------
 # define exposure 
-A <- "t1_hours_community"
+A <- "t1_permeability_individual_z"
 
-# define shift function (if less than 2.2 hour per week, make an hour)
-f <- function(data, trt){
-  ifelse( data[[trt]] <=.5, .5,  data[[trt]] )
+# set exposure variable, can be both the continuous and the coarsened, if needed
+exposure_var = c("permeability_individual", "not_lost") #
+
+
+# shift one pont up if under 6
+# f_1 <- function (data, trt) data[[trt]] + 1
+
+#  move to mean 
+# f <- function(data, trt) {
+#   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+# }
+
+
+# # define shift function if less than mean, make mean, otherwise ignore
+f  <- function(data, trt) {
+ ifelse(data[[trt]] <= max_score - half_sd, max_score,  data[[trt]] + half_sd)
 }
 
 
@@ -60,7 +104,8 @@ SL_folds = 5
 progressr::handlers(global = TRUE)
 
 # set seed for reproducing results
-set.seed(0112358)
+seed <- 0112358
+set.seed(seed)
 
 # set cores for estimation
 library(future)
@@ -73,7 +118,6 @@ sl_lib <- c("SL.glmnet",
             "SL.xgboost")
 
 #Improve speed (if needed)
-
 # sl_lib_args <- list(
 #   SL.glmnet = list(nalpha = 5, nlambda = 20),
 #   SL.ranger = list(num.threads = 4),
@@ -93,22 +137,136 @@ library(ranger)
 library(xgboost)
 library(glmnet)
 
-# boost spped
+# boost speed
 SL.xgboost = list(tree_method = 'gpu_hist')
 
 
 # check options
 listWrappers()
 
-# import data and wrangle-------------------------------------------------
 
+# kessler 6 ---------------------------------------------------------------
+# uncomment to get analysis
+# 
+# 
+# 
+# dt_only_k6 <- dt_19 |> select(kessler_depressed, kessler_effort,kessler_hopeless,
+#                                  kessler_worthless, kessler_nervous,
+#                                  kessler_restless)
+# 
+# 
+# # check factor structure
+# performance::check_factorstructure(dt_only_k6)
+# 
+# # explore a factor structure made of 3 latent variables
+# efa <- psych::fa(dt_only_k6, nfactors = 2) %>%
+#   model_parameters(sort = TRUE, threshold = "max")
+# 
+# efa
+# 
+# 
+# n <- n_factors(dt_only_k6)
+# 
+# # plot
+# plot(n) + theme_classic()
+# 
+# # CFA 
+# part_data <- datawizard::data_partition(dt_only_k6, traing_proportion = .7, seed = seed)
+# 
+# 
+# # set up training data
+# training <- part_data$p_0.7
+# test <- part_data$test
+# 
+# 
+# # one factor model
+# structure_k6_one <- psych::fa(training, nfactors = 1) |>
+#   efa_to_cfa()
+# 
+# # two factor model model
+# structure_k6_two <- psych::fa(training, nfactors = 2) |>
+#   efa_to_cfa()
+# 
+# # three factor model
+# structure_k6_three <- psych::fa(training, nfactors = 3) %>%
+#   efa_to_cfa()
+# 
+# # inspect models
+# structure_k6_one
+# structure_k6_two
+# structure_k6_three
+# 
+# 
+# # Next we perform the confirmatory factor analysis.
+# 
+# 
+# one_latent <-
+#   suppressWarnings(lavaan::cfa(structure_k6_one, data = test))
+# 
+# # two latents model
+# two_latents <-
+#   suppressWarnings(lavaan::cfa(structure_k6_two, data = test))
+# 
+# # three latents model
+# three_latents <-
+#   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
+# 
+# 
+# # compare models
+# compare <-
+#   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
+# 
+# # view as html table
+# as.data.frame(compare) |>
+#   kbl(format = "markdown")
+# 
+# # two factors wins 
+# structure_k6_two
+test <- dat |> 
+  arrange(id, wave) |> 
+  filter(year_measured == 1) |> 
+  group_by(wave) |> 
+  rowwise() |>
+  mutate(kessler_latent_depression =  mean(c(
+    kessler_depressed, kessler_hopeless, kessler_worthless
+  ), na.rm = TRUE)) |> 
+  mutate(kessler_latent_anxiety  = mean(c(
+    kessler_effort, kessler_nervous, kessler_restless
+  ), na.rm = TRUE)) |> 
+  ungroup()
+
+
+test_19<- test |> 
+  filter(wave == 2019, year_measured==1)
+
+
+
+test2_19 <- dat |> 
+  filter(wave == 2019, year_measured==1) |> 
+  rowwise() |> 
+  mutate( kessler_latent_depression =  mean(c(
+  kessler_depressed, kessler_hopeless, kessler_worthless
+), na.rm = TRUE)) |> 
+  ungroup()
+  
+
+
+table ( test2_19$kessler_latent_depression ==  test_19$kessler_latent_depression) 
+
+# import data and wrangle-------------------------------------------------
 dat_long  <- dat |>
+  arrange(id, wave) |>
   rowwise(wave) |>
-  mutate(power_no_control_composite =
-           mean(c(
-             power_self_nocontrol, power_others_control
-           ), na.rm = TRUE)) |>
-  ungroup() |>
+  mutate(power_no_control_composite = mean(c(
+    power_self_nocontrol, power_others_control
+  ), na.rm = TRUE)) |>
+  mutate(kessler_latent_depression =  mean(c(
+    kessler_depressed, kessler_hopeless, kessler_worthless
+  ), na.rm = TRUE)) |> 
+  mutate(kessler_latent_anxiety  = mean(c(
+    kessler_effort, kessler_nervous, kessler_restless
+  ), na.rm = TRUE)) |> 
+  ungroup() |> 
   # ungroup
   select(
     "wave",
@@ -319,6 +477,9 @@ dat_long  <- dat |>
     #During the last 30 days, how often did.... you feel exhausted?
     "rumination",
     "kessler6_sum",
+    # depression constructs,
+    "kessler_latent_depression",
+    "kessler_latent_anxiety",
     # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
     "kessler_depressed",
     #During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
@@ -437,7 +598,7 @@ dat_long  <- dat |>
     hours_friends_log = sqrt(hours_friends + 1),
     hours_family_log = sqrt(hours_family + 1)
   ) |>
-  mutate(male = as.numeric(male) - 1) |>
+  mutate(male = as.numeric(male) ) |>
   mutate(total_siblings_factor = ordered(round(
     ifelse(total_siblings > 7, 7, total_siblings), 0
   ))) |>
@@ -498,8 +659,11 @@ dat_long  <- dat |>
   arrange(id, wave) |>
   droplevels() |>
   select(-h_18, -k_18, -h_19, -k_19) |>
-  data.frame() |>
   droplevels() |>
+  ungroup() %>%
+  mutate(time = as.numeric(wave)) |> 
+  mutate(wave = time) |> 
+  arrange(id, wave) |> 
   arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
@@ -524,9 +688,16 @@ mutate(
   arrange(id, wave) |>
   data.frame()
 
+# check
+hist( dat_long$power_no_control_composite )
+table( floor( dat_long$kessler_latent_depression))
+
+
+table( scale( dat_long$kessler_latent_anxiety ))
+
 
 # check n
-n_unique(dat_long$id) #33148 # reports hours with community at baseline
+N <- n_unique(dat_long$id) #33255 # reports hours with community at baseline
 
 # double check path
 push_mods
@@ -534,10 +705,33 @@ push_mods
 # check col names
 colnames(dat)
 
+dev.off()
+# check 
+dt_check_exposure <- dat_long |> filter(wave == 0| wave == 1)
+
+# makes ure all is false
+table (is.na( dt_check_exposure$permeability_individual) )
+
+
+# make 
+
+dt_positivity_full <- dt_check_exposure|>
+  filter(wave == 0 | wave == 1) |> 
+  select(wave, id, permeability_individual, sample_weights) 
+
+dt_positivity_full
+
+# check sample weights NA - will return to this after impute
+table ( is.na( dt_positivity_full$sample_weights) ) # no nas
+
+out <- msm::statetable.msm(permeability_individual, id, data = dat_long)
+
+# transition table
+t_tab <- transition_table(out, state_names = NULL)
+t_tab
 
 
 # set variables for baseline exposure and outcome -------------------------
-
 
 baseline_vars = c(
   "male",
@@ -550,23 +744,23 @@ baseline_vars = c(
   "sample_origin",
   "nz_dep2018",
   "nzsei13",
-  "total_siblings_factor",
   "born_nz",
   "hlth_disability",
-  "hlth_bmi",
-  # bmi
+  # "hlth_bmi",
   # "pwi", # pwi
-  "kessler6_sum",
-  #  "support", #soc support
-  #  "belong", # social belonging
+  # "kessler6_sum",
+  "kessler_latent_depression",
+  "kessler_latent_anxiety",
+  "support", #soc support
+  "belong", # social belonging
+  "total_siblings_factor",
   #  "smoker", # smoker
   # "sfhealth",
-  #
   # "alcohol_frequency", measured with error
   # "alcohol_intensity",
-  "hours_family_log",
-  "hours_friends_log",
-  "hours_community_log",
+  # "hours_family_log",
+  # "hours_friends_log", 
+  # "hours_community_log",
   # "hours_community_sqrt_round",
   # "lifemeaning",
   "household_inc_log",
@@ -603,8 +797,8 @@ baseline_vars = c(
   #  "religion_church_binary",
   #  "religion_prayer_binary",
   #  "religion_scripture_binary",
-  #  "religion_believe_god",
-  #  "religion_believe_spirit",
+  #"religion_believe_god",
+  #"religion_believe_spirit",
   "sample_weights",
   "alert_level_combined_lead"
 )
@@ -616,9 +810,9 @@ baseline_vars
 # check
 baseline_vars
 
-# set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("hours_community_log", "not_lost") #
 
+#  check
+exposure_var
 
 # outcomes
 outcome_vars = c(
@@ -643,13 +837,14 @@ outcome_vars = c(
   # embodied
   "rumination",
   # embodied
-  "kessler6_sum",
+ # "kessler6_sum",
+  "kessler_latent_depression",
+  "kessler_latent_anxiety",
   # embodied
   "bodysat",
   #ego
   "vengeful_rumin",
   #ego
-  "bodysat",
   ## Am satisfied with the appearance, size and shape of my body.
   # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
   "perfectionism",
@@ -669,7 +864,7 @@ outcome_vars = c(
   #In general, I have a lot of self-control.
   "self_control_wish_more_reversed",
   #I wish I had more self-discipline.(r)
-   "emotion_regulation_out_control",
+  "emotion_regulation_out_control",
   # When I feel negative emotions, my emotions feel out of control. w10 - w13
   # "emotion_regulation_hide_neg_emotions",
   # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
@@ -721,19 +916,20 @@ prep_coop_all <- margot_wide_impute_baseline(
 )
 
 # check mi model
-outlist <-
-  row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
-length(outlist)
-
-# checks. We do not impute with weights: area of current research
-head(prep_coop_all$loggedEvents, 10)
+# outlist <-
+#   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
+# length(outlist)
+# 
+# # checks. We do not impute with weights: area of current research
+# head(prep_coop_all$loggedEvents, 10)
 
 push_mods
+
 # save function -- will save to your "push_mod" directory
-here_save(prep_coop_all, "prep_coop_all_1")
+here_save_arrow(prep_coop_all, "prep_coop_all_1")
 
 # read function
-prep_coop_all <- here_read("prep_coop_all_1")
+prep_coop_all <- here_read_arrow("prep_coop_all_1")
 
 head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
@@ -745,6 +941,7 @@ str(prep_coop_all)
 nrow(prep_coop_all)
 colnames(prep_coop_all)
 
+prep_coop_all <- as.data.frame(prep_coop_all)
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
@@ -762,6 +959,7 @@ head(df_wide_censored)
 dim(df_wide_censored)
 str(df_wide_censored)
 
+A
 # spit and shine
 df_clean <- df_wide_censored %>%
   mutate(t2_na_flag = rowSums(is.na(select(
@@ -779,7 +977,7 @@ df_clean <- df_wide_censored %>%
         !t1_not_lost &
         !t0_sample_weights &
         !t0_smoker_binary &
-        !t1_hours_community_log &
+     #   !t1_permeability_individual &  # make sure to change for each study
         !t2_smoker_binary,
       ~ scale(.x),
       .names = "{col}_z"
@@ -790,7 +988,7 @@ df_clean <- df_wide_censored %>%
     t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
-    t1_hours_community_log,
+  #  t1_permeability_individual, # make sure to change for each study
     t1_not_lost,
     t2_smoker_binary,
     ends_with("_z")
@@ -806,18 +1004,17 @@ dim(df_clean)
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 dev.off()
 
-table(df_clean$t2_community_time_binary)
 
-
-# check path
+# again check path
 push_mods
-
 # save
 here_save(df_clean, "df_clean")
 
 # read if needed
 df_clean <- here_read("df_clean")
 
+str(df_clean)
+df_clean <- as.data.frame(df_clean )
 
 #check n
 nrow(df_clean)
@@ -831,6 +1028,7 @@ names_base <-
                      -t0_smoker_z) |> colnames()
 
 names_base
+
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
 
@@ -840,7 +1038,9 @@ names_outcomes
 
 #### SET VARIABLE NAMES: Customise for each outcomewide model
 #  model
-A <- c("t1_hours_community_log")
+A  
+
+
 C <- c("t1_not_lost")
 
 #L <- list(c("L1"), c("L2"))
@@ -865,13 +1065,18 @@ table(df_clean$t1_hours_community_log)
 
 # check assignments
 f
-A
 C
+
+# make test data
+df_clean_test <- df_clean |> 
+  slice_head(n = 2000)
 
 # "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
 # MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
 
-# models for health ------------------------------------------------------------------
+
+# health models -----------------------------------------------------------
+
 
 # smoker binary
 #Do you currently smoke?
@@ -882,7 +1087,6 @@ C
 #
 #   # Rename the outcome variable prefix from t2 to t0
 #   outcome_renamed <- gsub("t2_", "t0_", outcome)
-#
 #   # Append the renamed outcome to selected columns
 #   final_cols <- c(selected_cols, outcome_renamed)
 #
@@ -1289,6 +1493,8 @@ here_save(t2_hlth_bmi_z_null, "t2_hlth_bmi_z_null")
 # embodied models ----------------------------------------------------------------
 
 
+## Am satisfied with the appearance, size and shape of my body.
+
 names_base_t2_bodysat_z <-
   select_and_rename_cols(names_base = names_base,
                          baseline_vars = baseline_vars,
@@ -1297,7 +1503,6 @@ names_base_t2_bodysat_z
 
 
 
-## Am satisfied with the appearance, size and shape of my body.
 t2_bodysat_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1339,25 +1544,36 @@ here_save(t2_bodysat_z_null,
           "t2_bodysat_z_null")
 
 
-names_base_t2_kessler6_sum_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_kessler6_sum_z")
-names_base_t2_kessler6_sum_z
 
-
-# During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
 # During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
 # During the last 30 days, how often did.... you feel that everything was an effort?
 # During the last 30 days, how often did.... you feel hopeless?
 # During the last 30 days, how often did.... you feel nervous?
 # During the last 30 days, how often did.... you feel restless or fidgety?
 # During the last 30 days, how often did.... you feel worthless?
-t2_kessler6_sum_z <- lmtp_tmle(
+
+
+
+names_base_t2_kessler_latent_anxiety_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_kessler_latent_anxiety_z")
+
+# check
+names_base_t2_kessler_latent_anxiety_z
+
+
+# During the last 30 days, how often did.... you feel that everything was an effort?
+# During the last 30 days, how often did.... you feel nervous?
+# During the last 30 days, how often did.... you feel restless or fidgety?
+
+
+
+t2_kessler_latent_anxiety_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_kessler6_sum_z,
-  outcome = "t2_kessler6_sum_z",
+  baseline = names_base_t2_kessler_latent_anxiety_z,
+  outcome = "t2_kessler_latent_anxiety_z",
   cens = C,
   shift = f,
   mtp = TRUE,
@@ -1369,21 +1585,24 @@ t2_kessler6_sum_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_kessler6_sum_z
-here_save(t2_kessler6_sum_z, "t2_kessler6_sum_z")
+t2_kessler_latent_anxiety_z
+here_save(t2_kessler_latent_anxiety_z, "t2_kessler_latent_anxiety_z")
 
-# During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
-# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
+
+
+# 
+# t2_kessler_latent_anxiety_z_clinical
+# here_save(t2_kessler_latent_anxiety_z_clinical, "t2_kessler_latent_anxiety_z_clinical")
+
 # During the last 30 days, how often did.... you feel that everything was an effort?
-# During the last 30 days, how often did.... you feel hopeless?
 # During the last 30 days, how often did.... you feel nervous?
 # During the last 30 days, how often did.... you feel restless or fidgety?
-# During the last 30 days, how often did.... you feel worthless?
-t2_kessler6_sum_z_null <- lmtp_tmle(
+
+t2_kessler_latent_anxiety_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_kessler6_sum_z,
-  outcome = "t2_kessler6_sum_z",
+  baseline = names_base_t2_kessler_latent_anxiety_z,
+  outcome = "t2_kessler_latent_anxiety_z",
   cens = C,
   shift = NULL,
   # mtp = TRUE,
@@ -1395,9 +1614,87 @@ t2_kessler6_sum_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_kessler6_sum_z_null
-here_save(t2_kessler6_sum_z_null, "t2_kessler6_sum_z_null")
+# test
+here_save(t2_kessler_latent_anxiety_z_null, "t2_kessler_latent_anxiety_z_null")
 
+
+# test
+tab_contrast_t2_kessler_latent_depression_z <-
+  margot_tab_lmtp(contrast_t2_kessler_latent_depression_z,
+                  scale = "RD",
+                  new_name = "Kessler 6 depression")
+
+
+out_tab_contrast_t2_kessler_latent_depression_z<-
+  lmtp_evalue_tab(tab_contrast_t2_kessler6_sum_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_kessler_latent_depression_z
+# depression 
+
+# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
+# During the last 30 days, how often did.... you feel hopeless?
+# During the last 30 days, how often did.... you feel worthless?
+
+
+names_base_t2_kessler_latent_depression_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_kessler_latent_depression_z")
+
+# check
+names_base_t2_kessler_latent_depression_z
+
+
+# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
+# During the last 30 days, how often did.... you feel hopeless?
+# During the last 30 days, how often did.... you feel worthless?
+
+t2_kessler_latent_depression_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_kessler_latent_depression_z,
+  outcome = "t2_kessler_latent_depression_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+f
+
+t2_kessler_latent_depression_z
+here_save(t2_kessler_latent_depression_z, "t2_kessler_latent_depression_z")
+
+
+
+t2_kessler_latent_depression_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_kessler_latent_depression_z,
+  outcome = "t2_kessler_latent_depression_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_kessler_latent_depression_z_null
+here_save(t2_kessler_latent_depression_z_null, "t2_kessler_latent_depression_z_null")
+
+
+
+
+# During the last 30 days, how often did.... you feel exhausted?
 
 names_base_t2_hlth_fatigue_z <-
   select_and_rename_cols(names_base = names_base,
@@ -1447,6 +1744,7 @@ here_save(t2_hlth_fatigue_z_null, "t2_hlth_fatigue_z_null")
 
 
 
+# During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
 
 
 names_base_t2_rumination_z <-
@@ -1819,8 +2117,6 @@ t2_permeability_individual_z_null <- lmtp_tmle(
 t2_permeability_individual_z_null
 here_save(t2_permeability_individual_z_null,
           "t2_permeability_individual_z_null")
-
-
 
 
 names_base_t2_emotion_regulation_out_control_z <-
@@ -2569,7 +2865,7 @@ contrast_t2_smoker_binary <-
 tab_contrast_t2_smoker_binary <-
   margot_tab_lmtp(contrast_t2_smoker_binary,
                   scale = "RR",
-                  new_name = "Smoker: socialising >=2 hours per week")
+                  new_name = "Smoker")
 
 tab_contrast_t2_smoker_binary
 
@@ -2592,7 +2888,7 @@ out_tab_contrast_t2_smoker_binary
 # tab_contrast_t2_sfhealth_z <-
 #   margot_tab_lmtp(contrast_t2_sfhealth_z,
 #                   scale = "RD",
-#                   new_name = "Short form health: socialising >=2 hours per week")
+#                   new_name = "Short form health")
 # 
 # 
 # out_tab_contrast_t2_sfhealth_z <-
@@ -2608,13 +2904,13 @@ t2_sfhealth_your_health_z_null <- here_read("t2_sfhealth_your_health_z_null")
 
 
 contrast_t2_sfhealth_your_health_z <- lmtp_contrast(t2_sfhealth_your_health_z,
-                                        ref = t2_sfhealth_your_health_z_null,
-                                        type = "additive")
+                                                    ref = t2_sfhealth_your_health_z_null,
+                                                    type = "additive")
 
 tab_contrast_t2_sfhealth_your_health_z <-
   margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
                   scale = "RD",
-                  new_name = "Short form health, your health: socialising >=2 hours per week")
+                  new_name = "Short form health, your health")
 
 
 out_tab_contrast_t2_sfhealth_your_health_z <-
@@ -2639,7 +2935,7 @@ contrast_t2_hours_exercise_log_z <-
 tab_contrast_t2_hours_exercise_log_z <-
   margot_tab_lmtp(contrast_t2_hours_exercise_log_z,
                   scale = "RD",
-                  new_name = "Hours excercise: socialising >=2 hours per week")
+                  new_name = "Hours excercise")
 
 
 out_tab_contrast_t2_hours_exercise_log_z <-
@@ -2664,7 +2960,7 @@ contrast_t2_alcohol_frequency_z <-
 tab_contrast_t2_alcohol_frequency_z <-
   margot_tab_lmtp(contrast_t2_alcohol_frequency_z ,
                   scale = "RD",
-                  new_name = "Alcohol frequency: socialising >=2 hours per week")
+                  new_name = "Alcohol frequency")
 
 
 out_tab_contrast_t2_alcohol_frequency_z <-
@@ -2692,7 +2988,7 @@ contrast_t2_alcohol_intensity_z <-
 tab_contrast_t2_alcohol_intensity_z <-
   margot_tab_lmtp(contrast_t2_alcohol_intensity_z,
                   scale = "RD",
-                  new_name = "Alcohol intensity: socialising >=2 hours per week")
+                  new_name = "Alcohol intensity")
 
 
 out_tab_contrast_t2_alcohol_intensity_z <-
@@ -2716,7 +3012,7 @@ contrast_t2_hours_sleep_z <-
 tab_contrast_t2_hours_sleep_z <-
   margot_tab_lmtp(contrast_t2_hours_sleep_z,
                   scale = "RD",
-                  new_name = "Hours sleep: socialising >=2 hours per week")
+                  new_name = "Hours sleep")
 
 
 out_tab_contrast_t2_hours_sleep_z <-
@@ -2736,7 +3032,7 @@ contrast_t2_bmi_z <- lmtp_contrast(t2_hlth_bmi_z,
                                    type = "additive")
 
 tab_contrast_t2_bmi_z <-
-  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI: socialising >=2 hours per week")
+  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI")
 
 
 out_tab_contrast_t2_bmi_z <-
@@ -2757,7 +3053,7 @@ contrast_t2_bodysat_z <- lmtp_contrast(t2_bodysat_z,
 
 contrast_t2_bodysat_z
 tab_contrast_t2_bodysat_z <-
-  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction: socialising >=2 hours per week")
+  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction")
 
 
 out_tab_contrast_t2_bodysat_z <-
@@ -2767,26 +3063,75 @@ out_tab_contrast_t2_bodysat_z
 
 # kessler 6
 
-t2_kessler6_sum_z <- here_read("t2_kessler6_sum_z")
-t2_kessler6_sum_z_null <-
-  here_read("t2_kessler6_sum_z_null")
+# t2_kessler6_sum_z <- here_read("t2_kessler6_sum_z")
+# t2_kessler6_sum_z_null <-
+#   here_read("t2_kessler6_sum_z_null")
+# 
+# contrast_t2_kessler6_sum_z <-
+#   lmtp_contrast(t2_kessler6_sum_z,
+#                 ref = t2_kessler6_sum_z_null,
+#                 type = "additive")
+# 
+# tab_contrast_t2_kessler6_sum_z <-
+#   margot_tab_lmtp(contrast_t2_kessler6_sum_z,
+#                   scale = "RD",
+#                   new_name = "Kessler 6 distress")
+# 
+# 
+# out_tab_contrast_t2_kessler6_sum_z <-
+#   lmtp_evalue_tab(tab_contrast_t2_kessler6_sum_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_kessler6_sum_z
 
-contrast_t2_kessler6_sum_z <-
-  lmtp_contrast(t2_kessler6_sum_z,
-                ref = t2_kessler6_sum_z_null,
+
+# depression 
+
+t2_kessler_latent_depression_z <- here_read("t2_kessler_latent_depression_z")
+t2_kessler_latent_depression_z_null <-
+  here_read("t2_kessler_latent_depression_z_null")
+
+contrast_t2_kessler_latent_depression_z <-
+  lmtp_contrast(t2_kessler_latent_depression_z,
+                ref = t2_kessler_latent_depression_z_null,
                 type = "additive")
 
-tab_contrast_t2_kessler6_sum_z <-
-  margot_tab_lmtp(contrast_t2_kessler6_sum_z,
+tab_contrast_t2_kessler_latent_depression_z <-
+  margot_tab_lmtp(contrast_t2_kessler_latent_depression_z,
                   scale = "RD",
-                  new_name = "Kessler 6 distress: socialising >=2 hours per week")
+                  new_name = "Kessler 6 depression")
 
 
-out_tab_contrast_t2_kessler6_sum_z <-
+out_tab_contrast_t2_kessler_latent_depression_z<-
   lmtp_evalue_tab(tab_contrast_t2_kessler6_sum_z,
                   scale = c("RD"))
 
-out_tab_contrast_t2_kessler6_sum_z
+out_tab_contrast_t2_kessler_latent_depression_z
+
+
+#anxiety 
+
+t2_kessler_latent_anxiety_z <- here_read("t2_kessler_latent_anxiety_z")
+t2_kessler_latent_anxiety_z_null <-
+  here_read("t2_kessler_latent_anxiety_z_null")
+
+contrast_t2_kessler_latent_anxiety_z <-
+  lmtp_contrast(t2_kessler_latent_anxiety_z,
+                ref = t2_kessler_latent_anxiety_z,
+                type = "additive")
+
+tab_contrast_t2_kessler_latent_anxiety_z <-
+  margot_tab_lmtp(contrast_t2_kessler_latent_anxiety_z,
+                  scale = "RD",
+                  new_name = "Kessler 6 anxiety")
+
+
+out_tab_contrast_t2_kessler_latent_anxiety_z <-
+  lmtp_evalue_tab(tab_contrast_t2_kessler_latent_anxiety_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_kessler_latent_anxiety_z
+
 
 # fatigue
 t2_hlth_fatigue_z <- here_read("t2_hlth_fatigue_z")
@@ -2803,7 +3148,7 @@ contrast_t2_hlth_fatigue_z <-
 tab_contrast_t2_hlth_fatigue_z <-
   margot_tab_lmtp(contrast_t2_hlth_fatigue_z ,
                   scale = "RD",
-                  new_name = "Fatigue: socialising >=2 hours per week")
+                  new_name = "Fatigue")
 
 
 out_tab_contrast_t2_hlth_fatigue_z <-
@@ -2825,7 +3170,7 @@ contrast_t2_rumination_z <-
 tab_contrast_t2_rumination_z <-
   margot_tab_lmtp(contrast_t2_rumination_z ,
                   scale = "RD",
-                  new_name = "Rumination: socialising >=2 hours per week")
+                  new_name = "Rumination")
 
 
 out_tab_contrast_t2_rumination_z <-
@@ -2850,7 +3195,7 @@ contrast_t2_sexual_satisfaction_z <-
 tab_contrast_t2_sexual_satisfaction_z <-
   margot_tab_lmtp(contrast_t2_sexual_satisfaction_z,
                   scale = "RD",
-                  new_name = "Sexual satisfaction: socialising >=2 hours per week")
+                  new_name = "Sexual satisfaction")
 
 
 out_tab_contrast_t2_sexual_satisfaction_z <-
@@ -2878,7 +3223,7 @@ contrast_t2_power_no_control_composite_z <-
 tab_contrast_t2_power_no_control_composite_z <-
   margot_tab_lmtp(contrast_t2_power_no_control_composite_z,
                   scale = "RD",
-                  new_name = "Power no control: socialising >=2 hours per week")
+                  new_name = "Power no control")
 
 
 out_tab_contrast_t2_power_no_control_composite_z <-
@@ -2902,7 +3247,7 @@ contrast_t2_self_esteem_z <-
 tab_contrast_t2_self_esteem_z <-
   margot_tab_lmtp(contrast_t2_self_esteem_z,
                   scale = "RD",
-                  new_name = "Self esteem: socialising >=2 hours per week")
+                  new_name = "Self esteem")
 
 
 out_tab_contrast_t2_self_esteem_z <-
@@ -2926,7 +3271,7 @@ contrast_t2_perfectionism_z <-
 tab_contrast_t2_perfectionism_z <-
   margot_tab_lmtp(contrast_t2_perfectionism_z ,
                   scale = "RD",
-                  new_name = "Perfectionism: socialising >=2 hours per week")
+                  new_name = "Perfectionism")
 
 
 out_tab_contrast_t2_perfectionism_z <-
@@ -2951,7 +3296,7 @@ contrast_t2_self_control_have_lots_z <-
 tab_contrast_t2_self_control_have_lots_z <-
   margot_tab_lmtp(contrast_t2_self_control_have_lots_z ,
                   scale = "RD",
-                  new_name = "Self control have: socialising >=2 hours per week")
+                  new_name = "Self control have")
 
 
 out_tab_contrast_t2_self_control_have_lots_z <-
@@ -2998,7 +3343,7 @@ contrast_t2_emotion_regulation_out_control_z <-
 tab_contrast_t2_emotion_regulation_out_control_z <-
   margot_tab_lmtp(contrast_t2_emotion_regulation_out_control_z ,
                   scale = "RD",
-                  new_name = "Emotional regulation (out of control): socialising >=2 hours per week")
+                  new_name = "Emotional regulation (out of control)")
 
 
 out_tab_contrast_t2_emotion_regulation_out_control_z <-
@@ -3022,7 +3367,7 @@ contrast_t2_permeability_individual_z <-
 tab_contrast_t2_permeability_individual_z <-
   margot_tab_lmtp(contrast_t2_permeability_individual_z ,
                   scale = "RD",
-                  new_name = "Permeability self: socialising >=2 hours per week")
+                  new_name = "Permeability self")
 
 
 out_tab_contrast_t2_permeability_individual_z <-
@@ -3055,7 +3400,7 @@ contrast_t2_gratitude_z <- lmtp_contrast(t2_gratitude_z,
 tab_contrast_t2_gratitude_z <-
   margot_tab_lmtp(contrast_t2_gratitude_z,
                   scale = "RD",
-                  new_name = "Gratitude: socialising >=2 hours per week")
+                  new_name = "Gratitude")
 
 
 out_tab_contrast_t2_gratitude_z <-
@@ -3078,7 +3423,7 @@ contrast_t2_vengeful_rumin_z <-
 tab_contrast_t2_vengeful_rumin_z <-
   margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
                   scale = "RD",
-                  new_name = "Vengefulness (forgiveness: socialising >=2 hours per week")
+                  new_name = "Vengefulness (forgiveness")
 
 
 out_tab_contrast_t2_vengeful_rumin_z <-
@@ -3103,7 +3448,7 @@ contrast_t2_pwb_your_health_z <-
 tab_contrast_t2_pwb_your_health_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_health_z,
                   scale = "RD",
-                  new_name = "PWB your health: socialising >=2 hours per week")
+                  new_name = "PWB your health")
 
 
 out_tab_contrast_t2_pwb_your_health_z <-
@@ -3127,7 +3472,7 @@ contrast_t2_pwb_your_future_security_z <-
 tab_contrast_t2_pwb_your_future_security_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_future_security_z,
                   scale = "RD",
-                  new_name = "PWB your future security: socialising >=2 hours per week")
+                  new_name = "PWB your future security")
 
 
 out_tab_contrast_t2_pwb_your_future_security_z <-
@@ -3154,7 +3499,7 @@ contrast_t2_pwb_your_relationships_z <-
 tab_contrast_t2_pwb_your_relationships_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_relationships_z ,
                   scale = "RD",
-                  new_name = "PWB your relationships: socialising >=2 hours per week")
+                  new_name = "PWB your relationships")
 
 
 out_tab_contrast_t2_pwb_your_relationships_z <-
@@ -3178,7 +3523,7 @@ contrast_t2_pwb_standard_living_z <-
 tab_contrast_t2_pwb_standard_living_z <-
   margot_tab_lmtp(contrast_t2_pwb_standard_living_z ,
                   scale = "RD",
-                  new_name = "PWB your standard living: socialising >=2 hours per week")
+                  new_name = "PWB your standard living")
 
 
 out_tab_contrast_t2_pwb_standard_living_z <-
@@ -3203,7 +3548,7 @@ contrast_t2_lifemeaning_z <-
 tab_contrast_t2_lifemeaning_z <-
   margot_tab_lmtp(contrast_t2_lifemeaning_z,
                   scale = "RD",
-                  new_name = "Meaning in life: socialising >=2 hours per week")
+                  new_name = "Meaning in life")
 
 
 out_tab_contrast_t2_lifemeaning_z <-
@@ -3223,7 +3568,7 @@ contrast_t2_lifesat_z <- lmtp_contrast(t2_lifesat_z,
 
 
 tab_contrast_t2_lifesat_z <-
-  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life: socialising >=2 hours per week")
+  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life")
 
 
 out_tab_contrast_t2_lifesat_z <-
@@ -3244,7 +3589,7 @@ contrast_t2_support_z <- lmtp_contrast(t2_support_z,
                                        type = "additive")
 
 tab_contrast_t2_support_z <-
-  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support: socialising >=2 hours per week")
+  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support")
 
 
 out_tab_contrast_t2_support_z <-
@@ -3269,7 +3614,7 @@ contrast_t2_neighbourhood_community_z <-
 tab_contrast_t2_neighbourhood_community_z <-
   margot_tab_lmtp(contrast_t2_neighbourhood_community_z,
                   scale = "RD",
-                  new_name = "Neighbourhood community: socialising >=2 hours per week")
+                  new_name = "Neighbourhood community")
 
 
 out_tab_contrast_t2_neighbourhood_community_z <-
@@ -3291,7 +3636,7 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 tab_contrast_t2_belong_z <-
   margot_tab_lmtp(contrast_t2_belong_z, scale = "RD", 
-                  new_name = "Social belonging: socialising >=2 hours per week")
+                  new_name = "Social belonging")
 
 
 out_tab_contrast_t2_belong_z <-
@@ -3308,7 +3653,7 @@ out_tab_contrast_t2_belong_z
 
 # bind individual tables
 tab_health <- rbind(
- # out_tab_contrast_t2_sfhealth_z,
+  # out_tab_contrast_t2_sfhealth_z,
   out_tab_contrast_t2_sfhealth_your_health_z,
   out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_alcohol_frequency_z,
@@ -3319,7 +3664,8 @@ tab_health <- rbind(
 
 tab_body <- rbind(
   out_tab_contrast_t2_bodysat_z,
-  out_tab_contrast_t2_kessler6_sum_z,
+  out_tab_contrast_t2_kessler_latent_depression_z,
+  out_tab_contrast_t2_kessler_latent_anxiety_z,
   out_tab_contrast_t2_hlth_fatigue_z,
   out_tab_contrast_t2_rumination_z,
   out_tab_contrast_t2_sexual_satisfaction_z
@@ -3395,7 +3741,10 @@ group_tab_social <- here_read("group_tab_social")
 
 
 # create plots -------------------------------------------------------------
-sub_title = "Socialising effect: at least 2 hours weekly, N = 33,148"
+
+# check N
+N 
+sub_title = "Impermeability Self Effect, N = 33,255"
 
 
 # graph health 

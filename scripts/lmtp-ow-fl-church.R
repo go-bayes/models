@@ -2592,7 +2592,7 @@ out_tab_contrast_t2_smoker_binary
 # sf health, your health
 t2_sfhealth_your_health_z <- here_read("t2_sfhealth_your_health_z")
 t2_sfhealth_your_health_z_null <- here_read("t2_sfhealth_your_health_z_null")
-
+t2_sfhealth_your_health_z_null
 
 contrast_t2_sfhealth_your_health_z <- lmtp_contrast(t2_sfhealth_your_health_z,
                                                     ref = t2_sfhealth_your_health_z_null,
@@ -2848,7 +2848,7 @@ out_tab_contrast_t2_sexual_satisfaction_z <-
 
 out_tab_contrast_t2_sexual_satisfaction_z
 
-
+push_mods
 # contrasts ego -----------------------------------------------------------
 
 # power no control
@@ -3304,7 +3304,7 @@ out_tab_contrast_t2_belong_z
 
 # bind individual tables
 tab_health <- rbind(
-  out_tab_contrast_t2_sfhealth_z,
+  out_tab_contrast_t2_sfhealth_your_health_z,
   out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_alcohol_frequency_z,
   out_tab_contrast_t2_alcohol_intensity_z,
@@ -3326,7 +3326,8 @@ tab_ego <- rbind(
   out_tab_contrast_t2_perfectionism_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
-  out_tab_contrast_t2_permeability_individual_z
+  out_tab_contrast_t2_permeability_individual_z,
+  out_tab_contrast_t2_emotion_regulation_out_control_z
 )
 
 tab_reflective <- rbind(
