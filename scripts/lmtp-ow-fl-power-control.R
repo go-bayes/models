@@ -1,6 +1,6 @@
 # sept 13 2023
 # permeability individual  =
-# joseph bulbulia : joseph.bulbulia@gmail.com 
+# joseph bulbulia : joseph.bulbulia@gmail.com
 
 
 # outcome-wide-analysis-template
@@ -11,30 +11,32 @@
 
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-source("/Users/joseph/GIT/templates/functions/libs2.R")
+# source("/Users/joseph/GIT/templates/functions/libs2.R")
+#
+# # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+# source("/Users/joseph/GIT/templates/functions/funs.R")
+#
+# # experimental functions
+# source(
+#   "/Users/joseph/GIT/templates/functions/experimental_funs.R"
+# )
+#
 
-# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-source("/Users/joseph/GIT/templates/functions/funs.R")
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
-# experimental functions
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
 source(
-  "/Users/joseph/GIT/templates/functions/experimental_funs.R"
+  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
 )
 
 
-# WARNING: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
 
-# WARNING: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
-
-# WARNING: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R")
-
-
-
-## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE.
+## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE. DO NOT USE THIS PATH
 pull_path <-
   fs::path_expand(
     "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
@@ -46,64 +48,39 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
-  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lmtp-ow-fl-permeability-individual")
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lmtp-ow-fl-power-self"
+  )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
 # set exposure here
-nzavs_exposure <- "permeability_individual"
+nzavs_exposure <- "power_no_control_composite_reversed"
 
-
-#eyeball distribution 
-
-dt_19 <- dat |> 
-  filter(year_measured == 1 & wave == 2019) 
-
-hist( 
-  dt_19$permeability_individual
-)
-
-mean_exposure <- mean( 
-  dt_19$permeability_individual, 
-  na.rm = TRUE
-)
-
-mean_exposure
-
-sd_exposure <- sd( 
-  dt_19$permeability_individual, 
-  na.rm = TRUE
-)
-
-half_sd <- sd_exposure/2
-max_score <- max( dt_19$permeability_individual, na.rm=TRUE) 
 
 # define exposures --------------------------------------------------------
-# define exposure 
-A <- "t1_permeability_individual_z"
+# define exposure
+A <- "t1_power_no_control_composite_reversed_z"
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("permeability_individual", "not_lost") #
+exposure_var = c("power_no_control_composite_reversed", "not_lost") #
 
 
 # shift one pont up if under 6
 # f_1 <- function (data, trt) data[[trt]] + 1
 
-#  move to mean 
-# f <- function(data, trt) {
-#   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
-# }
-
-
-# # define shift function if less than mean, make mean, otherwise ignore
-# f  <- function(data, trt) {
-#   ifelse(data[[trt]] <= max_score - half_sd, data[[trt]] + half_sd,  max_score)
-# }
-
+#  move to mean
 f <- function(data, trt) {
   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
 }
+
+
+# increase everyone by .5 sd, contrasted with what they would be anyway.
+#  only use this function for raw scores 
+# f  <- function(data, trt) {
+#   ifelse(data[[trt]] <= max_score - half_sd, data[[trt]] + half_sd,  max_score)
+# }
 
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
@@ -156,111 +133,79 @@ listWrappers()
 
 # kessler 6 ---------------------------------------------------------------
 # uncomment to get analysis
-# 
-# 
-# 
+#
+#
+#
 # dt_only_k6 <- dt_19 |> select(kessler_depressed, kessler_effort,kessler_hopeless,
 #                                  kessler_worthless, kessler_nervous,
 #                                  kessler_restless)
-# 
-# 
+#
+#
 # # check factor structure
 # performance::check_factorstructure(dt_only_k6)
-# 
+#
 # # explore a factor structure made of 3 latent variables
 # efa <- psych::fa(dt_only_k6, nfactors = 2) %>%
 #   model_parameters(sort = TRUE, threshold = "max")
-# 
+#
 # efa
-# 
-# 
+#
+#
 # n <- n_factors(dt_only_k6)
-# 
+#
 # # plot
 # plot(n) + theme_classic()
-# 
-# # CFA 
+#
+# # CFA
 # part_data <- datawizard::data_partition(dt_only_k6, traing_proportion = .7, seed = seed)
-# 
-# 
+#
+#
 # # set up training data
 # training <- part_data$p_0.7
 # test <- part_data$test
-# 
-# 
+#
+#
 # # one factor model
 # structure_k6_one <- psych::fa(training, nfactors = 1) |>
 #   efa_to_cfa()
-# 
+#
 # # two factor model model
 # structure_k6_two <- psych::fa(training, nfactors = 2) |>
 #   efa_to_cfa()
-# 
+#
 # # three factor model
 # structure_k6_three <- psych::fa(training, nfactors = 3) %>%
 #   efa_to_cfa()
-# 
+#
 # # inspect models
 # structure_k6_one
 # structure_k6_two
 # structure_k6_three
-# 
-# 
+#
+#
 # # Next we perform the confirmatory factor analysis.
-# 
-# 
+#
+#
 # one_latent <-
 #   suppressWarnings(lavaan::cfa(structure_k6_one, data = test))
-# 
+#
 # # two latents model
 # two_latents <-
 #   suppressWarnings(lavaan::cfa(structure_k6_two, data = test))
-# 
+#
 # # three latents model
 # three_latents <-
 #   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
-# 
-# 
+#
+#
 # # compare models
 # compare <-
 #   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
-# 
+#
 # # view as html table
 # as.data.frame(compare) |>
 #   kbl(format = "markdown")
-# 
-# # two factors wins 
-# structure_k6_two
-test <- dat |> 
-  arrange(id, wave) |> 
-  filter(year_measured == 1) |> 
-  group_by(wave) |> 
-  rowwise() |>
-  mutate(kessler_latent_depression =  mean(c(
-    kessler_depressed, kessler_hopeless, kessler_worthless
-  ), na.rm = TRUE)) |> 
-  mutate(kessler_latent_anxiety  = mean(c(
-    kessler_effort, kessler_nervous, kessler_restless
-  ), na.rm = TRUE)) |> 
-  ungroup()
-
-
-test_19<- test |> 
-  filter(wave == 2019, year_measured==1)
-
-
-
-test2_19 <- dat |> 
-  filter(wave == 2019, year_measured==1) |> 
-  rowwise() |> 
-  mutate( kessler_latent_depression =  mean(c(
-  kessler_depressed, kessler_hopeless, kessler_worthless
-), na.rm = TRUE)) |> 
-  ungroup()
-  
-
-
-table ( test2_19$kessler_latent_depression ==  test_19$kessler_latent_depression) 
+#
 
 # import data and wrangle-------------------------------------------------
 dat_long  <- dat |>
@@ -269,13 +214,15 @@ dat_long  <- dat |>
   mutate(power_no_control_composite = mean(c(
     power_self_nocontrol, power_others_control
   ), na.rm = TRUE)) |>
-  mutate(kessler_latent_depression =  mean(c(
-    kessler_depressed, kessler_hopeless, kessler_worthless
-  ), na.rm = TRUE)) |> 
+  mutate(kessler_latent_depression =  mean(
+    c(kessler_depressed, kessler_hopeless, kessler_worthless),
+    na.rm = TRUE
+  )) |>
   mutate(kessler_latent_anxiety  = mean(c(
     kessler_effort, kessler_nervous, kessler_restless
-  ), na.rm = TRUE)) |> 
-  ungroup() |> 
+  ), na.rm = TRUE)) |>
+  ungroup() |>
+  mutate(power_no_control_composite_reversed = 8 - power_no_control_composite) |>
   # ungroup
   select(
     "wave",
@@ -513,6 +460,7 @@ dat_long  <- dat |>
     # I am hardly ever satisfied with my performance.
     "power_no_control_composite",
     "power_self_nocontrol",
+    "power_no_control_composite_reversed",
     # I do not have enough power or control over\nimportant parts of my life.
     "power_others_control",
     # Other people have too much power or control over\nimportant parts of my life
@@ -607,7 +555,7 @@ dat_long  <- dat |>
     hours_friends_log = sqrt(hours_friends + 1),
     hours_family_log = sqrt(hours_family + 1)
   ) |>
-  mutate(male = as.numeric(male) ) |>
+  mutate(male = as.numeric(male)) |>
   mutate(total_siblings_factor = ordered(round(
     ifelse(total_siblings > 7, 7, total_siblings), 0
   ))) |>
@@ -670,9 +618,9 @@ dat_long  <- dat |>
   select(-h_18, -k_18, -h_19, -k_19) |>
   droplevels() |>
   ungroup() %>%
-  mutate(time = as.numeric(wave)) |> 
-  mutate(wave = time) |> 
-  arrange(id, wave) |> 
+  mutate(time = as.numeric(wave)) |>
+  mutate(wave = time) |>
+  arrange(id, wave) |>
   arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
@@ -697,16 +645,46 @@ mutate(
   arrange(id, wave) |>
   data.frame()
 
+
+# eyeball distribution
+# table(dat_long$wave)
+# dt_19 <- dat_long |>
+#   filter(year_measured == 1 & wave == 1)
+# 
+# hist(dt_19$power_no_control_composite_reversed)
+# table(dt_19$power_no_control_composite_reversed)
+# 
+# 
+# mean_exposure <- mean(dt_19$power_no_control_composite_reversed,
+#                       na.rm = TRUE)
+# 
+# mean_exposure
+# 
+# sd_exposure <- sd(dt_19$power_no_control_composite_reversed,
+#                   na.rm = TRUE)
+# sd_exposure
+# 
+# half_sd <- sd_exposure / 2
+# half_sd
+# 
+# max_score <- max(dt_19$permeability_individual, na.rm = TRUE)
+# 
+
+#check missing
+naniar::vis_miss(dat_long, warn_large_data = FALSE)
+dev.off()
+
 # check
-hist( dat_long$power_no_control_composite )
-table( floor( dat_long$kessler_latent_depression))
+hist(dat_long$power_no_control_composite)
+table(floor(dat_long$kessler_latent_depression))
 
 
-table( scale( dat_long$kessler_latent_anxiety ))
+table(scale(dat_long$kessler_latent_anxiety))
 
 
-# check n
-N <- n_unique(dat_long$id) #33255 # reports hours with community at baseline
+# check sample 
+N <-n_unique(dat_long$id) #34391 
+N
 
 # double check path
 push_mods
@@ -715,25 +693,32 @@ push_mods
 colnames(dat)
 
 dev.off()
-# check 
-dt_check_exposure <- dat_long |> filter(wave == 0| wave == 1)
+# check
+dt_check_exposure <- dat_long |> filter(wave == 1| wave == 2)
 
 # makes ure all is false
-table (is.na( dt_check_exposure$permeability_individual) )
+table (is.na(dt_check_exposure$power_no_control_composite_reversed))
 
 
-# make 
+# make
+dt_18 <- dat_long |>
+  filter(wave == 1 )
+  
+  
+table(is.na( dt_18$religion_spiritual_identification) )
 
-dt_positivity_full <- dt_check_exposure|>
-  filter(wave == 0 | wave == 1) |> 
-  select(wave, id, permeability_individual, sample_weights) 
+dt_positivity_full <- dt_check_exposure |>
+  filter(wave == 1 | wave == 2) |>
+  select(wave, id, power_no_control_composite_reversed, sample_weights)
 
 dt_positivity_full
 
 # check sample weights NA - will return to this after impute
-table ( is.na( dt_positivity_full$sample_weights) ) # no nas
+table (is.na(dt_positivity_full$sample_weights)) # 
 
-out <- msm::statetable.msm(permeability_individual, id, data = dat_long)
+# test positivity
+out <-
+  msm::statetable.msm(permeability_individual, id, data = dat_long)
 
 # transition table
 t_tab <- transition_table(out, state_names = NULL)
@@ -760,15 +745,17 @@ baseline_vars = c(
   # "kessler6_sum",
   "kessler_latent_depression",
   "kessler_latent_anxiety",
-  "support", #soc support
-  "belong", # social belonging
+  "support",
+  #soc support
+  "belong",
+  # social belonging
   "total_siblings_factor",
   #  "smoker", # smoker
   # "sfhealth",
   # "alcohol_frequency", measured with error
   # "alcohol_intensity",
   # "hours_family_log",
-  # "hours_friends_log", 
+  # "hours_friends_log",
   # "hours_community_log",
   # "hours_community_sqrt_round",
   # "lifemeaning",
@@ -817,10 +804,6 @@ baseline_vars = c(
 baseline_vars
 
 # check
-baseline_vars
-
-
-#  check
 exposure_var
 
 # outcomes
@@ -928,17 +911,17 @@ prep_coop_all <- margot_wide_impute_baseline(
 # outlist <-
 #   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
 # length(outlist)
-# 
+#
 # # checks. We do not impute with weights: area of current research
 # head(prep_coop_all$loggedEvents, 10)
 
 push_mods
 
 # save function -- will save to your "push_mod" directory
-here_save_arrow(prep_coop_all, "prep_coop_all_1")
+here_save(prep_coop_all, "prep_coop_all")
 
 # read function
-prep_coop_all <- here_read_arrow("prep_coop_all_1")
+prep_coop_all <- here_read("prep_coop_all")
 
 head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
@@ -985,10 +968,8 @@ df_clean <- df_wide_censored %>%
         !t0_not_lost &
         !t1_not_lost &
         !t0_sample_weights &
-        !t0_smoker_binary &
-     #   !t1_permeability_individual &  # make sure to change for each study
-        !t2_smoker_binary,
-      ~ scale(.x),
+        !t0_smoker_binary,       
+        ~ scale(.x),
       .names = "{col}_z"
     )
   ) |>
@@ -997,7 +978,7 @@ df_clean <- df_wide_censored %>%
     t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
-  #  t1_permeability_individual, # make sure to change for each study
+    #  t1_permeability_individual, # make sure to change for each study
     t1_not_lost,
     t2_smoker_binary,
     ends_with("_z")
@@ -1023,7 +1004,7 @@ here_save(df_clean, "df_clean")
 df_clean <- here_read("df_clean")
 
 str(df_clean)
-df_clean <- as.data.frame(df_clean )
+df_clean <- as.data.frame(df_clean)
 
 #check n
 nrow(df_clean)
@@ -1041,13 +1022,15 @@ names_base
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
 
-
 names_outcomes
+
+colnames(df_clean)
+
 # set variables for models ------------------------------------------------
 
 #### SET VARIABLE NAMES: Customise for each outcomewide model
 #  model
-A  
+A
 
 
 C <- c("t1_not_lost")
@@ -1058,26 +1041,13 @@ W <- c(paste(names_base, collapse = ", "))
 # check
 print(W)
 
-table(df_clean$t1_hours_community_log)
 
-# shift function -- what if everyone increased by .5 standard deviation, except those above 2
-
-# SHIFT FUNCTION
-# simple shift, everyone goes to church at least 4 times per week
-
-# f <- function(data, trt) {
-#   ifelse(data[[trt]] <= .5, .5,  data[[trt]])
-# }
-# simple function # add 1 to all
-# f_1 <- function (data, trt) data[[trt]] + 1
-
-
-# check assignments
+# check shift
 f
-C
 
-# make test data
-df_clean_test <- df_clean |> 
+
+# make test data (if needed)
+df_clean_test <- df_clean |>
   slice_head(n = 2000)
 
 # "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
@@ -1294,11 +1264,11 @@ here_save(t2_alcohol_intensity_z_null, "t2_alcohol_intensity_z_null")
 #   learners_outcome = sl_lib,
 #   parallel = n_cores
 # )
-# 
+#
 # t2_sfhealth_z
 # here_save(t2_sfhealth_z, "t2_sfhealth_z")
-# 
-# 
+#
+#
 names_base_t2_sfhealth_your_health_z <-
   select_and_rename_cols(names_base = names_base,
                          baseline_vars = baseline_vars,
@@ -1346,7 +1316,8 @@ t2_sfhealth_your_health_z_null <- lmtp_tmle(
 )
 
 t2_sfhealth_your_health_z_null
-here_save(t2_sfhealth_your_health_z_null, "t2_sfhealth_your_health_z_null")
+here_save(t2_sfhealth_your_health_z_null,
+          "t2_sfhealth_your_health_z_null")
 
 
 
@@ -1599,7 +1570,7 @@ here_save(t2_kessler_latent_anxiety_z, "t2_kessler_latent_anxiety_z")
 
 
 
-# 
+#
 # t2_kessler_latent_anxiety_z_clinical
 # here_save(t2_kessler_latent_anxiety_z_clinical, "t2_kessler_latent_anxiety_z_clinical")
 
@@ -1624,10 +1595,11 @@ t2_kessler_latent_anxiety_z_null <- lmtp_tmle(
 )
 
 # test
-here_save(t2_kessler_latent_anxiety_z_null, "t2_kessler_latent_anxiety_z_null")
+here_save(t2_kessler_latent_anxiety_z_null,
+          "t2_kessler_latent_anxiety_z_null")
 
 
-# depression 
+# depression
 
 # During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
 # During the last 30 days, how often did.... you feel hopeless?
@@ -1665,7 +1637,8 @@ t2_kessler_latent_depression_z <- lmtp_tmle(
 f
 
 t2_kessler_latent_depression_z
-here_save(t2_kessler_latent_depression_z, "t2_kessler_latent_depression_z")
+here_save(t2_kessler_latent_depression_z,
+          "t2_kessler_latent_depression_z")
 
 
 
@@ -1686,7 +1659,8 @@ t2_kessler_latent_depression_z_null <- lmtp_tmle(
 )
 
 t2_kessler_latent_depression_z_null
-here_save(t2_kessler_latent_depression_z_null, "t2_kessler_latent_depression_z_null")
+here_save(t2_kessler_latent_depression_z_null,
+          "t2_kessler_latent_depression_z_null")
 
 
 
@@ -2067,53 +2041,53 @@ here_save(
 
 
 
-# names_base_t2_permeability_individual_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_permeability_individual_z")
-# names_base_t2_permeability_individual_z
+names_base_t2_permeability_individual_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_permeability_individual_z")
+names_base_t2_permeability_individual_z
 
-# # I believe I am capable, as an individual\nof improving my status in society.
-# t2_permeability_individual_z <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_permeability_individual_z,
-#   outcome = "t2_permeability_individual_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_permeability_individual_z
-# here_save(t2_permeability_individual_z,
-#           "t2_permeability_individual_z")
-# 
-# # I believe I am capable, as an individual\nof improving my status in society.
-# t2_permeability_individual_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_permeability_individual_z,
-#   outcome = "t2_permeability_individual_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_permeability_individual_z_null
-# here_save(t2_permeability_individual_z_null,
-#           "t2_permeability_individual_z_null")
+# I believe I am capable, as an individual\nof improving my status in society.
+t2_permeability_individual_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_permeability_individual_z,
+  outcome = "t2_permeability_individual_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_permeability_individual_z
+here_save(t2_permeability_individual_z,
+          "t2_permeability_individual_z")
+
+# I believe I am capable, as an individual\nof improving my status in society.
+t2_permeability_individual_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_permeability_individual_z,
+  outcome = "t2_permeability_individual_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_permeability_individual_z_null
+here_save(t2_permeability_individual_z_null,
+          "t2_permeability_individual_z_null")
 
 
 names_base_t2_emotion_regulation_out_control_z <-
@@ -2142,7 +2116,8 @@ t2_emotion_regulation_out_control_z <- lmtp_tmle(
 )
 
 t2_emotion_regulation_out_control_z
-here_save(t2_emotion_regulation_out_control_z, "t2_emotion_regulation_out_control_z")
+here_save(t2_emotion_regulation_out_control_z,
+          "t2_emotion_regulation_out_control_z")
 
 
 
@@ -2162,7 +2137,10 @@ t2_emotion_regulation_out_control_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 t2_emotion_regulation_out_control_z_null
-here_save(t2_emotion_regulation_out_control_z_null, "t2_emotion_regulation_out_control_z_null")
+here_save(
+  t2_emotion_regulation_out_control_z_null,
+  "t2_emotion_regulation_out_control_z_null"
+)
 
 
 #
@@ -2580,20 +2558,71 @@ here_save(t2_pwb_standard_living_z_null,
 
 
 
-names_base_t2_lifemeaning_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_lifemeaning_z")
-names_base_t2_lifemeaning_z
+# names_base_t2_lifemeaning_z <-
+#   select_and_rename_cols(names_base = names_base,
+#                          baseline_vars = baseline_vars,
+#                          outcome = "t2_lifemeaning_z")
+# names_base_t2_lifemeaning_z
 
 
 # My life has a clear sense of purpose.
 # I have a good sense of what makes my life meaningful.
-t2_lifemeaning_z <- lmtp_tmle(
+# t2_lifemeaning_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_lifemeaning_z,
+#   outcome = "t2_lifemeaning_z",
+#   cens = C,
+#   shift = f,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# 
+# t2_lifemeaning_z
+# here_save(t2_lifemeaning_z, "t2_lifemeaning_z")
+# 
+# 
+# # My life has a clear sense of purpose.
+# # I have a good sense of what makes my life meaningful.
+# t2_lifemeaning_z_null <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_lifemeaning_z,
+#   outcome = "t2_lifemeaning_z",
+#   cens = C,
+#   shift = NULL,
+#   # mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_lifemeaning_z_null
+# here_save(t2_lifemeaning_z_null, "t2_lifemeaning_z_null")
+# 
+
+# My life has a clear sense of purpose.
+
+names_base_t2_meaning_purpose_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_meaning_purpose_z")
+names_base_t2_meaning_purpose_z
+
+t2_meaning_purpose_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_lifemeaning_z,
-  outcome = "t2_lifemeaning_z",
+  baseline = names_base_t2_meaning_purpose_z,
+  outcome = "t2_meaning_purpose_z",
   cens = C,
   shift = f,
   mtp = TRUE,
@@ -2606,17 +2635,16 @@ t2_lifemeaning_z <- lmtp_tmle(
 )
 
 
-t2_lifemeaning_z
-here_save(t2_lifemeaning_z, "t2_lifemeaning_z")
+t2_meaning_purpose_z
+here_save(t2_meaning_purpose_z, "t2_meaning_purpose_z")
 
 
 # My life has a clear sense of purpose.
-# I have a good sense of what makes my life meaningful.
-t2_lifemeaning_z_null <- lmtp_tmle(
+t2_meaning_purpose_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
-  baseline = names_base_t2_lifemeaning_z,
-  outcome = "t2_lifemeaning_z",
+  baseline = names_base_t2_meaning_purpose_z,
+  outcome = "t2_meaning_purpose_z",
   cens = C,
   shift = NULL,
   # mtp = TRUE,
@@ -2628,8 +2656,66 @@ t2_lifemeaning_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_lifemeaning_z_null
-here_save(t2_lifemeaning_z_null, "t2_lifemeaning_z_null")
+t2_meaning_purpose_z_null
+here_save(t2_meaning_purpose_z_null, "t2_meaning_purpose_z_null")
+
+
+
+# I have a good sense of what makes my life meaningful.
+
+
+names_base_t2_meaning_sense_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_meaning_sense_z")
+names_base_t2_meaning_sense_z
+
+# I have a good sense of what makes my life meaningful.
+
+t2_meaning_sense_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_meaning_sense_z,
+  outcome = "t2_meaning_sense_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+
+t2_meaning_sense_z
+here_save(t2_meaning_sense_z, "t2_meaning_sense_z")
+
+
+# I have a good sense of what makes my life meaningful.
+t2_meaning_sense_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_meaning_sense_z,
+  outcome = "t2_meaning_sense_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_meaning_sense_z_null
+here_save(t2_meaning_sense_z_null, "t2_meaning_sense_z_null")
+
+
+
+
 
 
 
@@ -2876,33 +2962,35 @@ out_tab_contrast_t2_smoker_binary
 # # sf health
 # t2_sfhealth_z <- here_read("t2_sfhealth_z")
 # t2_sfhealth_z_null <- here_read("t2_sfhealth_z_null")
-# 
-# 
+#
+#
 # contrast_t2_sfhealth_z <- lmtp_contrast(t2_sfhealth_z,
 #                                         ref = t2_sfhealth_z_null,
 #                                         type = "additive")
-# 
+#
 # tab_contrast_t2_sfhealth_z <-
 #   margot_tab_lmtp(contrast_t2_sfhealth_z,
 #                   scale = "RD",
 #                   new_name = "Short form health")
-# 
-# 
+#
+#
 # out_tab_contrast_t2_sfhealth_z <-
 #   lmtp_evalue_tab(tab_contrast_t2_sfhealth_z,
 #                   scale = c("RD"))
-# 
+#
 # out_tab_contrast_t2_sfhealth_z
 
 
 # sf health, your health
 t2_sfhealth_your_health_z <- here_read("t2_sfhealth_your_health_z")
-t2_sfhealth_your_health_z_null <- here_read("t2_sfhealth_your_health_z_null")
+t2_sfhealth_your_health_z_null <-
+  here_read("t2_sfhealth_your_health_z_null")
 
 
-contrast_t2_sfhealth_your_health_z <- lmtp_contrast(t2_sfhealth_your_health_z,
-                                                    ref = t2_sfhealth_your_health_z_null,
-                                                    type = "additive")
+contrast_t2_sfhealth_your_health_z <-
+  lmtp_contrast(t2_sfhealth_your_health_z,
+                ref = t2_sfhealth_your_health_z_null,
+                type = "additive")
 
 tab_contrast_t2_sfhealth_your_health_z <-
   margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
@@ -3063,28 +3151,29 @@ out_tab_contrast_t2_bodysat_z
 # t2_kessler6_sum_z <- here_read("t2_kessler6_sum_z")
 # t2_kessler6_sum_z_null <-
 #   here_read("t2_kessler6_sum_z_null")
-# 
+#
 # contrast_t2_kessler6_sum_z <-
 #   lmtp_contrast(t2_kessler6_sum_z,
 #                 ref = t2_kessler6_sum_z_null,
 #                 type = "additive")
-# 
+#
 # tab_contrast_t2_kessler6_sum_z <-
 #   margot_tab_lmtp(contrast_t2_kessler6_sum_z,
 #                   scale = "RD",
 #                   new_name = "Kessler 6 distress")
-# 
-# 
+#
+#
 # out_tab_contrast_t2_kessler6_sum_z <-
 #   lmtp_evalue_tab(tab_contrast_t2_kessler6_sum_z,
 #                   scale = c("RD"))
-# 
+#
 # out_tab_contrast_t2_kessler6_sum_z
 
 
-# depression 
+# depression
 
-t2_kessler_latent_depression_z <- here_read("t2_kessler_latent_depression_z")
+t2_kessler_latent_depression_z <-
+  here_read("t2_kessler_latent_depression_z")
 t2_kessler_latent_depression_z_null <-
   here_read("t2_kessler_latent_depression_z_null")
 
@@ -3099,16 +3188,17 @@ tab_contrast_t2_kessler_latent_depression_z <-
                   new_name = "Kessler 6 depression")
 
 
-out_tab_contrast_t2_kessler_latent_depression_z<-
+out_tab_contrast_t2_kessler_latent_depression_z <-
   lmtp_evalue_tab(tab_contrast_t2_kessler6_sum_z,
                   scale = c("RD"))
 
 out_tab_contrast_t2_kessler_latent_depression_z
 
 
-#anxiety 
+#anxiety
 
-t2_kessler_latent_anxiety_z <- here_read("t2_kessler_latent_anxiety_z")
+t2_kessler_latent_anxiety_z <-
+  here_read("t2_kessler_latent_anxiety_z")
 t2_kessler_latent_anxiety_z_null <-
   here_read("t2_kessler_latent_anxiety_z_null")
 
@@ -3338,9 +3428,11 @@ contrast_t2_emotion_regulation_out_control_z <-
                 type = "additive")
 
 tab_contrast_t2_emotion_regulation_out_control_z <-
-  margot_tab_lmtp(contrast_t2_emotion_regulation_out_control_z ,
-                  scale = "RD",
-                  new_name = "Emotional regulation (out of control)")
+  margot_tab_lmtp(
+    contrast_t2_emotion_regulation_out_control_z ,
+    scale = "RD",
+    new_name = "Emotional regulation (out of control)"
+  )
 
 
 out_tab_contrast_t2_emotion_regulation_out_control_z <-
@@ -3529,6 +3621,7 @@ out_tab_contrast_t2_pwb_standard_living_z <-
 
 out_tab_contrast_t2_pwb_standard_living_z
 
+
 # life meaning
 
 # t2_lifemeaning_z <- here_read("t2_lifemeaning_z")
@@ -3600,6 +3693,9 @@ out_tab_contrast_t2_meaning_sense_z <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_meaning_sense_z
+
+
+
 
 # lifesat
 
@@ -3679,7 +3775,7 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 
 tab_contrast_t2_belong_z <-
-  margot_tab_lmtp(contrast_t2_belong_z, scale = "RD", 
+  margot_tab_lmtp(contrast_t2_belong_z, scale = "RD",
                   new_name = "Social belonging")
 
 
@@ -3721,8 +3817,8 @@ tab_ego <- rbind(
   out_tab_contrast_t2_perfectionism_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
-  out_tab_contrast_t2_emotion_regulation_out_control_z#,
-#  out_tab_contrast_t2_permeability_individual_z
+  out_tab_contrast_t2_emotion_regulation_out_control_z,
+  out_tab_contrast_t2_permeability_individual_z
 )
 
 
@@ -3737,6 +3833,7 @@ tab_reflective <- rbind(
   out_tab_contrast_t2_meaning_purpose_z,
   out_tab_contrast_t2_meaning_sense_z
 )
+
 
 tab_social <- rbind(
   out_tab_contrast_t2_support_z,
@@ -3779,8 +3876,8 @@ here_save(group_tab_social, "group_tab_social")
 
 
 group_tab_health <- here_read("group_tab_health")
-group_tab_body<- here_read("group_tab_body")
-group_tab_ego<- here_read("group_tab_ego")
+group_tab_body <- here_read("group_tab_body")
+group_tab_ego <- here_read("group_tab_ego")
 group_tab_reflective <- here_read("group_tab_reflective")
 group_tab_social <- here_read("group_tab_social")
 
@@ -3788,11 +3885,11 @@ group_tab_social <- here_read("group_tab_social")
 # create plots -------------------------------------------------------------
 
 # check N
-N 
-sub_title = "Impermeability Self Effect, N = 33,255"
+N
+sub_title = "Self Empowerment, N = 34,391"
 
 
-# graph health 
+# graph health
 plot_group_tab_health <- margot_plot(
   group_tab_health,
   type = "RD",
@@ -3814,7 +3911,7 @@ plot_group_tab_health <- margot_plot(
 )
 plot_group_tab_health
 dev.off()
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_health,
   path = here::here(here::here(push_mods, "figs")),
@@ -3829,7 +3926,7 @@ ggsave(
 
 
 
-# graph body 
+# graph body
 plot_group_tab_body <- margot_plot(
   group_tab_body,
   type = "RD",
@@ -3850,7 +3947,7 @@ plot_group_tab_body <- margot_plot(
   x_lim_hi =  .5
 )
 
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_body,
   path = here::here(here::here(push_mods, "figs")),
@@ -3888,7 +3985,7 @@ plot_group_tab_ego <- margot_plot(
 )
 plot_group_tab_ego
 
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_ego,
   path = here::here(here::here(push_mods, "figs")),
@@ -3903,7 +4000,7 @@ ggsave(
 
 plot_group_tab_ego
 
-# graph reflective 
+# graph reflective
 plot_group_tab_reflective <- margot_plot(
   group_tab_reflective,
   type = "RD",
@@ -3924,7 +4021,8 @@ plot_group_tab_reflective <- margot_plot(
   x_lim_hi =  .5
 )
 plot_group_tab_reflective
-# save graph 
+
+# save graph
 ggsave(
   plot_group_tab_reflective,
   path = here::here(here::here(push_mods, "figs")),
@@ -3937,9 +4035,7 @@ ggsave(
   dpi = 600
 )
 
-
-
-# graph social 
+# graph social
 plot_group_tab_social <- margot_plot(
   group_tab_social,
   type = "RD",
@@ -3962,7 +4058,7 @@ plot_group_tab_social <- margot_plot(
 
 plot_group_tab_social
 
-# save graph 
+# save graph
 ggsave(
   plot_group_tab_social,
   path = here::here(here::here(push_mods, "figs")),
@@ -3974,8 +4070,4 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
-
-
-
-
 
