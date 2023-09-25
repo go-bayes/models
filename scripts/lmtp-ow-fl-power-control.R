@@ -1821,61 +1821,61 @@ here_save(t2_sexual_satisfaction_z_null,
 
 
 
-
-names_base_t2_power_no_control_composite_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_power_no_control_composite_z")
-names_base_t2_power_no_control_composite_z
-
-# I do not have enough power or control over\nimportant parts of my life.
-# Other people have too much power or control over\nimportant parts of my life.
-t2_power_no_control_composite_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_power_no_control_composite_z,
-  outcome = "t2_power_no_control_composite_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_power_no_control_composite_z
-here_save(t2_power_no_control_composite_z,
-          "t2_power_no_control_composite_z")
-
-
-
-# I do not have enough power or control over\nimportant parts of my life.
-# Other people have too much power or control over\nimportant parts of my life.
-t2_power_no_control_composite_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_power_no_control_composite_z,
-  outcome = "t2_power_no_control_composite_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_power_no_control_composite_z_null
-here_save(t2_power_no_control_composite_z_null,
-          "t2_power_no_control_composite_z_null")
-
-
-
+# 
+# names_base_t2_power_no_control_composite_z <-
+#   select_and_rename_cols(names_base = names_base,
+#                          baseline_vars = baseline_vars,
+#                          outcome = "t2_power_no_control_composite_z")
+# names_base_t2_power_no_control_composite_z
+# 
+# # I do not have enough power or control over\nimportant parts of my life.
+# # Other people have too much power or control over\nimportant parts of my life.
+# t2_power_no_control_composite_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_power_no_control_composite_z,
+#   outcome = "t2_power_no_control_composite_z",
+#   cens = C,
+#   shift = f,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_power_no_control_composite_z
+# here_save(t2_power_no_control_composite_z,
+#           "t2_power_no_control_composite_z")
+# 
+# 
+# 
+# # I do not have enough power or control over\nimportant parts of my life.
+# # Other people have too much power or control over\nimportant parts of my life.
+# t2_power_no_control_composite_z_null <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_power_no_control_composite_z,
+#   outcome = "t2_power_no_control_composite_z",
+#   cens = C,
+#   shift = NULL,
+#   # mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_power_no_control_composite_z_null
+# here_save(t2_power_no_control_composite_z_null,
+#           "t2_power_no_control_composite_z_null")
+# 
+# 
+# 
 
 names_base_t2_self_esteem_z <-
   select_and_rename_cols(names_base = names_base,
