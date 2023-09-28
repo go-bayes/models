@@ -4564,6 +4564,8 @@ contrast_t2_emotion_regulation_out_control_z_1 <-
                 ref = t2_emotion_regulation_out_control_z_null,
                 type = "additive")
 
+
+
 tab_contrast_t2_emotion_regulation_out_control_z_1 <-
   margot_tab_lmtp(
     contrast_t2_emotion_regulation_out_control_z_1 ,
@@ -4763,7 +4765,7 @@ contrast_t2_pwb_your_health_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_pwb_your_health_z_1 <-
-  margot_tab_lmtp(contrast_t2_pwb_your_health_z,
+  margot_tab_lmtp(contrast_t2_pwb_your_health_z_1,
                   scale = "RD",
                   new_name = "PWB your health")
 
