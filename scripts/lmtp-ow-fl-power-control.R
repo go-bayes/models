@@ -4238,6 +4238,7 @@ t2_rumination_z_1 <- here_read("t2_rumination_z_1")
 t2_rumination_z_null <-
   here_read("t2_rumination_z_null")
 
+# first contrast
 contrast_t2_rumination_z <-
   lmtp_contrast(t2_rumination_z,
                 ref = t2_rumination_z_null,
@@ -4249,11 +4250,27 @@ tab_contrast_t2_rumination_z <-
                   new_name = "Rumination")
 
 
-out_tab_contrast_t2_rumination_z <-
-  lmtp_evalue_tab(tab_contrast_t2_rumination_z,
+# second contrast
+
+contrast_t2_rumination_z_1 <-
+  lmtp_contrast(t2_rumination_z_1,
+                ref = t2_rumination_z_null,
+                type = "additive")
+
+tab_contrast_t2_rumination_z_1 <-
+  margot_tab_lmtp(contrast_t2_rumination_z_1 ,
+                  scale = "RD",
+                  new_name = "Rumination")
+
+
+out_tab_contrast_t2_rumination_z_1 <-
+  lmtp_evalue_tab(tab_contrast_t2_rumination_z_1,
                   scale = c("RD"))
 
-out_tab_contrast_t2_rumination_z
+out_tab_contrast_t2_rumination_z_1
+
+
+
 
 # sex sat
 t2_sexual_satisfaction_z <-
@@ -4700,7 +4717,7 @@ contrast_t2_vengeful_rumin_z <-
 tab_contrast_t2_vengeful_rumin_z <-
   margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
                   scale = "RD",
-                  new_name = "Vengefulness (forgiveness")
+                  new_name = "Vengefulness (forgiveness)")
 
 
 out_tab_contrast_t2_vengeful_rumin_z <-
@@ -5301,7 +5318,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Self Empowerment, N = 34,391"
+sub_title = "Self Empowerment: shift all below average to average, N = 34,391"
 
 
 # graph health
@@ -5536,7 +5553,7 @@ tab_reflective_1 <- rbind(
 )
 
 
-tab_social <- rbind(
+tab_social_1 <- rbind(
   out_tab_contrast_t2_support_z_1,
   out_tab_contrast_t2_neighbourhood_community_z_1,
   out_tab_contrast_t2_belong_z_1
@@ -5587,7 +5604,7 @@ group_tab_social_1 <- here_read("group_tab_social_1")
 
 # check N
 N
-sub_title_1 = "Self Empowerment: shift + 1 point everyone, N = 34,391"
+sub_title_1 = "Self Empowerment: shift + 1 point everyone (up to max 7), N = 34,391"
 
 
 # graph health
@@ -5648,6 +5665,7 @@ plot_group_tab_body_1 <- margot_plot(
   x_lim_hi =  .5
 )
 
+plot_group_tab_body_1
 # save graph
 ggsave(
   plot_group_tab_body_1,
