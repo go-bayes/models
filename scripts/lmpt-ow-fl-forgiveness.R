@@ -5588,7 +5588,7 @@ tab_body_1  <- rbind(
 )
 
 tab_ego_1  <- rbind(
-  #  out_tab_contrast_t2_power_no_control_composite_z_1 ,
+  out_tab_contrast_t2_power_no_control_composite_z_1 ,
   out_tab_contrast_t2_self_esteem_z_1,
   out_tab_contrast_t2_perfectionism_z_1,
   out_tab_contrast_t2_self_control_have_lots_z_1,
@@ -5600,7 +5600,7 @@ tab_ego_1  <- rbind(
 
 tab_reflective_1 <- rbind(
   out_tab_contrast_t2_gratitude_z_1,
-  out_tab_contrast_t2_vengeful_rumin_z_1,
+ # out_tab_contrast_t2_vengeful_rumin_z_1,
   out_tab_contrast_t2_pwb_your_health_z_1,
   out_tab_contrast_t2_pwb_your_future_security_z_1,
   out_tab_contrast_t2_pwb_your_relationships_z_1,
@@ -5639,7 +5639,7 @@ here_save(group_tab_ego_1, "group_tab_ego_1")
 
 # make group table
 group_tab_reflective_1 <-
-  group_tab(tab_reflective, type = "RD")
+  group_tab(tab_reflective_1, type = "RD")
 
 # save
 here_save(group_tab_reflective_1, "group_tab_reflective_1")
