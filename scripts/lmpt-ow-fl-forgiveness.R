@@ -680,7 +680,7 @@ f_1 <- function(data, trt) {
 
 
 #check missing
-naniar::vis_miss(dat_long, warn_large_data = FALSE)
+#naniar::vis_miss(dat_long, warn_large_data = FALSE)
 dev.off()
 
 # check
@@ -1123,7 +1123,8 @@ timing_info <- system.time({
 
 t2_smoker_binary
 here_save(t2_smoker_binary, "t2_smoker_binary")
-
+# t2_smoker_binary <-here_read( "t2_smoker_binary")
+# t2_smoker_binary
 
 # print timing info
 print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
@@ -5302,7 +5303,7 @@ tab_body <- rbind(
 )
 
 tab_ego <- rbind(
-  #  out_tab_contrast_t2_power_no_control_composite_z,
+  out_tab_contrast_t2_power_no_control_composite_z,
   out_tab_contrast_t2_self_esteem_z,
   out_tab_contrast_t2_perfectionism_z,
   out_tab_contrast_t2_self_control_have_lots_z,
@@ -5314,7 +5315,7 @@ tab_ego <- rbind(
 
 tab_reflective <- rbind(
   out_tab_contrast_t2_gratitude_z,
-  out_tab_contrast_t2_vengeful_rumin_z,
+#  out_tab_contrast_t2_vengeful_rumin_z,
   out_tab_contrast_t2_pwb_your_health_z,
   out_tab_contrast_t2_pwb_your_future_security_z,
   out_tab_contrast_t2_pwb_your_relationships_z,
