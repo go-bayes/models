@@ -3306,7 +3306,7 @@ contrast_t2_lifemeaning_z <-
 tab_contrast_t2_lifemeaning_z <-
   margot_tab_lmtp(contrast_t2_lifemeaning_z,
                   scale = "RD",
-                  new_name = "Meaning in life: socialising >=2 hours per week")
+                  new_name = "Meaning in life: shift everyone to average trust in science")
 
 
 out_tab_contrast_t2_lifemeaning_z <-
@@ -3440,12 +3440,12 @@ tab_ego <- rbind(
 
 
 tab_reflective <- rbind(
-  out_tab_contrast_t2_gratitude_z,
-  out_tab_contrast_t2_vengeful_rumin_z,
-  out_tab_contrast_t2_pwb_your_health_z,
-  out_tab_contrast_t2_pwb_your_future_security_z,
-  out_tab_contrast_t2_pwb_your_relationships_z,
-  out_tab_contrast_t2_pwb_standard_living_z,
+  # out_tab_contrast_t2_gratitude_z,
+  # out_tab_contrast_t2_vengeful_rumin_z,
+  # out_tab_contrast_t2_pwb_your_health_z,
+  # out_tab_contrast_t2_pwb_your_future_security_z,
+  # out_tab_contrast_t2_pwb_your_relationships_z,
+  # out_tab_contrast_t2_pwb_standard_living_z,
   out_tab_contrast_t2_lifemeaning_z
 )
 
@@ -3489,18 +3489,10 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 # save
 here_save(group_tab_social, "group_tab_social")
 
-
-
-group_tab_health <- here_read("group_tab_health")
-group_tab_body<- here_read("group_tab_body")
-group_tab_ego<- here_read("group_tab_ego")
-group_tab_reflective <- here_read("group_tab_reflective")
-group_tab_social <- here_read("group_tab_social")
-
-
 # create plots -------------------------------------------------------------
-sub_title = "Socialising effect: at least 2 hours weekly, N = 33,148"
+sub_title = "Trust in science effect: shift to at least average trust, N =32,737"
 
+n_unique(dat_long$id)
 
 # graph health
 plot_group_tab_health <- margot_plot(
@@ -3511,8 +3503,8 @@ plot_group_tab_health <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3548,8 +3540,8 @@ plot_group_tab_body <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3585,8 +3577,8 @@ plot_group_tab_ego <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3615,15 +3607,15 @@ plot_group_tab_ego
 
 # graph reflective
 plot_group_tab_reflective <- margot_plot(
-  group_tab_ego,
+  group_tab_reflective,
   type = "RD",
   title = "Reflective effects",
   subtitle = sub_title,
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3658,8 +3650,8 @@ plot_group_tab_social <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,

@@ -3386,12 +3386,7 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 # save
 here_save(group_tab_social, "group_tab_social")
 
-
-group_tab_health <- here_read("group_tab_health")
-group_tab_body<- here_read("group_tab_body")
 group_tab_ego<- here_read("group_tab_ego")
-group_tab_reflective <- here_read("group_tab_reflective")
-group_tab_social <- here_read("group_tab_social")
 
 
 # create plots -------------------------------------------------------------
@@ -3407,10 +3402,10 @@ plot_group_tab_health <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
-  title_size = 15,
+  title_size = 12,
   subtitle_size = 11,
   legend_text_size = 8,
   legend_title_size = 10,
@@ -3444,8 +3439,8 @@ plot_group_tab_body <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3473,6 +3468,8 @@ ggsave(
 plot_group_tab_body
 
 # graph ego
+
+group_tab_ego
 plot_group_tab_ego <- margot_plot(
   group_tab_ego,
   type = "RD",
@@ -3481,8 +3478,8 @@ plot_group_tab_ego <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3495,31 +3492,55 @@ plot_group_tab_ego <- margot_plot(
 plot_group_tab_ego
 
 # save graph 
+
+# plot reflective
+plot_group_tab_reflective <- margot_plot(
+  group_tab_reflective,
+  type = "RD",
+  title = "Ego effects",
+  subtitle = sub_title,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+plot_group_tab_reflective
+
+push_mods
 ggsave(
-  plot_group_tab_ego,
+  plot_group_tab_reflective,
   path = here::here(here::here(push_mods, "figs")),
   width = 8,
   height = 6,
   units = "in",
-  filename = "plot_group_tab_ego.png",
+  filename = "plot_group_tab_reflective.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
 )
 
-plot_group_tab_ego
+plot_group_tab_reflective
 
 # graph reflective 
 plot_group_tab_reflective <- margot_plot(
-  group_tab_reflective,
+  group_tab_ego,
   type = "RD",
   title = "Reflective effects",
   subtitle = sub_title,
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,
@@ -3554,8 +3575,8 @@ plot_group_tab_social <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
+  base_size = 8,
+  text_size = 2.5,
   point_size = .5,
   title_size = 12,
   subtitle_size = 11,

@@ -2820,81 +2820,81 @@ t2_gratitude_z_null
 here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
 
 
-
-
-names_base_t2_vengeful_rumin_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_vengeful_rumin_z")
-names_base_t2_vengeful_rumin_z
-
-
-
-
-# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-t2_vengeful_rumin_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_vengeful_rumin_z,
-  outcome = "t2_vengeful_rumin_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_vengeful_rumin_z
-here_save(t2_vengeful_rumin_z, "t2_vengeful_rumin_z")
-
-
-
-
-# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-t2_vengeful_rumin_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_vengeful_rumin_z,
-  outcome = "t2_vengeful_rumin_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_vengeful_rumin_z_1
-here_save(t2_vengeful_rumin_z_1, "t2_vengeful_rumin_z_1")
-
-# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-t2_vengeful_rumin_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_vengeful_rumin_z,
-  outcome = "t2_vengeful_rumin_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_vengeful_rumin_z_null
-here_save(t2_vengeful_rumin_z_null, "t2_vengeful_rumin_z_null")
-
-
+# 
+# 
+# names_base_t2_vengeful_rumin_z <-
+#   select_and_rename_cols(names_base = names_base,
+#                          baseline_vars = baseline_vars,
+#                          outcome = "t2_vengeful_rumin_z")
+# names_base_t2_vengeful_rumin_z
+# 
+# 
+# 
+# 
+# # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+# t2_vengeful_rumin_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_vengeful_rumin_z,
+#   outcome = "t2_vengeful_rumin_z",
+#   cens = C,
+#   shift = f,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_vengeful_rumin_z
+# here_save(t2_vengeful_rumin_z, "t2_vengeful_rumin_z")
+# 
+# 
+# 
+# 
+# # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+# t2_vengeful_rumin_z_1 <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_vengeful_rumin_z,
+#   outcome = "t2_vengeful_rumin_z",
+#   cens = C,
+#   shift = f_1,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_vengeful_rumin_z_1
+# here_save(t2_vengeful_rumin_z_1, "t2_vengeful_rumin_z_1")
+# 
+# # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+# t2_vengeful_rumin_z_null <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_vengeful_rumin_z,
+#   outcome = "t2_vengeful_rumin_z",
+#   cens = C,
+#   shift = NULL,
+#   # mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_vengeful_rumin_z_null
+# here_save(t2_vengeful_rumin_z_null, "t2_vengeful_rumin_z_null")
+# 
+# 
 
 
 names_base_t2_pwb_your_health_z <-
@@ -4358,29 +4358,55 @@ out_tab_contrast_t2_sexual_satisfaction_z_1
 # contrasts ego -----------------------------------------------------------
 
 # power no control
-# t2_power_no_control_composite_z <-
-#   here_read("t2_power_no_control_composite_z")
-# t2_power_no_control_composite_z_null <-
-#   here_read("t2_power_no_control_composite_z_null")
-# 
-# 
-# contrast_t2_power_no_control_composite_z <-
-#   lmtp_contrast(t2_power_no_control_composite_z,
-#                 ref = t2_power_no_control_composite_z_null,
-#                 type = "additive")
-# 
-# 
-# tab_contrast_t2_power_no_control_composite_z <-
-#   margot_tab_lmtp(contrast_t2_power_no_control_composite_z,
-#                   scale = "RD",
-#                   new_name = "Power no control")
-# 
-# 
-# out_tab_contrast_t2_power_no_control_composite_z <-
-#   lmtp_evalue_tab(tab_contrast_t2_power_no_control_composite_z,
-#                   scale = c("RD"))
-# 
-# out_tab_contrast_t2_power_no_control_composite_z
+t2_power_no_control_composite_z <-
+  here_read("t2_power_no_control_composite_z")
+
+t2_power_no_control_composite_z_1 <-
+  here_read("t2_power_no_control_composite_z_1")
+
+t2_power_no_control_composite_z_null <-
+  here_read("t2_power_no_control_composite_z_null")
+
+# first contrast
+contrast_t2_power_no_control_composite_z <-
+  lmtp_contrast(t2_power_no_control_composite_z,
+                ref = t2_power_no_control_composite_z_null,
+                type = "additive")
+
+
+tab_contrast_t2_power_no_control_composite_z <-
+  margot_tab_lmtp(contrast_t2_power_no_control_composite_z,
+                  scale = "RD",
+                  new_name = "Power no control")
+
+
+out_tab_contrast_t2_power_no_control_composite_z <-
+  lmtp_evalue_tab(tab_contrast_t2_power_no_control_composite_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_power_no_control_composite_z
+
+
+
+# second contrast
+contrast_t2_power_no_control_composite_z_1  <-
+  lmtp_contrast(t2_power_no_control_composite_z_1,
+                ref = t2_power_no_control_composite_z_null,
+                type = "additive")
+
+
+tab_contrast_t2_power_no_control_composite_z_1  <-
+  margot_tab_lmtp(contrast_t2_power_no_control_composite_z_1 ,
+                  scale = "RD",
+                  new_name = "Power no control")
+
+
+out_tab_contrast_t2_power_no_control_composite_z_1  <-
+  lmtp_evalue_tab(tab_contrast_t2_power_no_control_composite_z_1,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_power_no_control_composite_z_1 
+
 
 # self esteem
 
@@ -5350,7 +5376,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Self Empowerment: shift all below average to average, N = 34,391"
+sub_title = "Forgiveness: shift all below average to average, N = 34,749"
 
 
 # graph health
@@ -5636,7 +5662,7 @@ group_tab_social_1 <- here_read("group_tab_social_1")
 
 # check N
 N
-sub_title_1 = "Self Empowerment: shift + 1 point everyone (up to max 7), N = 34,391"
+sub_title_1 = "Forgiveness: shift + 1 point everyone (up to max 7), N = 34,749"
 
 
 # graph health

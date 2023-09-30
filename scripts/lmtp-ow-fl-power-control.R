@@ -5581,7 +5581,7 @@ here_save(group_tab_ego_1, "group_tab_ego_1")
 
 # make group table
 group_tab_reflective_1 <-
-  group_tab(tab_reflective, type = "RD")
+  group_tab(tab_reflective_1, type = "RD")
 
 # save
 here_save(group_tab_reflective_1, "group_tab_reflective_1")
