@@ -1,8 +1,8 @@
-# sept 30 2023
+# OCT 1 2023
 # joseph bulbulia : joseph.bulbulia@gmail.com
 # outcome-wide-analysis-template
 
-# Forgiveness
+# PERFECTIONISM
 
 
 # preliminaries -----------------------------------------------------------
@@ -47,22 +47,22 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-forgiveness"
+    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-perfectionism"
   )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
 # set exposure here
-nzavs_exposure <- "forgiveness"
+nzavs_exposure <- "perfectionism"
 
 
 # define exposures --------------------------------------------------------
 # define exposure
-A <- "t1_forgiveness_z"
+A <- "t1_perfectionism_z"
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("forgiveness", "not_lost") #
+exposure_var = c("perfectionism", "not_lost") #
 
 
 # shift one pont up if under 6
@@ -646,18 +646,18 @@ mutate(
 dt_19 <- dat_long |>
   filter(year_measured == 1 & wave == 1)
 
-hist(dt_19$forgiveness)
-table(dt_19$forgiveness)
+hist(dt_19$perfectionism)
+table(dt_19$perfectionism)
 dev.off()
 
-mean_exposure <- mean(dt_19$forgiveness,
+mean_exposure <- mean(dt_19$perfectionism,
                       na.rm = TRUE)
 mean_exposure
 
-max_score <- max(dt_19$forgiveness, na.rm = TRUE)
+max_score <- max(dt_19$perfectionism, na.rm = TRUE)
 max_score
 
-sd_exposure <- sd(dt_19$forgiveness,
+sd_exposure <- sd(dt_19$perfectionism,
                   na.rm = TRUE)
 sd_exposure
 
@@ -683,13 +683,6 @@ f_1 <- function(data, trt) {
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
 dev.off()
 
-# check
-hist(dat_long$forgiveness)
-table(floor(dat_long$kessler_latent_depression))
-
-
-table(scale(dat_long$kessler_latent_anxiety))
-
 
 # check sample 
 N <-n_unique(dat_long$id) #34749 
@@ -706,10 +699,10 @@ dev.off()
 dt_check_exposure <- dat_long |> filter(wave == 1| wave == 2)
 
 # makes sure all is false
-table (is.na(dt_check_exposure$forgiveness))
+table (is.na(dt_check_exposure$perfectionism))
 
 # makes sure all is false
-table ((dt_check_exposure$forgiveness))
+table ((dt_check_exposure$perfectionism))
 # make
 dt_18 <- dat_long |>
   filter(wave == 1 )
@@ -718,8 +711,8 @@ dt_18 <- dat_long |>
 
 dt_positivity_full <- dt_check_exposure |>
   filter(wave == 1 | wave == 2) |>
-  select(wave, id, forgiveness, sample_weights) |> 
-  mutate(foregivness_round = round(forgiveness, 0))
+  select(wave, id, perfectionism, sample_weights) |> 
+  mutate(perfectionism_round = round(perfectionism, 0))
 
 dt_positivity_full
 
@@ -728,7 +721,7 @@ table (is.na(dt_positivity_full$sample_weights)) #
 
 # test positivity
 out <-
-  msm::statetable.msm(foregivness_round, id, data = dt_positivity_full)
+  msm::statetable.msm(perfectionism_round, id, data = dt_positivity_full)
 
 # transition table
 t_tab <- transition_table(out, state_names = NULL)
@@ -736,7 +729,7 @@ t_tab
 
 
 out <-
-  msm::statetable.msm(forgiveness, id, data = dt_positivity_full)
+  msm::statetable.msm(perfectionism, id, data = dt_positivity_full)
 
 # transition table
 t_tab <- transition_table(out, state_names = NULL)
@@ -855,11 +848,11 @@ outcome_vars = c(
   # embodied
   "bodysat",
   #ego
- # "vengeful_rumin",
+  "vengeful_rumin",
   #ego
   ## Am satisfied with the appearance, size and shape of my body.
   # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-  "perfectionism",
+#  "perfectionism",
   # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
   # I am hardly ever satisfied with my performance.
   "power_no_control_composite",
@@ -883,7 +876,7 @@ outcome_vars = c(
   # "emotion_regulation_change_thinking_to_calm",#,#, # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
   # "emp_work_life_balance"# I have a good balance between work and other important things in my life.
   #"respect_self",
- # "vengeful_rumin",
+  # "vengeful_rumin",
   "gratitude",
   ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
   "pwb_your_health",
@@ -946,7 +939,7 @@ head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
 dev.off()
 
-
+N
 #check must be a dataframe
 str(prep_coop_all)
 nrow(prep_coop_all)
@@ -2666,83 +2659,83 @@ here_save(
 
 
 
-names_base_t2_perfectionism_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_perfectionism_z")
-names_base_t2_perfectionism_z
+# names_base_t2_perfectionism_z <-
+#   select_and_rename_cols(names_base = names_base,
+#                          baseline_vars = baseline_vars,
+#                          outcome = "t2_perfectionism_z")
+# names_base_t2_perfectionism_z
 
 # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # I am hardly ever satisfied with my performance.
-t2_perfectionism_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_perfectionism_z
-here_save(t2_perfectionism_z, "t2_perfectionism_z")
-
-
-
-# # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-t2_perfectionism_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_perfectionism_z_1
-here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
-
-
-
-
-
-
-# # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-t2_perfectionism_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_perfectionism_z_null
-here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
+# t2_perfectionism_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_perfectionism_z,
+#   outcome = "t2_perfectionism_z",
+#   cens = C,
+#   shift = f,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# 
+# t2_perfectionism_z
+# here_save(t2_perfectionism_z, "t2_perfectionism_z")
+# 
+# 
+# 
+# # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+# # I am hardly ever satisfied with my performance.
+# t2_perfectionism_z_1 <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_perfectionism_z,
+#   outcome = "t2_perfectionism_z",
+#   cens = C,
+#   shift = f_1,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# 
+# t2_perfectionism_z_1
+# here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
+# 
+# 
+# 
+# 
+# 
+# 
+# # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+# # I am hardly ever satisfied with my performance.
+# t2_perfectionism_z_null <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_perfectionism_z,
+#   outcome = "t2_perfectionism_z",
+#   cens = C,
+#   shift = NULL,
+#   # mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_perfectionism_z_null
+# here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
 
 
 
@@ -2821,81 +2814,81 @@ t2_gratitude_z_null
 here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
 
 
-# 
-# 
-# names_base_t2_vengeful_rumin_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_vengeful_rumin_z")
-# names_base_t2_vengeful_rumin_z
-# 
-# 
-# 
-# 
-# # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-# t2_vengeful_rumin_z <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_vengeful_rumin_z,
-#   outcome = "t2_vengeful_rumin_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_vengeful_rumin_z
-# here_save(t2_vengeful_rumin_z, "t2_vengeful_rumin_z")
-# 
-# 
-# 
-# 
-# # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-# t2_vengeful_rumin_z_1 <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_vengeful_rumin_z,
-#   outcome = "t2_vengeful_rumin_z",
-#   cens = C,
-#   shift = f_1,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_vengeful_rumin_z_1
-# here_save(t2_vengeful_rumin_z_1, "t2_vengeful_rumin_z_1")
-# 
-# # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-# t2_vengeful_rumin_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_vengeful_rumin_z,
-#   outcome = "t2_vengeful_rumin_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_vengeful_rumin_z_null
-# here_save(t2_vengeful_rumin_z_null, "t2_vengeful_rumin_z_null")
-# 
-# 
+
+
+names_base_t2_vengeful_rumin_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_vengeful_rumin_z")
+names_base_t2_vengeful_rumin_z
+
+
+
+
+# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+t2_vengeful_rumin_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_vengeful_rumin_z,
+  outcome = "t2_vengeful_rumin_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_vengeful_rumin_z
+here_save(t2_vengeful_rumin_z, "t2_vengeful_rumin_z")
+
+
+
+
+# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+t2_vengeful_rumin_z_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_vengeful_rumin_z,
+  outcome = "t2_vengeful_rumin_z",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_vengeful_rumin_z_1
+here_save(t2_vengeful_rumin_z_1, "t2_vengeful_rumin_z_1")
+
+# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
+t2_vengeful_rumin_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_vengeful_rumin_z,
+  outcome = "t2_vengeful_rumin_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_vengeful_rumin_z_null
+here_save(t2_vengeful_rumin_z_null, "t2_vengeful_rumin_z_null")
+
+
 
 
 names_base_t2_pwb_your_health_z <-
@@ -4458,49 +4451,49 @@ out_tab_contrast_t2_self_esteem_z_1 <-
 out_tab_contrast_t2_self_esteem_z_1
 
 # perfectionism
-t2_perfectionism_z <- here_read("t2_perfectionism_z")
-t2_perfectionism_z_1 <- here_read("t2_perfectionism_z_1")
-t2_perfectionism_z_null <-
-  here_read("t2_perfectionism_z_null")
-
-# first contrast
-contrast_t2_perfectionism_z <-
-  lmtp_contrast(t2_perfectionism_z,
-                ref = t2_perfectionism_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_perfectionism_z <-
-  margot_tab_lmtp(contrast_t2_perfectionism_z ,
-                  scale = "RD",
-                  new_name = "Perfectionism")
-
-
-out_tab_contrast_t2_perfectionism_z <-
-  lmtp_evalue_tab(tab_contrast_t2_perfectionism_z,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_perfectionism_z
-
-
-# second contrast
-contrast_t2_perfectionism_z_1 <-
-  lmtp_contrast(t2_perfectionism_z_1,
-                ref = t2_perfectionism_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_perfectionism_z_1 <-
-  margot_tab_lmtp(contrast_t2_perfectionism_z_1,
-                  scale = "RD",
-                  new_name = "Perfectionism")
-
-
-out_tab_contrast_t2_perfectionism_z_1 <-
-  lmtp_evalue_tab(tab_contrast_t2_perfectionism_z_1,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_perfectionism_z_1
+# t2_perfectionism_z <- here_read("t2_perfectionism_z")
+# t2_perfectionism_z_1 <- here_read("t2_perfectionism_z_1")
+# t2_perfectionism_z_null <-
+#   here_read("t2_perfectionism_z_null")
+# 
+# # first contrast
+# contrast_t2_perfectionism_z <-
+#   lmtp_contrast(t2_perfectionism_z,
+#                 ref = t2_perfectionism_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_perfectionism_z <-
+#   margot_tab_lmtp(contrast_t2_perfectionism_z ,
+#                   scale = "RD",
+#                   new_name = "Perfectionism")
+# 
+# 
+# out_tab_contrast_t2_perfectionism_z <-
+#   lmtp_evalue_tab(tab_contrast_t2_perfectionism_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_perfectionism_z
+# 
+# 
+# # second contrast
+# contrast_t2_perfectionism_z_1 <-
+#   lmtp_contrast(t2_perfectionism_z_1,
+#                 ref = t2_perfectionism_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_perfectionism_z_1 <-
+#   margot_tab_lmtp(contrast_t2_perfectionism_z_1,
+#                   scale = "RD",
+#                   new_name = "Perfectionism")
+# 
+# 
+# out_tab_contrast_t2_perfectionism_z_1 <-
+#   lmtp_evalue_tab(tab_contrast_t2_perfectionism_z_1,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_perfectionism_z_1
 
 
 # self control have
@@ -4762,49 +4755,49 @@ out_tab_contrast_t2_gratitude_z_1
 
 
 # 
-# # vengence / forgive
-# t2_vengeful_rumin_z <- here_read("t2_vengeful_rumin_z")
-# t2_vengeful_rumin_z_1 <- here_read("t2_vengeful_rumin_z_1")
-# 
-# t2_vengeful_rumin_z_null <-
-#   here_read("t2_vengeful_rumin_z_null")
-# 
-# # first contrast
-# contrast_t2_vengeful_rumin_z <-
-#   lmtp_contrast(t2_vengeful_rumin_z,
-#                 ref = t2_vengeful_rumin_z_null,
-#                 type = "additive")
-# 
-# tab_contrast_t2_vengeful_rumin_z <-
-#   margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
-#                   scale = "RD",
-#                   new_name = "Vengefulness (forgiveness)")
-# 
-# 
-# out_tab_contrast_t2_vengeful_rumin_z <-
-#   lmtp_evalue_tab(tab_contrast_t2_vengeful_rumin_z,
-#                   scale = c("RD"))
-# 
-# out_tab_contrast_t2_vengeful_rumin_z
-# 
-# 
-# # second contrast
-# contrast_t2_vengeful_rumin_z_1 <-
-#   lmtp_contrast(t2_vengeful_rumin_z_1,
-#                 ref = t2_vengeful_rumin_z_null,
-#                 type = "additive")
-# 
-# tab_contrast_t2_vengeful_rumin_z_1  <-
-#   margot_tab_lmtp(contrast_t2_vengeful_rumin_z_1 ,
-#                   scale = "RD",
-#                   new_name = "Vengefulness (forgiveness")
-# 
-# 
-# out_tab_contrast_t2_vengeful_rumin_z_1  <-
-#   lmtp_evalue_tab(tab_contrast_t2_vengeful_rumin_z_1 ,
-#                   scale = c("RD"))
-# 
-# out_tab_contrast_t2_vengeful_rumin_z_1 
+# vengence / forgive
+t2_vengeful_rumin_z <- here_read("t2_vengeful_rumin_z")
+t2_vengeful_rumin_z_1 <- here_read("t2_vengeful_rumin_z_1")
+
+t2_vengeful_rumin_z_null <-
+  here_read("t2_vengeful_rumin_z_null")
+
+# first contrast
+contrast_t2_vengeful_rumin_z <-
+  lmtp_contrast(t2_vengeful_rumin_z,
+                ref = t2_vengeful_rumin_z_null,
+                type = "additive")
+
+tab_contrast_t2_vengeful_rumin_z <-
+  margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
+                  scale = "RD",
+                  new_name = "Vengefulness (forgiveness)")
+
+
+out_tab_contrast_t2_vengeful_rumin_z <-
+  lmtp_evalue_tab(tab_contrast_t2_vengeful_rumin_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_vengeful_rumin_z
+
+
+# second contrast
+contrast_t2_vengeful_rumin_z_1 <-
+  lmtp_contrast(t2_vengeful_rumin_z_1,
+                ref = t2_vengeful_rumin_z_null,
+                type = "additive")
+
+tab_contrast_t2_vengeful_rumin_z_1  <-
+  margot_tab_lmtp(contrast_t2_vengeful_rumin_z_1 ,
+                  scale = "RD",
+                  new_name = "Vengefulness (forgiveness")
+
+
+out_tab_contrast_t2_vengeful_rumin_z_1  <-
+  lmtp_evalue_tab(tab_contrast_t2_vengeful_rumin_z_1 ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_vengeful_rumin_z_1
 # 
 
 # pwb your health
@@ -5307,7 +5300,7 @@ tab_body <- rbind(
 tab_ego <- rbind(
   out_tab_contrast_t2_power_no_control_composite_z,
   out_tab_contrast_t2_self_esteem_z,
-  out_tab_contrast_t2_perfectionism_z,
+ # out_tab_contrast_t2_perfectionism_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
   out_tab_contrast_t2_emotion_regulation_out_control_z,
@@ -5317,7 +5310,7 @@ tab_ego <- rbind(
 
 tab_reflective <- rbind(
   out_tab_contrast_t2_gratitude_z,
-#  out_tab_contrast_t2_vengeful_rumin_z,
+  out_tab_contrast_t2_vengeful_rumin_z,
   out_tab_contrast_t2_pwb_your_health_z,
   out_tab_contrast_t2_pwb_your_future_security_z,
   out_tab_contrast_t2_pwb_your_relationships_z,
@@ -5379,7 +5372,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Forgiveness: shift all below average to average, N = 34,749"
+sub_title = "Perfectionism: shift all below average to average, N = 34,762"
 
 
 # graph health
@@ -5408,8 +5401,8 @@ dev.off()
 ggsave(
   plot_group_tab_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health.png",
   device = 'png',
@@ -5423,7 +5416,7 @@ ggsave(
 plot_group_tab_body <- margot_plot(
   group_tab_body,
   type = "RD",
-  title = "Body effects",
+  title = "Embodied effects",
   subtitle = sub_title,
   xlab = "",
   ylab = "",
@@ -5444,8 +5437,8 @@ plot_group_tab_body <- margot_plot(
 ggsave(
   plot_group_tab_body,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body.png",
   device = 'png',
@@ -5482,8 +5475,8 @@ plot_group_tab_ego
 ggsave(
   plot_group_tab_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_ego.png",
   device = 'png',
@@ -5519,8 +5512,8 @@ plot_group_tab_reflective
 ggsave(
   plot_group_tab_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_reflective.png",
   device = 'png',
@@ -5555,8 +5548,8 @@ plot_group_tab_social
 ggsave(
   plot_group_tab_social,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_social.png",
   device = 'png',
@@ -5603,7 +5596,7 @@ tab_ego_1  <- rbind(
 
 tab_reflective_1 <- rbind(
   out_tab_contrast_t2_gratitude_z_1,
- # out_tab_contrast_t2_vengeful_rumin_z_1,
+  # out_tab_contrast_t2_vengeful_rumin_z_1,
   out_tab_contrast_t2_pwb_your_health_z_1,
   out_tab_contrast_t2_pwb_your_future_security_z_1,
   out_tab_contrast_t2_pwb_your_relationships_z_1,
@@ -5665,7 +5658,7 @@ group_tab_social_1 <- here_read("group_tab_social_1")
 
 # check N
 N
-sub_title_1 = "Forgiveness: shift + 1 point everyone (up to max 7), N = 34,749"
+sub_title_1 = "Perfectionism: shift + 1 point everyone (up to max 7), N = 34,762"
 
 
 # graph health
@@ -5694,8 +5687,8 @@ dev.off()
 ggsave(
   plot_group_tab_health_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health_1.png",
   device = 'png',
@@ -5709,7 +5702,7 @@ ggsave(
 plot_group_tab_body_1 <- margot_plot(
   group_tab_body_1,
   type = "RD",
-  title = "Body effects",
+  title = "Embodied effects",
   subtitle = sub_title_1,
   xlab = "",
   ylab = "",
@@ -5731,8 +5724,8 @@ plot_group_tab_body_1
 ggsave(
   plot_group_tab_body_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body_1.png",
   device = 'png',
@@ -5769,8 +5762,8 @@ plot_group_tab_ego_1
 ggsave(
   plot_group_tab_ego_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_ego_1.png",
   device = 'png',
@@ -5806,8 +5799,8 @@ plot_group_tab_reflective_1
 ggsave(
   plot_group_tab_reflective_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_reflective_1.png",
   device = 'png',
@@ -5842,8 +5835,8 @@ plot_group_tab_social_1
 ggsave(
   plot_group_tab_social_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_social_1.png",
   device = 'png',
@@ -5851,3 +5844,4 @@ ggsave(
   dpi = 600
 )
 dev.off()
+
