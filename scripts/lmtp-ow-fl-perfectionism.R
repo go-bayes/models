@@ -1,7 +1,7 @@
 # OCT 1 2023
 # joseph bulbulia : joseph.bulbulia@gmail.com
 # outcome-wide-analysis-template
-
+# note that the shift up function results are save in :/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-perfectionism
 # PERFECTIONISM
 
 
@@ -47,7 +47,7 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-perfectionism"
+    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-perfectionism-2"
   )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
@@ -70,7 +70,7 @@ exposure_var = c("perfectionism", "not_lost") #
 
 #  move to mean
 f <- function(data, trt) {
-  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+  ifelse(data[[trt]] > 0, 0,  data[[trt]])
 }
 
 
@@ -654,8 +654,8 @@ mean_exposure <- mean(dt_19$perfectionism,
                       na.rm = TRUE)
 mean_exposure
 
-max_score <- max(dt_19$perfectionism, na.rm = TRUE)
-max_score
+min_score <- max(dt_19$perfectionism, na.rm = TRUE)
+min_score
 
 sd_exposure <- sd(dt_19$perfectionism,
                   na.rm = TRUE)
@@ -673,7 +673,7 @@ one_point_in_sd_units
 # only use this function for raw scores
 
 f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
 }
 
 
@@ -685,7 +685,7 @@ dev.off()
 
 
 # check sample 
-N <-n_unique(dat_long$id) #34749 
+N <-n_unique(dat_long$id) #34762 
 N
 
 # double check path
