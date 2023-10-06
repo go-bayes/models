@@ -650,12 +650,15 @@ hist(dt_19$perfectionism)
 table(dt_19$perfectionism)
 dev.off()
 
-mean_exposure <- mean(dt_19$perfectionism,
-                      na.rm = TRUE)
+dt_19$perfectionism_z <- scale(dt_19$perfectionism)
+
+
+mean_exposure = 0
 mean_exposure
 
-min_score <- max(dt_19$perfectionism, na.rm = TRUE)
+min_score <- min(dt_19$perfectionism_z, na.rm = TRUE) # make sure his is SD units
 min_score
+
 
 sd_exposure <- sd(dt_19$perfectionism,
                   na.rm = TRUE)
@@ -676,8 +679,8 @@ f_1 <- function(data, trt) {
   ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
 }
 
-
-
+f
+f_1
 
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
@@ -695,6 +698,7 @@ push_mods
 colnames(dat)
 
 dev.off()
+
 # check
 dt_check_exposure <- dat_long |> filter(wave == 1| wave == 2)
 
@@ -814,6 +818,7 @@ baseline_vars = c(
 
 # check
 baseline_vars
+
 
 # check
 exposure_var
@@ -1057,6 +1062,8 @@ print(W)
 # check shift
 f
 
+f_1
+min_score + one_point_in_sd_units
 
 # make test data (if needed)
 df_clean_test <- df_clean |>
@@ -5372,7 +5379,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Perfectionism: shift all below average to average, N = 34,762"
+sub_title = "Perfectionism: shift all above average to average, N = 34,762"
 
 
 # graph health
@@ -5586,7 +5593,7 @@ tab_body_1  <- rbind(
 tab_ego_1  <- rbind(
   out_tab_contrast_t2_power_no_control_composite_z_1 ,
   out_tab_contrast_t2_self_esteem_z_1,
-  out_tab_contrast_t2_perfectionism_z_1,
+ # out_tab_contrast_t2_perfectionism_z_1,
   out_tab_contrast_t2_self_control_have_lots_z_1,
   out_tab_contrast_t2_self_control_wish_more_reversed_z_1,
   out_tab_contrast_t2_emotion_regulation_out_control_z_1,
@@ -5652,15 +5659,15 @@ group_tab_body_1 <- here_read("group_tab_body_1")
 group_tab_ego_1 <- here_read("group_tab_ego_1")
 group_tab_reflective_1 <- here_read("group_tab_reflective_1")
 group_tab_social_1 <- here_read("group_tab_social_1")
-
+group_tab_social_1
 
 # create plots -------------------------------------------------------------
 
 # check N
 N
-sub_title_1 = "Perfectionism: shift + 1 point everyone (up to max 7), N = 34,762"
+sub_title_1 = "Perfectionism: shift - 1 point everyone (up to min 1), N = 34,762"
 
-
+f_1
 # graph health
 plot_group_tab_health_1 <- margot_plot(
   group_tab_health_1,
@@ -5771,7 +5778,7 @@ ggsave(
   dpi = 600
 )
 
-plot_group_tab_ego
+plot_group_tab_ego_1
 
 # graph reflective
 plot_group_tab_reflective_1 <- margot_plot(
