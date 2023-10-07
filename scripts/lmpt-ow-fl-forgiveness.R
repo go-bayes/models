@@ -644,20 +644,24 @@ mutate(
 # eyeball distribution
 # table(dat_long$wave)
 dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 1)
+  filter(year_measured == 1 & wave == 1) |> 
+  mutate(forgiveness_z = scale(forgiveness))
 
-hist(dt_19$forgiveness)
-table(dt_19$forgiveness)
+hist(dt_19$forgiveness_z)
+table(dt_19$forgiveness_z)
 dev.off()
 
 mean_exposure <- mean(dt_19$forgiveness,
                       na.rm = TRUE)
+
+# just to view, do not use in function
 mean_exposure
 
-max_score <- max(dt_19$forgiveness, na.rm = TRUE)
+# make sure to use the sd
+max_score <- max(dt_19$forgiveness_z, na.rm = TRUE)
 max_score
 
-sd_exposure <- sd(dt_19$forgiveness,
+sd_exposure <- sd(d_19$forgiveness,
                   na.rm = TRUE)
 sd_exposure
 
@@ -676,8 +680,13 @@ f_1 <- function(data, trt) {
   ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
 }
 
+# check function logic
+max_score - one_point_in_sd_units
 
+# make sure positions align.
+table(dt_19$forgiveness_z)
 
+table(dt_19$forgiveness)
 
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
@@ -5778,7 +5787,7 @@ ggsave(
   dpi = 600
 )
 
-plot_group_tab_ego
+plot_group_tab_ego_1
 
 # graph reflective
 plot_group_tab_reflective_1 <- margot_plot(
