@@ -614,8 +614,7 @@ dat_long  <- dat |>
   droplevels() |>
   ungroup() %>%
   mutate(time = as.numeric(wave)) |>
-  mutate(wave = time) |>
-  arrange(id, wave) |>
+  rename(wave = time) |>
   arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
@@ -639,6 +638,85 @@ mutate(
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
+
+
+
+
+
+
+# factors 
+#
+# dt_only_k6 <- dt_19 |> select(kessler_depressed, kessler_effort,kessler_hopeless,
+#                                  kessler_worthless, kessler_nervous,
+#                                  kessler_restless)
+#
+#
+# # check factor structure
+# performance::check_factorstructure(dt_only_k6)
+#
+# # explore a factor structure made of 3 latent variables
+# efa <- psych::fa(dt_only_k6, nfactors = 2) %>%
+#   model_parameters(sort = TRUE, threshold = "max")
+#
+# efa
+#
+#
+# n <- n_factors(dt_only_k6)
+#
+# # plot
+# plot(n) + theme_classic()
+#
+# # CFA
+# part_data <- datawizard::data_partition(dt_only_k6, traing_proportion = .7, seed = seed)
+#
+#
+# # set up training data
+# training <- part_data$p_0.7
+# test <- part_data$test
+#
+#
+# # one factor model
+# structure_k6_one <- psych::fa(training, nfactors = 1) |>
+#   efa_to_cfa()
+#
+# # two factor model model
+# structure_k6_two <- psych::fa(training, nfactors = 2) |>
+#   efa_to_cfa()
+#
+# # three factor model
+# structure_k6_three <- psych::fa(training, nfactors = 3) %>%
+#   efa_to_cfa()
+#
+# # inspect models
+# structure_k6_one
+# structure_k6_two
+# structure_k6_three
+#
+#
+# # Next we perform the confirmatory factor analysis.
+#
+#
+# one_latent <-
+#   suppressWarnings(lavaan::cfa(structure_k6_one, data = test))
+#
+# # two latents model
+# two_latents <-
+#   suppressWarnings(lavaan::cfa(structure_k6_two, data = test))
+#
+# # three latents model
+# three_latents <-
+#   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
+#
+#
+# # compare models
+# compare <-
+#   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
+#
+# # view as html table
+# as.data.frame(compare) |>
+#   kbl(format = "markdown")
+#
+
 
 
 # eyeball distribution
