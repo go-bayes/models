@@ -5697,7 +5697,7 @@ plot_group_tab_health_1 <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
-plot_group_tab_health_1
+plot_group_tab_health+ plot_group_tab_health_1
 dev.off()
 # save graph
 ggsave(
@@ -5735,7 +5735,7 @@ plot_group_tab_body_1 <- margot_plot(
   x_lim_hi =  .5
 )
 
-plot_group_tab_body_1
+plot_group_tab_body + plot_group_tab_body_1
 # save graph
 ggsave(
   plot_group_tab_body_1,
@@ -5774,6 +5774,9 @@ plot_group_tab_ego_1 <- margot_plot(
 )
 plot_group_tab_ego_1
 
+
+plot_group_tab_ego + plot_group_tab_ego_1
+
 # save graph
 ggsave(
   plot_group_tab_ego_1,
@@ -5809,7 +5812,7 @@ plot_group_tab_reflective_1 <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
-plot_group_tab_reflective_1
+plot_group_tab_reflective + plot_group_tab_reflective_1
 
 # save graph
 ggsave(
@@ -5845,7 +5848,7 @@ plot_group_tab_social_1 <- margot_plot(
   x_lim_hi =  .5
 )
 
-plot_group_tab_social_1
+
 
 # save graph
 ggsave(
@@ -5860,3 +5863,7 @@ ggsave(
   dpi = 600
 )
 dev.off()
+
+
+plot_group_tab_social + plot_group_tab_social_1
+

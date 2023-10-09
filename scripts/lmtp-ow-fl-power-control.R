@@ -616,7 +616,6 @@ dat_long  <- dat |>
   mutate(time = as.numeric(wave)) |>
   mutate(wave = time) |>
   arrange(id, wave) |>
-  arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
   #     religion_church,
@@ -643,10 +642,15 @@ mutate(
 
 # eyeball distribution
 # table(dat_long$wave)
+
+table( dat_long$wave )
 dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 1)
+  filter(year_measured == 1 & wave == 2) |> 
+  mutate(power_no_control_composite_reversed_z = scale( power_no_control_composite_reversed))
 
 hist(dt_19$power_no_control_composite_reversed)
+hist(dt_19$power_no_control_composite_reversed_z)
+
 table(dt_19$power_no_control_composite_reversed)
 
 
@@ -654,7 +658,9 @@ mean_exposure <- mean(dt_19$power_no_control_composite_reversed,
                       na.rm = TRUE)
 mean_exposure
 
-max_score <- max(dt_19$permeability_individual, na.rm = TRUE)
+# make sure this is a z score
+max_score <- max(dt_19$power_no_control_composite_reversed_z, na.rm = TRUE)
+max_score
 
 sd_exposure <- sd(dt_19$power_no_control_composite_reversed,
                   na.rm = TRUE)
@@ -1053,6 +1059,9 @@ print(W)
 # check shift
 f
 
+f_1
+
+max_score
 
 # make test data (if needed)
 df_clean_test <- df_clean |>
@@ -1861,7 +1870,7 @@ t2_kessler_latent_depression_z <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-f
+
 
 t2_kessler_latent_depression_z
 here_save(t2_kessler_latent_depression_z,
@@ -2000,6 +2009,8 @@ names_base_t2_rumination_z <-
                          baseline_vars = baseline_vars,
                          outcome = "t2_rumination_z")
 names_base_t2_rumination_z
+
+
 # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
 t2_rumination_z <- lmtp_tmle(
   data = df_clean,
