@@ -722,7 +722,7 @@ mutate(
 # eyeball distribution
 # table(dat_long$wave)
 dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 1) |> 
+  filter(year_measured == 2 & wave == 1) |> 
   mutate(forgiveness_z = scale(forgiveness))
 
 hist(dt_19$forgiveness_z)

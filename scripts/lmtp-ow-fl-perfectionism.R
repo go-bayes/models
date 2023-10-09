@@ -644,7 +644,7 @@ mutate(
 # eyeball distribution
 # table(dat_long$wave)
 dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 1)
+  filter(year_measured == 2 & wave == 1)
 
 hist(dt_19$perfectionism)
 table(dt_19$perfectionism)
