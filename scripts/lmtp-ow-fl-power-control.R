@@ -4256,10 +4256,15 @@ contrast_t2_rumination_z <-
                 type = "additive")
 
 tab_contrast_t2_rumination_z <-
-  margot_tab_lmtp(contrast_t2_rumination_z ,
+  margot_tab_lmtp(contrast_t2_rumination_z,
                   scale = "RD",
                   new_name = "Rumination")
 
+out_tab_contrast_t2_rumination_z<-
+  lmtp_evalue_tab(tab_contrast_t2_rumination_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_rumination_z
 
 # second contrast
 
@@ -4274,7 +4279,7 @@ tab_contrast_t2_rumination_z_1 <-
                   new_name = "Rumination")
 
 
-out_tab_contrast_t2_rumination_z_1 <-
+out_tab_contrast_t2_rumination_z_1<-
   lmtp_evalue_tab(tab_contrast_t2_rumination_z_1,
                   scale = c("RD"))
 
@@ -5358,8 +5363,8 @@ dev.off()
 ggsave(
   plot_group_tab_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health.png",
   device = 'png',
@@ -5389,13 +5394,13 @@ plot_group_tab_body <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
-
+plot_group_tab_body
 # save graph
 ggsave(
   plot_group_tab_body,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body.png",
   device = 'png',
@@ -5404,7 +5409,7 @@ ggsave(
 )
 
 
-plot_group_tab_body
+
 
 # graph ego
 plot_group_tab_ego <- margot_plot(
@@ -5432,8 +5437,8 @@ plot_group_tab_ego
 ggsave(
   plot_group_tab_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_ego.png",
   device = 'png',
@@ -5469,8 +5474,8 @@ plot_group_tab_reflective
 ggsave(
   plot_group_tab_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_reflective.png",
   device = 'png',
@@ -5505,8 +5510,8 @@ plot_group_tab_social
 ggsave(
   plot_group_tab_social,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_social.png",
   device = 'png',
@@ -5603,7 +5608,6 @@ group_tab_social_1 <- group_tab(tab_social_1, type = "RD")
 # save
 here_save(group_tab_social_1, "group_tab_social_1")
 
-
 group_tab_health_1 <- here_read("group_tab_health_1")
 group_tab_body_1 <- here_read("group_tab_body_1")
 group_tab_ego_1 <- here_read("group_tab_ego_1")
@@ -5644,8 +5648,8 @@ dev.off()
 ggsave(
   plot_group_tab_health_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health_1.png",
   device = 'png',
@@ -5681,8 +5685,8 @@ plot_group_tab_body_1
 ggsave(
   plot_group_tab_body_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body_1.png",
   device = 'png',
@@ -5719,8 +5723,8 @@ plot_group_tab_ego_1
 ggsave(
   plot_group_tab_ego_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_ego_1.png",
   device = 'png',
@@ -5756,8 +5760,8 @@ plot_group_tab_reflective_1
 ggsave(
   plot_group_tab_reflective_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_reflective_1.png",
   device = 'png',
@@ -5792,8 +5796,8 @@ plot_group_tab_social_1
 ggsave(
   plot_group_tab_social_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_social_1.png",
   device = 'png',
@@ -5801,3 +5805,105 @@ ggsave(
   dpi = 600
 )
 dev.off()
+
+
+
+# comparative intervention graphs -----------------------------------------
+
+# combo graphs
+
+plot_compare_health <- plot_group_tab_health + plot_group_tab_health_1 + plot_annotation(title = 
+                                                                                           "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_health
+
+ggsave(
+  plot_compare_health,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_compare_health.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+plot_compare_body <- plot_group_tab_body + plot_group_tab_body_1  + plot_annotation(title = 
+                                                                                      "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_body
+ggsave(
+  plot_compare_body,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_compare_body.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+
+plot_compare_ego <- plot_group_tab_ego + plot_group_tab_ego_1+ plot_annotation(title = 
+                                                                                 "Shift Intervention Comparisions", tag_level = "A")
+
+
+plot_compare_ego
+ggsave(
+  plot_compare_ego,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_compare_ego.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+
+plot_compare_reflective <- plot_group_tab_reflective + plot_group_tab_reflective_1+ plot_annotation(title = 
+                                                                                                      "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_reflective
+ggsave(
+  plot_compare_reflective,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_compare_reflective.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+
+
+plot_compare_social  <-plot_group_tab_social + plot_group_tab_social_1+ plot_annotation(title = 
+                                                                                          "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_social
+ggsave(
+  plot_compare_social,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_compare_social.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
