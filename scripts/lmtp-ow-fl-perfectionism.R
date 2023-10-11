@@ -5852,3 +5852,106 @@ ggsave(
 )
 dev.off()
 
+
+
+
+# comparative intervention graphs -----------------------------------------
+
+# combo graphs
+
+plot_compare_health <- plot_group_tab_health + plot_group_tab_health_1 + plot_annotation(title = 
+                                                                                           "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_health
+ggsave(
+  plot_compare_health,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_compare_health.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+plot_compare_body <- plot_group_tab_body + plot_group_tab_body_1  + plot_annotation(title = 
+                                                                                      "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_body
+ggsave(
+  plot_compare_body,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_compare_body.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+
+plot_compare_ego <- plot_group_tab_ego + plot_group_tab_ego_1+ plot_annotation(title = 
+                                                                                 "Shift Intervention Comparisions", tag_level = "A")
+
+
+plot_compare_ego
+ggsave(
+  plot_compare_ego,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_compare_ego.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+
+plot_compare_reflective <- plot_group_tab_reflective + plot_group_tab_reflective_1+ plot_annotation(title = 
+                                                                                                      "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_reflective
+ggsave(
+  plot_compare_reflective,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_compare_reflective.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+
+
+plot_compare_social  <-plot_group_tab_social + plot_group_tab_social_1+ plot_annotation(title = 
+                                                                                          "Shift Intervention Comparisions", tag_level = "A")
+
+plot_compare_social
+ggsave(
+  plot_compare_social,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_compare_social.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
+
