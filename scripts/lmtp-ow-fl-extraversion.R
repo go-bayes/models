@@ -69,10 +69,6 @@ exposure_var = c("extraversion", "not_lost") #
 # shift one pont up if under 6
 # f_1 <- function (data, trt) data[[trt]] + 1
 
-#  move to mean
-f <- function(data, trt) {
-  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
-}
 
 
 # see second function below
@@ -739,6 +735,10 @@ mean_exposure <- mean(dt_19$extraversion,
 mean_exposure
 
 # make sure to use the sd
+
+min_score <- min(dt_19$extraversion_z, na.rm = TRUE)
+min_score
+
 max_score <- max(dt_19$extraversion_z, na.rm = TRUE)
 max_score
 
@@ -754,12 +754,21 @@ one_point_in_sd_units
 
 
 
+# Decrease by one point
+f <- function(data, trt) {
+  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
+}
+
+
+
 #  increase everyone by one point, contrasted with what they would be anyway.
 # only use this function for raw scores
 
 f_1 <- function(data, trt) {
   ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
 }
+
+
 
 # check function logic
 max_score - one_point_in_sd_units
@@ -1221,6 +1230,9 @@ push_mods
 #   return(final_cols)
 # }
 
+baseline_vars
+
+f
 
 names_base_t2_smoker_binary <-
   select_and_rename_cols(names_base = names_base,
@@ -5506,7 +5518,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Extraversion: shift all below average to average, N = 34,189"
+sub_title_1 = "Extraversion: shift - 1 point everyone (down to min 7), N = 34,189"
 
 # graph health
 plot_group_tab_health <- margot_plot(
