@@ -61,7 +61,7 @@ nzavs_exposure <- "religion_identification_level"
 
 # define exposures --------------------------------------------------------
 # define exposure
-A <- "t1_religion_identification_level_z"
+A <- "t1_religion_identification_level"
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
 exposure_var = c("religion_identification_level", "not_lost") #
@@ -82,8 +82,9 @@ exposure_var = c("religion_identification_level", "not_lost") #
 #   ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
 # }
 
+# one point change
 f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + one_point, data[[trt]] - one_point,  min_score)
+  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
 }
 
 
@@ -92,14 +93,17 @@ f <- function(data, trt) {
 # only use this function for raw scores
 
 f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point, data[[trt]] + one_point,  max_score)
+  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
 }
 
 
-# extreme estimands
+# extreme estimands (for comparison)
 
 f_all_max <- function (data, trt) data[[trt]] == max_score
 f_all_min <- function (data, trt) data[[trt]] == min_score
+
+
+
 
 
 # see second function below
@@ -756,11 +760,6 @@ dt_19 <- dat_long |>
   filter(year_measured == 1 & wave == 2019) |> 
   mutate(religion_identification_level_z = scale(religion_identification_level))
 
-# eyeball distribution
-# table(dat_long$wave)
-dt_19 <- dat_long |> filter(wave == 2019) |> 
-  mutate(perfectionism_z = scale(perfectionism)) |> 
-  mutate(perfectionism_reponses = round(perfectionism, 0))
 
 hist(dt_19$religion_identification_level_z)
 hist(dt_19$religion_identification_level)
@@ -823,14 +822,15 @@ max_score
 
 # one_point_in_sd_units <- 1/sd_exposure
 # one_point_in_sd_units
-one_point <- 1
+
 
 push_mods
 
 nzavs_exposure
+
 # use function
 # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source("/Users/joseph/GIT/templates/functions/funs.R")
+#source("/Users/joseph/GIT/templates/functions/funs.R")
 graph_density_of_exposure <- create_density_sd(dt_19, nzavs_exposure)
 graph_density_of_exposure
 
@@ -1089,14 +1089,13 @@ naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
 dev.off()
 
 
-N
 #check must be a dataframe
 str(prep_coop_all)
 nrow(prep_coop_all)
 colnames(prep_coop_all)
 prep_coop_all <- as.data.frame(prep_coop_all)
 
-here_save("prep_coop_all")
+
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
@@ -1117,7 +1116,6 @@ head(df_wide_censored)
 dim(df_wide_censored)
 str(df_wide_censored)
 
-A
 # spit and shine
 df_clean <- df_wide_censored %>%
   mutate(t2_na_flag = rowSums(is.na(select(
@@ -1134,17 +1132,19 @@ df_clean <- df_wide_censored %>%
         !t0_not_lost &
         !t1_not_lost &
         !t0_sample_weights &
-        !t0_smoker_binary,       
+        !t0_smoker_binary, # &
       ~ scale(.x),
       .names = "{col}_z"
     )
-  ) |>
+  ) |> 
   select(
     where(is.factor),
     t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
     #  t1_permeability_individual, # make sure to change for each study
+    # t0_religion_identification_level,
+    t1_religion_identification_level,
     t1_not_lost,
     t2_smoker_binary,
     ends_with("_z")
@@ -1174,6 +1174,7 @@ df_clean <- as.data.frame(df_clean)
 
 #check n
 nrow(df_clean)
+
 
 colnames(df_clean)
 # get names
@@ -1212,7 +1213,9 @@ print(W)
 f
 
 f_1
-min_score + one_point
+
+min_score + 1
+max_score -1
 
 # make test data (if needed)
 df_clean_test <- df_clean |>
@@ -1239,7 +1242,8 @@ df_clean_test <- df_clean |>
 #
 #   return(final_cols)
 # }
-
+baseline_vars
+names_base
 
 names_base_t2_smoker_binary <-
   select_and_rename_cols(names_base = names_base,
@@ -2815,83 +2819,79 @@ here_save(
 
 
 
-# names_base_t2_perfectionism_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_perfectionism_z")
-# names_base_t2_perfectionism_z
+names_base_t2_perfectionism_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_perfectionism_z")
+names_base_t2_perfectionism_z
 
 # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # I am hardly ever satisfied with my performance.
-# t2_perfectionism_z <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_perfectionism_z,
-#   outcome = "t2_perfectionism_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# 
-# t2_perfectionism_z
-# here_save(t2_perfectionism_z, "t2_perfectionism_z")
-# 
-# 
-# 
+t2_perfectionism_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_perfectionism_z,
+  outcome = "t2_perfectionism_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+
+t2_perfectionism_z
+here_save(t2_perfectionism_z, "t2_perfectionism_z")
+#
+#
+#
 # # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # # I am hardly ever satisfied with my performance.
-# t2_perfectionism_z_1 <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_perfectionism_z,
-#   outcome = "t2_perfectionism_z",
-#   cens = C,
-#   shift = f_1,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# 
-# t2_perfectionism_z_1
-# here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
-# 
-# 
-# 
-# 
-# 
-# 
+t2_perfectionism_z_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_perfectionism_z,
+  outcome = "t2_perfectionism_z",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+#
+#
+t2_perfectionism_z_1
+here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
+
+#
 # # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # # I am hardly ever satisfied with my performance.
-# t2_perfectionism_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_perfectionism_z,
-#   outcome = "t2_perfectionism_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_perfectionism_z_null
-# here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
+t2_perfectionism_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_perfectionism_z,
+  outcome = "t2_perfectionism_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_perfectionism_z_null
+here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
 
 
 
