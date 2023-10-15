@@ -605,7 +605,7 @@ dat_long  <- dat |>
     hours_exercise_log = log(hours_exercise + 1)
   ) |>
   dplyr::rename(sample_weights = w_gend_age_euro) |>
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
+  dplyr::mutate(sample_origin = as.factor( sample_origin_names_combined)) |>  #shorter name
   arrange(id, wave) |>
   droplevels() |>
   select(-h_18, -k_18, -h_19, -k_19) |>
@@ -637,6 +637,8 @@ mutate(
   data.frame()
 
 table(dat_long$time)
+table(dat_long$wave)
+
 
 N <- n_unique(dat_long$id)
 N
@@ -717,14 +719,14 @@ N
 
 
 
-# eyeball distribution
-# table(dat_long$wave)
+# eyeball distributi
+table(dat_long$wave)
 
 dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 2) |> 
+  filter(year_measured == 1 & wave == 2019) |> 
   mutate(extraversion_z = scale(extraversion))
 
-hist(dt_19$extraversion_z)
+table(dt_19$extraversion_z)
 hist(dt_19$extraversion)
 
 dev.off()
@@ -735,7 +737,7 @@ dev.off()
 mean_exposure <- mean(dt_19$extraversion,
                       na.rm = TRUE)
 
-
+mean_exposure
 # create histogram
 library(tidyverse)
 library(ggplot2)
@@ -744,91 +746,26 @@ library(ggplot2)
 library(tidyverse)
 library(ggplot2)
 
-# create_histogram_sd <- function(df, column_name, bin_width = NULL, num_bins = NULL) {
-#   
-#   # attempt to convert to numeric if not already
-#   col_data <- df[[column_name]]
-#   if (!is.numeric(col_data)) {
-#     stop("Column must be numeric or integer.")
-#   }
-#   
-#   # transform column to standard deviation units
-#   scaled_data <- scale(col_data)
-#   df <- df %>% mutate(scaled_data = as.vector(scaled_data))
-#   
-#   # calculate min and max after scaling
-#   min_score <- min(scaled_data, na.rm = TRUE)
-#   max_score <- max(scaled_data, na.rm = TRUE)
-#   
-#   # calculate additional margins for extending the limits
-#   margin_lower <- min_score - 1
-#   margin_upper <- max_score + 1
-#   
-#   # create histogram
-#   gg <- ggplot(df, aes(x = scaled_data)) +
-#     geom_histogram(aes(y = after_stat(density)), 
-#                    fill = "grey50", 
-#                    alpha = 0.7, 
-#                    binwidth = ifelse(is.null(bin_width), NA, bin_width), 
-#                    bins = ifelse(is.null(num_bins), NA, num_bins)) +
-#     geom_density(alpha = 0.2, fill = "#FF6666") +
-#     annotate("rect", xmin = min_score, xmax = min_score + 1, ymin = 0, ymax = Inf,
-#              fill = "blue", alpha = 0.4) +
-#     annotate("rect", xmin = max_score - 1, xmax = max_score, ymin = 0, ymax = Inf,
-#              fill = "red", alpha = 0.4) +
-#     coord_cartesian(xlim = c(margin_lower, margin_upper)) +
-#     theme_minimal()
-#   
-#   return(gg)
-# }
-# 
-# # 
-# create_density_sd <- function(df, column_name, title = NULL, subtitle = NULL) {
-#   
-#   # attempt to convert to numeric if not already
-#   col_data <- df[[column_name]]
-#   if (!is.numeric(col_data)) {
-#     stop("Column must be numeric or integer.")
-#   }
-#   
-#   # transform column to standard deviation units
-#   scaled_data <- scale(col_data)
-#   df <- df %>% mutate(scaled_data = as.vector(scaled_data))
-#   
-#   # calculate standard deviation for original data
-#   sd_exposure <- sd(col_data, na.rm = TRUE)
-#   one_point_in_sd_units <- 1 / sd_exposure
-#   
-#   # calculate min and max after scaling
-#   min_score <- min(scaled_data, na.rm = TRUE)
-#   max_score <- max(scaled_data, na.rm = TRUE)
-#   
-#   
-#   # create vertical lines
-#   vert_lines <- seq(min_score, max_score, by = one_point_in_sd_units)
-#   
-#   dynamic_title <- paste("Density of responses for", column_name, "showing lowest and highest responses on the scale")
-#   
-#   # create density plot
-#   gg <- ggplot(df, aes(x = scaled_data)) +
-#     geom_density(alpha = 0.2, fill = "lightblue4") +
-#     geom_vline(xintercept = vert_lines, colour = "black", linetype = "dotted") +  # corrected line
-#     annotate("rect", xmin = min_score, xmax = min_score + one_point_in_sd_units, ymin = 0, ymax = Inf,
-#              fill = "dodgerblue", alpha = 0.7) +
-#     annotate("rect", xmin = max_score - one_point_in_sd_units, xmax = max_score, ymin = 0, ymax = Inf,
-#              fill = "gold2", alpha = 0.7) +
-#     scale_x_continuous(name = paste(column_name, "_z_score")) +
-#     ggtitle(dynamic_title) +
-#     theme_minimal()
-#   
-#   return(gg)
-# }
 
 
 
 # use function
-create_density_sd(dt_19, "perfectionism")
-create_density_sd(dt_19, "extraversion")
+graph_density_of_exposure <- create_density_sd(dt_19, nzavs_exposure)
+graph_density_of_exposure
+ggsave(
+  graph_density_of_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "graph_density_of_exposure.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
 
 min(dt_19$kessler_depressed, na.rm=TRUE)
 table(dt_19$kessler_depressed)
@@ -1107,25 +1044,197 @@ outcome_vars = c(
 
 
 
+# 
+# # test models -------------------------------------------------------------
+# library(dplyr)
+# library(lme4)
+# 
+# 
+# # import necessary libraries
+# library(model_parameters)
+# 
+# run_ols <- function(dat, exposure, outcome, return_data = FALSE, sample_weights = NULL, new_name = NULL, 
+#                     default_vars = c(
+#                       "male",
+#                       "age",
+#                       "education_level_coarsen",
+#                       "eth_cat",
+#                       "nz_dep2018",
+#                       "nzsei13",
+#                       "born_nz",
+#                       "hlth_disability",
+#                       "kessler_latent_depression",
+#                       "kessler_latent_anxiety",
+#                       "total_siblings_factor",
+#                       "household_inc_log",
+#                       "partner",
+#                       "political_conservative",
+#                       "urban",
+#                       "children_num",
+#                       "hours_children_log",
+#                       "hours_work_log",
+#                       "hours_housework_log",
+#                       "hours_exercise_log",
+#                       "agreeableness",
+#                       "conscientiousness",
+#                       "extraversion",
+#                       "honesty_humility",
+#                       "openness",
+#                       "neuroticism",
+#                       "modesty",
+#                       "religion_church_round",
+#                       "religion_spiritual_identification",
+#                       "religion_identification_level"
+#                     )) {
+# 
+#   
+#   # prepare predictor variables, removing duplicates
+#   predictors <- unique(c(exposure, default_vars))
+#   
+#   # remove outcome from predictors if present
+#   predictors <- setdiff(predictors, outcome)
+#   
+#   # construct and run the OLS model
+#   formula_str <- paste(outcome, "~", paste(predictors, collapse = " + "))
+#   original_model <- lm(formula_str, data = dat, weights = sample_weights)
+#   
+#   # generate summary using model_parameters
+#   model_summary <- parameters::model_parameters(original_model)
+#   
+#   # make data frame
+#   model_summary_df <- as.data.frame(model_summary)
+#   
+#   # # extract coefficient and CI for exposure
+#   coef_exposure <- model_summary_df |> dplyr::filter(Parameter == exposure) |> select(c("Coefficient", "CI_low", "CI_high")) |> 
+#     dplyr::mutate(across(everything(), \(x) round(x, digits = 4))) |> rename(OLS_coefficient = Coefficient)
+#   
+#   rownames(coef_exposure)[1] <- paste0(new_name)
+#   
+#   # standardise model with refit
+#   model_summary_standardised <- parameters::model_parameters(original_model, standardise = "refit")
+#   
+#   # make data frame
+#   model_summary_standardised_df <- as.data.frame(model_summary_standardised)
+#   
+#   
+#   # # extract coefficient and CI for exposure in the standardised model
+#   coef_exposure_standardised <- model_summary_standardised_df |> dplyr::filter(Parameter == exposure) |> select(c("Coefficient", "CI_low", "CI_high")) |> 
+#     dplyr::mutate(across(everything(), \(x) round(x, digits = 4))) |>  rename(OLS_coefficient = Coefficient)
+# 
+#   rownames(coef_exposure_standardised)[1] <- paste0(new_name)
+#   
+#   
+#   # 
+#   # prepare the return list
+#   return_list <- list(
+#     "Original_Model" = original_model,
+#     "Model_Summary" = model_summary,
+#     "Coef_Exposure" = coef_exposure,
+#     "Coef_Exposure_Standardised" = coef_exposure_standardised
+#   )
+#   
+#   # include data if specified
+#   if (return_data) {
+#     return_list$Data <- dat
+#   }
+#   
+#   return(return_list)
+# }
+# 
+# 
+# 
+# 
+# run_lmer <- function(dat_long, time_var, exposure, outcome,  return_data = FALSE, sample_weights = NULL, new_name = NULL, default_vars = c(
+#   "male",
+#   "age",
+#   "education_level_coarsen",
+#   "eth_cat",
+#   "nz_dep2018",
+#   "nzsei13",
+#   "born_nz",
+#   "hlth_disability",
+#   "kessler_latent_depression",
+#   "kessler_latent_anxiety",
+#   "total_siblings_factor",
+#   "household_inc_log",
+#   "partner",
+#   "political_conservative",
+#   "urban",
+#   "children_num",
+#   "hours_children_log",
+#   "hours_work_log",
+#   "hours_housework_log",
+#   "hours_exercise_log",
+#   "agreeableness",
+#   "conscientiousness",
+#   "extraversion",
+#   "honesty_humility",
+#   "openness",
+#   "neuroticism",
+#   "modesty"
+# )) {
+#   # prepare predictor variables, removing duplicates
+#   predictors <- unique(c(exposure, default_vars))
+#   
+#   # remove outcome from predictors if present
+#   predictors <- setdiff(predictors, outcome)
+#   
+#   # construct and run the LME4 model
+#   formula_str <- paste(outcome, "~", paste(predictors, collapse = " + "), "+ (1|id)")
+#   original_model <- lmer(formula_str, data = dat_long, weights = sample_weights)
+#   
+#   
+#   # generate summary using model_parameters
+#   model_summary <- parameters::model_parameters(original_model, effects ="fixed")
+#   
+#   # make data frame
+#   model_summary_df <- as.data.frame(model_summary)
+#   
+#   # # extract coefficient and CI for exposure
+#   coef_exposure <- model_summary_df |> dplyr::filter(Parameter == exposure) |> select(c("Coefficient", "CI_low", "CI_high")) |> 
+#     dplyr::mutate(across(everything(), \(x) round(x, digits = 4))) |> rename(Multi_level_coefficient = Coefficient)
+#   
+#   rownames(coef_exposure)[1] <- paste0(new_name)
+#   
+#   # standardise model with refit
+#   model_summary_standardised <- parameters::model_parameters(original_model, standardise = "refit", effects ="fixed")
+#   
+#   # make data frame
+#   model_summary_standardised_df <- as.data.frame(model_summary_standardised)
+#   
+#   
+#   # # extract coefficient and CI for exposure in the standardised model
+#   coef_exposure_standardised <- model_summary_standardised_df |> dplyr::filter(Parameter == exposure) |> select(c("Coefficient", "CI_low", "CI_high")) |> 
+#     dplyr::mutate(across(everything(), \(x) round(x, digits = 4)))  |> rename(Multi_level_coefficient = Coefficient)
+#   
+#   rownames(coef_exposure_standardised)[1] <- paste0(new_name)
+#   
+#   # prepare the return list
+#   return_list <- list(
+#     "Original_Model" = original_model,
+#     "Model_Summary" = model_summary,
+#     "Coef_Exposure" = coef_exposure,
+#     "Coef_Exposure_Standardised" = coef_exposure_standardised
+#   )
+#   # prepare the return list
+#   return_list <- list(
+#     "Original_Model" = original_model,
+#     "Model_Summary" = model_summary,
+#     "Coef_Exposure" = coef_exposure,
+#     "Coef_Exposure_Standardised" = coef_exposure_standardised
+#   )
+#   
+#   # include data if specified
+#   if (return_data) {
+#     return_list$Data <- dat
+#   }
+#   
+#   return(return_list)
+# }
 
-# test models -------------------------------------------------------------
-library(dplyr)
-library(lme4)
 
 
 
-# test models
-dat_baseline = dat_long %>% filter(get(time_var) == 0)
-ols_results <- run_ols(dat_baseline,  exposure = "religion_church_round",  outcome = "perfectionism")
-model_parameters(ols_results,   standardize = "basic",
-)
-model_parameters(ols_results,  
-)
-
-plot(ols_results)
-lmer_results <- run_lmer(dat_long, time_var = "time", exposure = "religion_church_round", outcome ="perfectionism")
-lmer_results
-plot(lmer_results)
 
 # make data wide and impute baseline missing values -----------------------
 
@@ -1253,7 +1362,7 @@ df_clean <- df_wide_censored %>%
     t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
-    #  t1_permeability_individual, # make sure to change for each study
+    t1_extraversion, # make sure to change for each study
     t1_not_lost,
     t2_smoker_binary,
     ends_with("_z")
@@ -1354,7 +1463,6 @@ push_mods
 
 baseline_vars
 
-f
 
 names_base_t2_smoker_binary <-
   select_and_rename_cols(names_base = names_base,
@@ -2137,7 +2245,7 @@ t2_kessler_latent_depression_z <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-f
+
 
 t2_kessler_latent_depression_z
 here_save(t2_kessler_latent_depression_z,
@@ -5548,53 +5656,64 @@ out_tab_contrast_t2_belong_z_1
 # don't forget to report smoking
 
 # bind individual tables
+
+
 tab_health <- rbind(
-  out_tab_contrast_t2_sfhealth_your_health_z,
   out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_alcohol_frequency_z,
   out_tab_contrast_t2_alcohol_intensity_z,
+  out_tab_contrast_t2_bmi_z,
   out_tab_contrast_t2_hours_sleep_z,
-  out_tab_contrast_t2_bmi_z
+  out_tab_contrast_t2_sfhealth_your_health_z
 )
+tab_health
+
 
 tab_body <- rbind(
   out_tab_contrast_t2_bodysat_z,
-  out_tab_contrast_t2_kessler_latent_depression_z,
   out_tab_contrast_t2_kessler_latent_anxiety_z,
+  out_tab_contrast_t2_kessler_latent_depression_z,
   out_tab_contrast_t2_hlth_fatigue_z,
   out_tab_contrast_t2_rumination_z,
   out_tab_contrast_t2_sexual_satisfaction_z
 )
+tab_body
+
+
 
 tab_ego <- rbind(
-  out_tab_contrast_t2_power_no_control_composite_z,
-  out_tab_contrast_t2_self_esteem_z,
+  out_tab_contrast_t2_emotion_regulation_out_control_z,
+  out_tab_contrast_t2_permeability_individual_z,
   out_tab_contrast_t2_perfectionism_z,
+  out_tab_contrast_t2_power_no_control_composite_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
-  out_tab_contrast_t2_emotion_regulation_out_control_z,
-  out_tab_contrast_t2_permeability_individual_z
+  out_tab_contrast_t2_self_esteem_z
 )
+
+tab_ego
 
 
 tab_reflective <- rbind(
   out_tab_contrast_t2_gratitude_z,
-  out_tab_contrast_t2_vengeful_rumin_z,
-  out_tab_contrast_t2_pwb_your_health_z,
+  out_tab_contrast_t2_meaning_purpose_z,
+  out_tab_contrast_t2_meaning_sense_z,
   out_tab_contrast_t2_pwb_your_future_security_z,
+  out_tab_contrast_t2_pwb_your_health_z,
   out_tab_contrast_t2_pwb_your_relationships_z,
   out_tab_contrast_t2_pwb_standard_living_z,
-  #out_tab_contrast_t2_lifemeaning_z
-  out_tab_contrast_t2_meaning_purpose_z,
-  out_tab_contrast_t2_meaning_sense_z
+  out_tab_contrast_t2_vengeful_rumin_z
 )
+tab_reflective
 
 
 tab_social <- rbind(
-  out_tab_contrast_t2_support_z,
+  out_tab_contrast_t2_belong_z,
   out_tab_contrast_t2_neighbourhood_community_z,
-  out_tab_contrast_t2_belong_z
+  out_tab_contrast_t2_support_z
 )
+tab_social
+
 
 
 # make group table
@@ -5832,52 +5951,59 @@ dev.off()
 
 # bind individual tables
 tab_health_1 <- rbind(
-  out_tab_contrast_t2_sfhealth_your_health_z_1 ,
-  out_tab_contrast_t2_hours_exercise_log_z_1 ,
-  out_tab_contrast_t2_alcohol_frequency_z_1 ,
-  out_tab_contrast_t2_alcohol_intensity_z_1 ,
-  out_tab_contrast_t2_hours_sleep_z_1 ,
-  out_tab_contrast_t2_bmi_z_1 
+  out_tab_contrast_t2_hours_exercise_log_z_1,
+  out_tab_contrast_t2_alcohol_frequency_z_1,
+  out_tab_contrast_t2_alcohol_intensity_z_1,
+  out_tab_contrast_t2_bmi_z_1,
+  out_tab_contrast_t2_hours_sleep_z_1,
+  out_tab_contrast_t2_sfhealth_your_health_z_1
 )
+tab_health_1
 
-tab_body_1  <- rbind(
-  out_tab_contrast_t2_bodysat_z_1 ,
-  out_tab_contrast_t2_kessler_latent_depression_z_1 ,
-  out_tab_contrast_t2_kessler_latent_anxiety_z_1 ,
-  out_tab_contrast_t2_hlth_fatigue_z_1 ,
-  out_tab_contrast_t2_rumination_z_1 ,
-  out_tab_contrast_t2_sexual_satisfaction_z_1 
+
+tab_body_1 <- rbind(
+  out_tab_contrast_t2_bodysat_z_1,
+  out_tab_contrast_t2_kessler_latent_anxiety_z_1,
+  out_tab_contrast_t2_kessler_latent_depression_z_1,
+  out_tab_contrast_t2_hlth_fatigue_z_1,
+  out_tab_contrast_t2_rumination_z_1,
+  out_tab_contrast_t2_sexual_satisfaction_z_1
 )
+tab_body_1
 
-tab_ego_1  <- rbind(
-  out_tab_contrast_t2_power_no_control_composite_z_1 ,
-  out_tab_contrast_t2_self_esteem_z_1,
+
+tab_ego_1 <- rbind(
+  out_tab_contrast_t2_emotion_regulation_out_control_z_1,
+  out_tab_contrast_t2_permeability_individual_z_1,
   out_tab_contrast_t2_perfectionism_z_1,
+  out_tab_contrast_t2_power_no_control_composite_z_1,
   out_tab_contrast_t2_self_control_have_lots_z_1,
   out_tab_contrast_t2_self_control_wish_more_reversed_z_1,
-  out_tab_contrast_t2_emotion_regulation_out_control_z_1,
-  out_tab_contrast_t2_permeability_individual_z_1 
+  out_tab_contrast_t2_self_esteem_z_1
 )
+
+tab_ego_1
 
 
 tab_reflective_1 <- rbind(
   out_tab_contrast_t2_gratitude_z_1,
-  out_tab_contrast_t2_vengeful_rumin_z_1,
-  out_tab_contrast_t2_pwb_your_health_z_1,
+  out_tab_contrast_t2_meaning_purpose_z_1,
+  out_tab_contrast_t2_meaning_sense_z_1,
   out_tab_contrast_t2_pwb_your_future_security_z_1,
+  out_tab_contrast_t2_pwb_your_health_z_1,
   out_tab_contrast_t2_pwb_your_relationships_z_1,
   out_tab_contrast_t2_pwb_standard_living_z_1,
-  #out_tab_contrast_t2_lifemeaning_z_1
-  out_tab_contrast_t2_meaning_purpose_z_1,
-  out_tab_contrast_t2_meaning_sense_z_1
+  out_tab_contrast_t2_vengeful_rumin_z_1
 )
+tab_reflective_1
 
 
 tab_social_1 <- rbind(
-  out_tab_contrast_t2_support_z_1,
+  out_tab_contrast_t2_belong_z_1,
   out_tab_contrast_t2_neighbourhood_community_z_1,
-  out_tab_contrast_t2_belong_z_1
+  out_tab_contrast_t2_support_z_1
 )
+tab_social_1
 
 
 # make group table
@@ -5889,7 +6015,7 @@ here_save(group_tab_health_1, "group_tab_health_1")
 
 # make group table
 group_tab_body_1 <- group_tab(tab_body_1 , type = "RD")
-
+group_tab_body_1
 # save
 here_save(group_tab_body_1, "group_tab_body_1")
 
@@ -6211,5 +6337,394 @@ ggsave(
   dpi = 600
 )
 dev.off()
+
+
+
+# Non-causal-model-comparisons --------------------------------------------
+# set names
+source("/Users/joseph/GIT/templates/functions/funs.R")
+
+
+baseline_vars
+# set data (note we have missing variables in the longitudinal dataset)
+baseline_vars_sans <- setdiff(baseline_vars, "sample_weights")
+baseline_vars_sans_lme <- setdiff(baseline_vars, c("sample_weights", "religion_church_round", 
+                                                   "religion_spiritual_identification"))
+dat_baseline <- dat_long |> filter(wave == "2018")
+# set names
+
+baseline_vars_sans_lme
+# smoker ------------------------------------------------------------------
+
+
+names_base_t2_smoker_binary <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_smoker_binary")
+
+names_base_t2_smoker_binary
+
+baseline_vars_sans_lme<- c(baseline_vars_sans_lme)
+
+
+
+# regressions -------------------------------------------------------------
+
+# cross-sectional
+t2_smoker_binary_glm <- run_glm(dat_baseline, exposure = "extraversion",  outcome = "smoker", sample_weights_var = "sample_weights", new_name = "Smoker", family = "binomial",
+                                default_vars = baseline_vars_sans)
+t2_smoker_binary_glm
+
+# save
+here_save(t2_smoker_binary_glm,"t2_smoker_binary_glm")
+
+baseline_vars_sans_lme
+
+t2_smoker_binary_glmer <- run_glmer(dat_long, time_var = "time",  exposure = "extraversion",  
+                                    outcome = "smoker", sample_weights_var = "sample_weights", new_name = "Smoker", family = "poisson", default_vars = baseline_vars_sans_lme)
+
+t2_smoker_binary_glmer
+# save
+here_save(t2_smoker_binary_glmer,"t2_smoker_binary_glmer")
+
+
+t2_smoker_binary_cate <- run_glm(df_clean, exposure = "t1_extraversion",  outcome = "t2_smoker_binary", sample_weights_var = "t0_sample_weights", new_name = "Smoker",
+                               default_vars = names_base_t2_smoker_binary)
+
+t2_smoker_binary_cate
+here_save(t2_smoker_binary_cate,"t2_smoker_binary_cate")
+
+
+out_tab_contrast_t2_smoker_binary
+
+
+# alchohol frequency ------------------------------------------------------
+
+
+names_base_t2_alcohol_frequency_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_alcohol_frequency_z")
+names_base_t2_alcohol_frequency_z
+
+# alcohol intensity -------------------------------------------------------
+
+
+
+names_base_t2_alcohol_intensity_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_alcohol_intensity_z")
+names_base_t2_alcohol_intensity_z
+
+
+
+
+names_base_t2_sfhealth_your_health_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_sfhealth_your_health_z")
+names_base_t2_sfhealth_your_health_z
+
+
+
+names_base_t2_hours_exercise_log_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hours_exercise_log_z")
+names_base_t2_hours_exercise_log_z
+
+
+
+names_base_t2_hlth_sleep_hours_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hlth_sleep_hours_z")
+names_base_t2_hlth_sleep_hours_z
+
+
+
+
+
+names_base_t2_hlth_bmi_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hlth_bmi_z")
+names_base_t2_hlth_bmi_z
+
+
+# ego
+
+names_base_t2_bodysat_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_bodysat_z")
+names_base_t2_bodysat_z
+
+
+
+names_base_t2_kessler_latent_anxiety_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_kessler_latent_anxiety_z")
+
+
+names_base_t2_kessler_latent_depression_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_kessler_latent_depression_z")
+
+
+
+names_base_t2_hlth_fatigue_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hlth_fatigue_z")
+names_base_t2_hlth_fatigue_z
+
+
+
+
+names_base_t2_rumination_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_rumination_z")
+names_base_t2_rumination_z
+
+
+
+
+
+names_base_t2_sexual_satisfaction_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_sexual_satisfaction_z")
+names_base_t2_sexual_satisfaction_z
+
+
+
+
+# 
+names_base_t2_power_no_control_composite_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_power_no_control_composite_z")
+names_base_t2_power_no_control_composite_z
+
+
+
+names_base_t2_self_esteem_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_self_esteem_z")
+names_base_t2_self_esteem_z
+
+
+
+
+
+names_base_t2_self_control_have_lots_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_self_control_have_lots_z")
+names_base_t2_self_control_have_lots_z
+
+
+
+
+names_base_t2_self_control_wish_more_reversed_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_self_control_wish_more_reversed_z")
+names_base_t2_self_control_wish_more_reversed_z
+
+
+
+
+
+names_base_t2_permeability_individual_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_permeability_individual_z")
+names_base_t2_permeability_individual_z
+
+
+
+names_base_t2_emotion_regulation_out_control_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_emotion_regulation_out_control_z")
+names_base_t2_emotion_regulation_out_control_z
+
+
+
+
+
+names_base_t2_perfectionism_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_perfectionism_z")
+names_base_t2_perfectionism_z
+
+
+
+names_base_t2_gratitude_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_gratitude_z")
+names_base_t2_gratitude_z
+
+
+# 
+names_base_t2_vengeful_rumin_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_vengeful_rumin_z")
+names_base_t2_vengeful_rumin_z
+
+
+
+names_base_t2_pwb_your_health_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_your_health_z")
+names_base_t2_pwb_your_health_z
+
+
+
+
+names_base_t2_pwb_your_future_security_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_your_future_security_z")
+names_base_t2_pwb_your_future_security_z
+
+
+names_base_t2_pwb_your_relationships_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_your_relationships_z")
+names_base_t2_pwb_your_relationships_z
+
+
+
+
+names_base_t2_pwb_standard_living_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_standard_living_z")
+names_base_t2_pwb_standard_living_z
+
+
+
+names_base_t2_meaning_purpose_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_meaning_purpose_z")
+names_base_t2_meaning_purpose_z
+
+
+
+names_base_t2_meaning_sense_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_meaning_sense_z")
+names_base_t2_meaning_sense_z
+
+
+
+
+names_base_t2_lifesat_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_lifesat_z")
+names_base_t2_lifesat_z
+
+
+
+
+names_base_t2_support_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_support_z")
+names_base_t2_support_z
+
+
+
+
+
+names_base_t2_belong_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_belong_z")
+names_base_t2_belong_z
+
+
+
+names_base_t2_neighbourhood_community_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_neighbourhood_community_z")
+names_base_t2_neighbourhood_community_z
+
+
+
+
+
+# regression tables -------------------------------------------------------
+
+
+
+
+
+
+
+
+names_base_t2_support_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_support_z")
+names_base_t2_support_z
+
+
+
+
+names_base_t2_belong_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_belong_z")
+names_base_t2_belong_z
+
+head( df_clean$t0_sample_weights)
+
+cate_belong_results <- run_ols(df_clean, exposure = "t1_extraversion",  outcome = "t2_belong_z", sample_weights_var = "t0_sample_weights", new_name = "Social Belonging", z_transform = FALSE, 
+                          default_vars = names_base_t2_belong_z)
+
+cate_belong_results
+belong_results_lmer
+
+support_results_lmer <- run_lmer(dat_long,  time_var = "time", exposure = "extraversion",  outcome = "support", sample_weights_var = "sample_weights", new_name = "Social Support", z_transform = TRUE)
+belong_results_lmer <- run_lmer(dat_long,  time_var = "time", exposure = "extraversion",  outcome = "belong", sample_weights_var = "sample_weights", new_name = "Social Beloinging")
+support_results_lmer
+
+belong_results <- run_ols(dat_baseline, exposure = "extraversion",  outcome = "belong", sample_weights = "sample_weights", new_name = "Social Belonging", z_transform = FALSE)
+
+belong_results
+belong_results$Original_Model
+
+df_clean
+
+
+test0<-rbind( belong_results$Coef_Exposure,
+              support_results$Coef_Exposure)
+
+
+test2 <-rbind( belong_results_lmer$Coef_Exposure,
+               support_results_lmer$Coef_Exposure)
+
+
+
+out_tab_contrast_t2_support_z_1
+out_tab_contrast_t2_belong_z_1
 
 

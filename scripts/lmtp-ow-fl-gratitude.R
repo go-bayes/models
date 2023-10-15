@@ -575,7 +575,7 @@ dat_long  <- dat |>
   ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
   dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
                                                    !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
+  dplyr::mutate(sample_origin = as.factor( sample_origin_names_combined)) |>  #shorter name
   arrange(id) |>
   filter((wave == 2018 & year_measured == 1) |
            (wave == 2019 & year_measured == 1) |
@@ -5502,8 +5502,8 @@ dev.off()
 ggsave(
   plot_group_tab_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health.png",
   device = 'png',
@@ -5538,8 +5538,8 @@ plot_group_tab_body <- margot_plot(
 ggsave(
   plot_group_tab_body,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body.png",
   device = 'png',
@@ -5576,8 +5576,8 @@ plot_group_tab_ego
 ggsave(
   plot_group_tab_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_ego.png",
   device = 'png',
@@ -5613,8 +5613,8 @@ plot_group_tab_reflective
 ggsave(
   plot_group_tab_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_reflective.png",
   device = 'png',
@@ -5999,8 +5999,8 @@ plot_compare_ego
 ggsave(
   plot_compare_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 16,
+  height = 9,
   units = "in",
   filename = "plot_compare_ego.png",
   device = 'png',
@@ -6018,8 +6018,8 @@ plot_compare_reflective
 ggsave(
   plot_compare_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 16,
+  height = 9,
   units = "in",
   filename = "plot_compare_reflective.png",
   device = 'png',
@@ -6038,8 +6038,8 @@ plot_compare_social
 ggsave(
   plot_compare_social,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 16,
+  height = 9,
   units = "in",
   filename = "plot_compare_social.png",
   device = 'png',

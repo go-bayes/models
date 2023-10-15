@@ -9,28 +9,28 @@
 
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-# source("/Users/joseph/GIT/templates/functions/libs2.R")
-#
-# # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-# source("/Users/joseph/GIT/templates/functions/funs.R")
-#
-# # experimental functions
-# source(
-#   "/Users/joseph/GIT/templates/functions/experimental_funs.R"
-# )
-#
+source("/Users/joseph/GIT/templates/functions/libs2.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+source("/Users/joseph/GIT/templates/functions/funs.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
-
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# experimental functions
 source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+  "/Users/joseph/GIT/templates/functions/experimental_funs.R"
 )
+
+# 
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+# 
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+# 
+# 
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 
 
@@ -68,10 +68,28 @@ exposure_var = c("forgiveness", "not_lost") #
 # shift one pont up if under 6
 # f_1 <- function (data, trt) data[[trt]] + 1
 
-#  move to mean
+# #  move to mean
+# f <- function(data, trt) {
+#   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+# }
+
+
+# shift functions
+#  decrease everyone by one point, contrasted with what they would be anyway.
 f <- function(data, trt) {
-  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
 }
+
+f
+
+
+
+#  increase everyone by one point, contrasted with what they would be anyway.
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+}
+
+
 
 
 # see second function below
@@ -607,13 +625,13 @@ dat_long  <- dat |>
     hours_exercise_log = log(hours_exercise + 1)
   ) |>
   dplyr::rename(sample_weights = w_gend_age_euro) |>
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
+  dplyr::mutate(sample_origin = as.factor( sample_origin_names_combined)) |>  #shorter name
   arrange(id, wave) |>
   droplevels() |>
   select(-h_18, -k_18, -h_19, -k_19) |>
   droplevels() |>
   ungroup() %>%
-  mutate(wave = as.numeric(wave)) |>
+  mutate(time = as.numeric(wave)) |>
   arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
@@ -716,13 +734,88 @@ mutate(
 #   kbl(format = "markdown")
 #
 
-
+table(dat_long$wave)
 
 # eyeball distribution
 # table(dat_long$wave)
+
 dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 2) |> 
+  filter(year_measured ==1 & wave == 2019) |> 
   mutate(forgiveness_z = scale(forgiveness))
+
+nrow(dt_19)
+
+
+
+library(ggplot2)
+library(dplyr)
+# 
+# coloured_histogram <- function(df, col_name, scale_min, scale_max) {
+#   
+#   epsilon <- 0.01  # small value to adjust range
+#   
+#   # title and subtitle
+#   dynamic_title <- paste("Density of responses for", col_name)
+#   fixed_sub_title <- "Lowest compressed shift shaded blue; highest compressed-shift shaded gold."
+#   
+#   # create a copy of the data to avoid modifying the original data
+#   df_copy <- df %>% 
+#     mutate(fill_category = case_when(
+#       between(!!sym(col_name), scale_min, scale_min + 1 - epsilon) ~ "Lowest",
+#       between(!!sym(col_name), scale_max - 1 + epsilon, scale_max) ~ "Highest",
+#       TRUE ~ "Middle"
+#     ))
+#   
+#   # create bar plot
+#   p <- ggplot(df_copy, aes(x = !!sym(col_name))) +
+#     geom_bar(aes(y = ..count.., fill = fill_category), alpha = 1) +
+#     scale_fill_manual(
+#       values = c("Lowest" = "dodgerblue", "Highest" = "gold2", "Middle" = "grey60")
+#     ) +
+#     labs(title = dynamic_title, subtitle = fixed_sub_title) +
+#     scale_x_continuous(breaks = seq(floor(min(df_copy[[col_name]])), ceiling(max(df_copy[[col_name]])), by = 1)) +
+#     theme_minimal()
+#   
+#   return(p)
+# }
+
+
+source("/Users/joseph/GIT/templates/functions/funs.R")
+
+# generate bar plot
+graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "forgiveness", scale_min = 1, scale_max = 7)
+
+graph_density_of_exposure
+
+
+ggsave(
+  graph_density_of_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "graph_density_of_exposure.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+# test 
+dt_19 |> 
+  select(forgiveness) |> 
+  filter(forgiveness < 2) |> 
+  count(n = n())
+dt_19 |> 
+  select(forgiveness) |> 
+  filter(forgiveness > 6) |> 
+  count(n = n())
+
+dt_19 |> 
+  select(forgiveness) |> 
+  filter(forgiveness >=2  &  forgiveness <=6) |> 
+  count(n = n())
+
 
 hist(dt_19$forgiveness_z)
 table(dt_19$forgiveness_z)
@@ -735,10 +828,12 @@ mean_exposure <- mean(dt_19$forgiveness,
 mean_exposure
 
 # make sure to use the sd
+min_score <- min(dt_19$forgiveness_z, na.rm = TRUE)
+
 max_score <- max(dt_19$forgiveness_z, na.rm = TRUE)
 max_score
 
-sd_exposure <- sd(d_19$forgiveness,
+sd_exposure <- sd(dt_19$forgiveness,
                   na.rm = TRUE)
 sd_exposure
 
@@ -752,18 +847,8 @@ one_point_in_sd_units
 
 #  increase everyone by one point, contrasted with what they would be anyway.
 # only use this function for raw scores
-
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
-}
-
-# check function logic
-max_score - one_point_in_sd_units
-
-# make sure positions align.
-table(dt_19$forgiveness_z)
-
-table(dt_19$forgiveness)
+f_1
+f
 
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
@@ -789,7 +874,7 @@ colnames(dat)
 
 dev.off()
 # check
-dt_check_exposure <- dat_long |> filter(wave == 1| wave == 2)
+dt_check_exposure <- dat_long |> filter(wave == 2018| wave == 2019)
 
 # makes sure all is false
 table (is.na(dt_check_exposure$forgiveness))
@@ -803,7 +888,7 @@ dt_18 <- dat_long |>
 
 
 dt_positivity_full <- dt_check_exposure |>
-  filter(wave == 1 | wave == 2) |>
+  filter(wave == 2018| wave == 2019) |>
   select(wave, id, forgiveness, sample_weights) |> 
   mutate(foregivness_round = round(forgiveness, 0))
 
@@ -1959,7 +2044,7 @@ t2_kessler_latent_depression_z <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-f
+
 
 t2_kessler_latent_depression_z
 here_save(t2_kessler_latent_depression_z,
@@ -5370,55 +5455,65 @@ out_tab_contrast_t2_belong_z_1
 
 # don't forget to report smoking
 
+
+
 # bind individual tables
+
 tab_health <- rbind(
-  # out_tab_contrast_t2_sfhealth_z,
-  out_tab_contrast_t2_sfhealth_your_health_z,
   out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_alcohol_frequency_z,
   out_tab_contrast_t2_alcohol_intensity_z,
+  out_tab_contrast_t2_bmi_z,
   out_tab_contrast_t2_hours_sleep_z,
-  out_tab_contrast_t2_bmi_z
+  out_tab_contrast_t2_sfhealth_your_health_z
 )
+tab_health
+
 
 tab_body <- rbind(
   out_tab_contrast_t2_bodysat_z,
-  out_tab_contrast_t2_kessler_latent_depression_z,
   out_tab_contrast_t2_kessler_latent_anxiety_z,
+  out_tab_contrast_t2_kessler_latent_depression_z,
   out_tab_contrast_t2_hlth_fatigue_z,
   out_tab_contrast_t2_rumination_z,
   out_tab_contrast_t2_sexual_satisfaction_z
 )
+tab_body
+
+
 
 tab_ego <- rbind(
-  out_tab_contrast_t2_power_no_control_composite_z,
-  out_tab_contrast_t2_self_esteem_z,
+  out_tab_contrast_t2_emotion_regulation_out_control_z,
+  out_tab_contrast_t2_permeability_individual_z,
   out_tab_contrast_t2_perfectionism_z,
+  out_tab_contrast_t2_power_no_control_composite_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
-  out_tab_contrast_t2_emotion_regulation_out_control_z,
-  out_tab_contrast_t2_permeability_individual_z
+  out_tab_contrast_t2_self_esteem_z
 )
+
+tab_ego
 
 
 tab_reflective <- rbind(
   out_tab_contrast_t2_gratitude_z,
-#  out_tab_contrast_t2_vengeful_rumin_z,
-  out_tab_contrast_t2_pwb_your_health_z,
-  out_tab_contrast_t2_pwb_your_future_security_z,
-  out_tab_contrast_t2_pwb_your_relationships_z,
-  out_tab_contrast_t2_pwb_standard_living_z,
-  #out_tab_contrast_t2_lifemeaning_z
   out_tab_contrast_t2_meaning_purpose_z,
-  out_tab_contrast_t2_meaning_sense_z
+  out_tab_contrast_t2_meaning_sense_z,
+  out_tab_contrast_t2_pwb_your_future_security_z,
+  out_tab_contrast_t2_pwb_your_health_z,
+  out_tab_contrast_t2_pwb_your_relationships_z,
+  out_tab_contrast_t2_pwb_standard_living_z#,
+ # out_tab_contrast_t2_vengeful_rumin_z
 )
+tab_reflective
 
 
 tab_social <- rbind(
-  out_tab_contrast_t2_support_z,
+  out_tab_contrast_t2_belong_z,
   out_tab_contrast_t2_neighbourhood_community_z,
-  out_tab_contrast_t2_belong_z
+  out_tab_contrast_t2_support_z
 )
+tab_social
 
 
 # make group table
@@ -5464,7 +5559,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Forgiveness: shift all below average to average, N = 34,749"
+sub_title = "Forgiveness:shift DOWN 1x point (to min 1), N = 34,749"
 
 
 # graph health
@@ -5493,8 +5588,8 @@ dev.off()
 ggsave(
   plot_group_tab_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health.png",
   device = 'png',
@@ -5529,8 +5624,8 @@ plot_group_tab_body <- margot_plot(
 ggsave(
   plot_group_tab_body,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body.png",
   device = 'png',
@@ -5567,8 +5662,8 @@ plot_group_tab_ego
 ggsave(
   plot_group_tab_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_ego.png",
   device = 'png',
@@ -5604,8 +5699,8 @@ plot_group_tab_reflective
 ggsave(
   plot_group_tab_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_reflective.png",
   device = 'png',
@@ -5640,8 +5735,8 @@ plot_group_tab_social
 ggsave(
   plot_group_tab_social,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_social.png",
   device = 'png',
@@ -5654,57 +5749,61 @@ dev.off()
 # make tables shift one up -------------------------------------------------------------
 
 # don't forget to report smoking
-
 # bind individual tables
 tab_health_1 <- rbind(
-  # out_tab_contrast_t2_sfhealth_z_1,
-  out_tab_contrast_t2_sfhealth_your_health_z_1 ,
-  out_tab_contrast_t2_hours_exercise_log_z_1 ,
-  out_tab_contrast_t2_alcohol_frequency_z_1 ,
-  out_tab_contrast_t2_alcohol_intensity_z_1 ,
-  out_tab_contrast_t2_hours_sleep_z_1 ,
-  out_tab_contrast_t2_bmi_z_1 
+  out_tab_contrast_t2_hours_exercise_log_z_1,
+  out_tab_contrast_t2_alcohol_frequency_z_1,
+  out_tab_contrast_t2_alcohol_intensity_z_1,
+  out_tab_contrast_t2_bmi_z_1,
+  out_tab_contrast_t2_hours_sleep_z_1,
+  out_tab_contrast_t2_sfhealth_your_health_z_1
 )
+tab_health_1
 
-tab_body_1  <- rbind(
-  out_tab_contrast_t2_bodysat_z_1 ,
-  out_tab_contrast_t2_kessler_latent_depression_z_1 ,
-  out_tab_contrast_t2_kessler_latent_anxiety_z_1 ,
-  out_tab_contrast_t2_hlth_fatigue_z_1 ,
-  out_tab_contrast_t2_rumination_z_1 ,
-  out_tab_contrast_t2_sexual_satisfaction_z_1 
+
+tab_body_1 <- rbind(
+  out_tab_contrast_t2_bodysat_z_1,
+  out_tab_contrast_t2_kessler_latent_anxiety_z_1,
+  out_tab_contrast_t2_kessler_latent_depression_z_1,
+  out_tab_contrast_t2_hlth_fatigue_z_1,
+  out_tab_contrast_t2_rumination_z_1,
+  out_tab_contrast_t2_sexual_satisfaction_z_1
 )
+tab_body_1
 
-tab_ego_1  <- rbind(
-  out_tab_contrast_t2_power_no_control_composite_z_1 ,
-  out_tab_contrast_t2_self_esteem_z_1,
+
+tab_ego_1 <- rbind(
+  out_tab_contrast_t2_emotion_regulation_out_control_z_1,
+  out_tab_contrast_t2_permeability_individual_z_1,
   out_tab_contrast_t2_perfectionism_z_1,
+  out_tab_contrast_t2_power_no_control_composite_z_1,
   out_tab_contrast_t2_self_control_have_lots_z_1,
   out_tab_contrast_t2_self_control_wish_more_reversed_z_1,
-  out_tab_contrast_t2_emotion_regulation_out_control_z_1,
-  out_tab_contrast_t2_permeability_individual_z_1 
+  out_tab_contrast_t2_self_esteem_z_1
 )
+
+tab_ego_1
 
 
 tab_reflective_1 <- rbind(
   out_tab_contrast_t2_gratitude_z_1,
- # out_tab_contrast_t2_vengeful_rumin_z_1,
-  out_tab_contrast_t2_pwb_your_health_z_1,
-  out_tab_contrast_t2_pwb_your_future_security_z_1,
-  out_tab_contrast_t2_pwb_your_relationships_z_1,
-  out_tab_contrast_t2_pwb_standard_living_z_1,
-  #out_tab_contrast_t2_lifemeaning_z_1
   out_tab_contrast_t2_meaning_purpose_z_1,
-  out_tab_contrast_t2_meaning_sense_z_1
+  out_tab_contrast_t2_meaning_sense_z_1,
+  out_tab_contrast_t2_pwb_your_future_security_z_1,
+  out_tab_contrast_t2_pwb_your_health_z_1,
+  out_tab_contrast_t2_pwb_your_relationships_z_1,
+  out_tab_contrast_t2_pwb_standard_living_z_1#,
+ # out_tab_contrast_t2_vengeful_rumin_z_1
 )
+tab_reflective_1
 
 
 tab_social_1 <- rbind(
-  out_tab_contrast_t2_support_z_1,
+  out_tab_contrast_t2_belong_z_1,
   out_tab_contrast_t2_neighbourhood_community_z_1,
-  out_tab_contrast_t2_belong_z_1
+  out_tab_contrast_t2_support_z_1
 )
-
+tab_social_1
 
 # make group table
 group_tab_health_1 <- group_tab(tab_health_1, type = "RD")
@@ -5750,8 +5849,7 @@ group_tab_social_1 <- here_read("group_tab_social_1")
 
 # check N
 N
-sub_title_1 = "Forgiveness: shift + 1 point everyone (up to max 7), N = 34,749"
-
+sub_title_1 = "Forgiveness: shift UP 1x point (to max 7), N = 34,749"
 
 # graph health
 plot_group_tab_health_1 <- margot_plot(
@@ -5779,8 +5877,8 @@ dev.off()
 ggsave(
   plot_group_tab_health_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health_1.png",
   device = 'png',
@@ -5816,8 +5914,8 @@ plot_group_tab_body + plot_group_tab_body_1
 ggsave(
   plot_group_tab_body_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body_1.png",
   device = 'png',
@@ -5857,8 +5955,8 @@ plot_group_tab_ego + plot_group_tab_ego_1
 ggsave(
   plot_group_tab_ego_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_ego_1.png",
   device = 'png',
@@ -5894,8 +5992,8 @@ plot_group_tab_reflective + plot_group_tab_reflective_1
 ggsave(
   plot_group_tab_reflective_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_reflective_1.png",
   device = 'png',
@@ -5930,8 +6028,8 @@ plot_group_tab_social_1 <- margot_plot(
 ggsave(
   plot_group_tab_social_1,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 12,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_social_1.png",
   device = 'png',
@@ -5952,8 +6050,8 @@ plot_compare_health
 ggsave(
   plot_compare_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_health.png",
   device = 'png',
@@ -5970,8 +6068,8 @@ plot_compare_body
 ggsave(
   plot_compare_body,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_body.png",
   device = 'png',
@@ -5990,8 +6088,8 @@ plot_compare_ego
 ggsave(
   plot_compare_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_ego.png",
   device = 'png',
@@ -6009,8 +6107,8 @@ plot_compare_reflective
 ggsave(
   plot_compare_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_reflective.png",
   device = 'png',
@@ -6029,8 +6127,8 @@ plot_compare_social
 ggsave(
   plot_compare_social,
   path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_social.png",
   device = 'png',

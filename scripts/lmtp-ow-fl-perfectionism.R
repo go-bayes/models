@@ -9,28 +9,28 @@
 
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-# source("/Users/joseph/GIT/templates/functions/libs2.R")
-#
-# # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-# source("/Users/joseph/GIT/templates/functions/funs.R")
-#
-# # experimental functions
-# source(
-#   "/Users/joseph/GIT/templates/functions/experimental_funs.R"
-# )
-#
+source("/Users/joseph/GIT/templates/functions/libs2.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+source("/Users/joseph/GIT/templates/functions/funs.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
-
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# experimental functions
 source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+  "/Users/joseph/GIT/templates/functions/experimental_funs.R"
 )
+
+
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+# 
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 
 
@@ -45,6 +45,8 @@ dat <- arrow::read_parquet(pull_path)
 
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
+# first analysis was a shift up. here we combine shift up and down.
+
 push_mods <-
   fs::path_expand(
     "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-perfectionism-2"
@@ -68,10 +70,27 @@ exposure_var = c("perfectionism", "not_lost") #
 # shift one pont up if under 6
 # f_1 <- function (data, trt) data[[trt]] + 1
 
-#  move to mean
+# #  move to mean
+# f <- function(data, trt) {
+#   ifelse(data[[trt]] > 0, 0,  data[[trt]])
+# }
+
+# shift functions
+#  decrease everyone by one point, contrasted with what they would be anyway.
 f <- function(data, trt) {
-  ifelse(data[[trt]] > 0, 0,  data[[trt]])
+  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
 }
+
+f
+
+
+
+#  increase everyone by one point, contrasted with what they would be anyway.
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+}
+
+
 
 
 # see second function below
@@ -573,7 +592,7 @@ dat_long  <- dat |>
   ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
   dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
                                                    !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
+  dplyr::mutate(sample_origin = as.factor( sample_origin_names_combined)) |>  #shorter name
   arrange(id) |>
   filter((wave == 2018 & year_measured == 1) |
            (wave == 2019 & year_measured == 1) |
@@ -614,8 +633,6 @@ dat_long  <- dat |>
   droplevels() |>
   ungroup() %>%
   mutate(time = as.numeric(wave)) |>
-  mutate(wave = time) |>
-  arrange(id, wave) |>
   arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
@@ -640,25 +657,65 @@ mutate(
   arrange(id, wave) |>
   data.frame()
 
-
+nzavs_exposure
 # eyeball distribution
 # table(dat_long$wave)
-dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 2)
+dt_19 <- dat_long |> filter(wave == 2019) |> 
+  mutate(perfectionism_z = scale(perfectionism)) |> 
+  mutate(perfectionism_reponses = round(perfectionism, 0))
 
 hist(dt_19$perfectionism)
-table(dt_19$perfectionism)
-dev.off()
+
+table(dt_19$Prefectionism_responses)
+
+
+# generate bar plot
+graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "perfectionism", scale_min = 1, scale_max = 7)
+
+graph_density_of_exposure
+
+ggsave(
+  graph_density_of_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "graph_density_of_exposure.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+# test 
+dt_19 |> 
+  select(perfectionism) |> 
+  filter(perfectionism < 2) |> 
+  count(n = n())
+dt_19 |> 
+  select(perfectionism) |> 
+  filter(perfectionism > 6) |> 
+  count(n = n())
+
+dt_19 |> 
+  select(perfectionism) |> 
+  filter(perfectionism >=2  &  perfectionism <=6) |> 
+  count(n = n())
+
+
+
+nzavs_exposure
 
 dt_19$perfectionism_z <- scale(dt_19$perfectionism)
-
-
-mean_exposure = 0
-mean_exposure
 
 min_score <- min(dt_19$perfectionism_z, na.rm = TRUE) # make sure his is SD units
 min_score
 
+max_score <- max(dt_19$perfectionism_z, na.rm = TRUE) # make sure his is SD units
+
+max_score
+max_score
 
 sd_exposure <- sd(dt_19$perfectionism,
                   na.rm = TRUE)
@@ -666,21 +723,34 @@ sd_exposure
 
 one_point_in_sd_units <- 1/sd_exposure
 one_point_in_sd_units
+push_mods
 
-# half_sd <- sd_exposure / 2
-# half_sd
+nzavs_exposure
+# use function
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+source("/Users/joseph/GIT/templates/functions/funs.R")
+graph_density_of_exposure <- create_density_sd(dt_19, nzavs_exposure)
+graph_density_of_exposure
 
 
 
-#  increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
+ggsave(
+  graph_density_of_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "graph_density_of_exposure.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
-}
+# screen off
+dev.off()
 
-f
-f_1
+
+
 
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
@@ -700,7 +770,7 @@ colnames(dat)
 dev.off()
 
 # check
-dt_check_exposure <- dat_long |> filter(wave == 1| wave == 2)
+dt_check_exposure <- dat_long |>   filter(wave == 2018 | wave == 2019) |>
 
 # makes sure all is false
 table (is.na(dt_check_exposure$perfectionism))
@@ -709,16 +779,18 @@ table (is.na(dt_check_exposure$perfectionism))
 table ((dt_check_exposure$perfectionism))
 # make
 dt_18 <- dat_long |>
-  filter(wave == 1 )
+  filter(wave == 2018 )
 
 
 
-dt_positivity_full <- dt_check_exposure |>
-  filter(wave == 1 | wave == 2) |>
+dt_positivity_full <- dat_long |>
+  filter(wave == 2018 | wave == 2019) |>
   select(wave, id, perfectionism, sample_weights) |> 
   mutate(perfectionism_round = round(perfectionism, 0))
 
 dt_positivity_full
+
+table(dt_positivity_full$perfectionism_round)
 
 # check sample weights NA - will return to this after impute
 table (is.na(dt_positivity_full$sample_weights)) # 
@@ -3705,7 +3777,7 @@ here_save(t2_belong_z_null, "t2_belong_z_null")
 
 
 # contrasts health ---------------------------------------------------------------
-
+push_mods
 # smoker
 t2_smoker_binary <- here_read("t2_smoker_binary")
 t2_smoker_binary_1 <- here_read("t2_smoker_binary_1")
@@ -4723,6 +4795,7 @@ out_tab_contrast_t2_permeability_individual_z_1
 
 # gratitude
 t2_gratitude_z <- here_read("t2_gratitude_z")
+t2_gratitude_z
 t2_gratitude_z_1 <- here_read("t2_gratitude_z_1")
 
 
@@ -5124,7 +5197,6 @@ out_tab_contrast_t2_meaning_sense_z_1
 
 t2_lifesat_z <- here_read("t2_lifesat_z")
 t2_lifesat_z_1 <- here_read("t2_lifesat_z_1")
-
 t2_lifesat_z_null <- here_read("t2_lifesat_z_null")
 
 
@@ -5379,7 +5451,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Perfectionism: shift all above average to average, N = 34,762"
+sub_title = "Perfectionism: shift DOWN 1x point (min 1), N = 34,762"
 
 
 # graph health
@@ -5603,7 +5675,7 @@ tab_ego_1  <- rbind(
 
 tab_reflective_1 <- rbind(
   out_tab_contrast_t2_gratitude_z_1,
-  # out_tab_contrast_t2_vengeful_rumin_z_1,
+  out_tab_contrast_t2_vengeful_rumin_z_1,
   out_tab_contrast_t2_pwb_your_health_z_1,
   out_tab_contrast_t2_pwb_your_future_security_z_1,
   out_tab_contrast_t2_pwb_your_relationships_z_1,
@@ -5665,7 +5737,7 @@ group_tab_social_1
 
 # check N
 N
-sub_title_1 = "Perfectionism: shift - 1 point everyone (up to min 1), N = 34,762"
+sub_title_1 = "Perfectionism: shift UP 1x point (max 7), N = 34,762"
 
 f_1
 # graph health
@@ -5820,7 +5892,7 @@ plot_group_tab_social_1 <- margot_plot(
   group_tab_social_1,
   type = "RD",
   title = "Social effects",
-  subtitle = sub_title,
+  subtitle = sub_title_1,
   xlab = "",
   ylab = "",
   estimate_scale = 1,
@@ -5866,8 +5938,8 @@ plot_compare_health
 ggsave(
   plot_compare_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_health.png",
   device = 'png',
@@ -5884,8 +5956,8 @@ plot_compare_body
 ggsave(
   plot_compare_body,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_body.png",
   device = 'png',
@@ -5904,8 +5976,8 @@ plot_compare_ego
 ggsave(
   plot_compare_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_ego.png",
   device = 'png',
@@ -5923,8 +5995,8 @@ plot_compare_reflective
 ggsave(
   plot_compare_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_reflective.png",
   device = 'png',
@@ -5933,9 +6005,10 @@ ggsave(
 )
 dev.off()
 
+push_mods
 
 
-
+plot_group_tab_social_1
 plot_compare_social  <-plot_group_tab_social + plot_group_tab_social_1+ plot_annotation(title = 
                                                                                           "Shift Intervention Comparisions", tag_level = "A")
 
@@ -5943,8 +6016,8 @@ plot_compare_social
 ggsave(
   plot_compare_social,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_social.png",
   device = 'png',
