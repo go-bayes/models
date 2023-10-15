@@ -6201,13 +6201,13 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
-
+group_tab_social_1
 # graph social
 plot_group_tab_social_1 <- margot_plot(
   group_tab_social_1,
   type = "RD",
   title = "Social effects",
-  subtitle = sub_title,
+  subtitle = sub_title_1,
   xlab = "",
   ylab = "",
   estimate_scale = 1,
@@ -6223,7 +6223,7 @@ plot_group_tab_social_1 <- margot_plot(
   x_lim_hi =  .5
 )
 
-
+plot_group_tab_social_1
 
 # save graph
 ggsave(
