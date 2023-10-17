@@ -82,9 +82,10 @@ exposure_var = c("religion_identification_level", "not_lost") #
 #   ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
 # }
 
+
 # one point change
 f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
+  ifelse(data[[trt]] > 1, 1,  data[[trt]])
 }
 
 
@@ -93,14 +94,8 @@ f <- function(data, trt) {
 # only use this function for raw scores
 
 f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
+  ifelse(data[[trt]] < 7, 7,  data[[trt]])
 }
-
-
-# extreme estimands (for comparison)
-
-f_all_max <- function (data, trt) data[[trt]] == max_score
-f_all_min <- function (data, trt) data[[trt]] == min_score
 
 
 
@@ -940,10 +935,10 @@ baseline_vars = c(
   # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
   # "religion_religious", # Do you identify with a religion and/or spiritual group?
   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-  "religion_church_round",
+  # "religion_church_round",
   # "religion_religious", #
-  "religion_spiritual_identification",
-  "religion_identification_level",
+  # "religion_spiritual_identification",
+ "religion_identification_level",
   #  "religion_religious",
   #  "religion_church_binary",
   #  "religion_prayer_binary",
@@ -4270,7 +4265,6 @@ out_tab_contrast_t2_bodysat_z_1
 
 t2_kessler_latent_depression_z <-
   here_read("t2_kessler_latent_depression_z")
-
 t2_kessler_latent_depression_z_1 <-
   here_read("t2_kessler_latent_depression_z_1")
 
