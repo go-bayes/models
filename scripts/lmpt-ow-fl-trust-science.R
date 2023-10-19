@@ -4,11 +4,10 @@
 
 
 # outcome-wide-analysis-template
-# Sept 11, 2023
+# OCT 18, 2023
 
 
 # preliminaries -----------------------------------------------------------
-
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
@@ -45,11 +44,11 @@ push_mods
 
 # set exposure here
 nzavs_exposure <-
-  "trust_science_our_society_places_too_much_emphasis_reversed"
+  "trust_science_high_confidence_scientific_community"
 
 # define exposure
 A <-
-  "t1_trust_science_our_society_places_too_much_emphasis_reversed_z"
+  "t1_trust_science_high_confidence_scientific_community_z"
 
 # define shift function (if any one is average make them average, otherwise leave alone)
 f <- function(data, trt) {
@@ -120,7 +119,21 @@ dat_long  <- dat |>
     trust_science_our_society_places_too_much_emphasis_reversed =
       science_trust02r
   ) |>
+  arrange(id, wave) |>
+  mutate(forgiveness = 8 - vengeful_rumin) |> # reverse score veng rumination 
+  rowwise(wave) |>
+  mutate(power_no_control_composite = mean(c(
+    power_self_nocontrol, power_others_control
+  ), na.rm = TRUE)) |>
+  mutate(kessler_latent_depression =  mean(
+    c(kessler_depressed, kessler_hopeless, kessler_worthless),
+    na.rm = TRUE
+  )) |>
+  mutate(kessler_latent_anxiety  = mean(c(
+    kessler_effort, kessler_nervous, kessler_restless
+  ), na.rm = TRUE)) |>
   ungroup() |>
+  mutate(power_no_control_composite_reversed = 8 - power_no_control_composite) |>
   # ungroup
   select(
     "wave",
@@ -137,6 +150,7 @@ dat_long  <- dat |>
     # 0 = female, 0.5 = neither female nor male, 1 = male.
     "age",
     "born_nz",
+    "sexual_orientation",
     "hlth_disability",
     # value label 0    No 1   Yes
     "eth_cat",
@@ -259,6 +273,7 @@ dat_long  <- dat |>
     "modesty",
     # see above
     "vengeful_rumin",
+    "forgiveness",
     "charity_donate",
     #How much money have you donated to charity in the last year?
     "hours_charity",
@@ -331,6 +346,9 @@ dat_long  <- dat |>
     #During the last 30 days, how often did.... you feel exhausted?
     "rumination",
     "kessler6_sum",
+    # depression constructs,
+    "kessler_latent_depression",
+    "kessler_latent_anxiety",
     # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
     "kessler_depressed",
     #During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
@@ -355,6 +373,7 @@ dat_long  <- dat |>
     # I am hardly ever satisfied with my performance.
     "power_no_control_composite",
     "power_self_nocontrol",
+    "power_no_control_composite_reversed",
     # I do not have enough power or control over\nimportant parts of my life.
     "power_others_control",
     # Other people have too much power or control over\nimportant parts of my life
@@ -436,11 +455,7 @@ dat_long  <- dat |>
     "hours_community",
     "hours_friends",
     "hours_family",
-    # "I have a high degree of confidence in the scientific community",
-    "trust_science_high_confidence_scientific_community",
-    #Our society places too much emphasis on science.
-    "trust_science_our_society_places_too_much_emphasis_reversed",
-    "alert_level_combined"
+    "alert_level_combined_lead"
     # Hours spent … socialising with family
     # Hours spent … socialising with friends
     # Hours spent … socialising with community groups
@@ -468,30 +483,27 @@ dat_long  <- dat |>
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
-  dplyr::filter((wave == 2019 & year_measured  == 1) |
-                  (wave == 2020  &
+  dplyr::filter((wave == 2018 & year_measured  == 1) |
+                  (wave == 2019  &
                      year_measured  == 1) |
-                  (wave == 2021)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
+                  (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
   dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
                                                    !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
-  arrange(id) |>
-  filter((wave == 2019 & year_measured == 1) |
-           (wave == 2020 & year_measured == 1) |
-           (wave == 2021)) %>%
+  filter((wave == 2018 & year_measured == 1) |
+           (wave == 2019 & year_measured == 1) |
+           (wave == 2020)) %>%
   group_by(id) |>
+  mutate(k_18 = ifelse(wave == 2018 &
+                         meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
+  mutate(h_18 = mean(k_18, na.rm = TRUE)) %>%
   mutate(k_19 = ifelse(wave == 2019 &
                          meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
   mutate(h_19 = mean(k_19, na.rm = TRUE)) %>%
-  mutate(k_20 = ifelse(wave == 2020 &
-                         meets_criteria_baseline == 1, 1, 0)) %>% # selection criteria
-  mutate(h_20 = mean(k_20, na.rm = TRUE)) %>%
+  dplyr::filter(h_18 > 0) |>  # hack to enable repeat of baseline
   dplyr::filter(h_19 > 0) |>  # hack to enable repeat of baseline
-  dplyr::filter(h_20 > 0) |>  # hack to enable repeat of baseline
-  ungroup() |> 
-  arrange(id, wave) |> 
+  ungroup() %>%
   mutate(
     not_lost = ifelse(lead(year_measured) == 1, 1, 0),
     # not_lost = ifelse(lead(year_measured)== -1, 0, not_lost,
@@ -500,6 +512,7 @@ dat_long  <- dat |>
                         year_measured == 1, 1, not_lost),
     not_lost = ifelse(is.na(not_lost), 0, not_lost)
   ) |>
+  ungroup() |>
   dplyr::mutate(
     friends_money = ifelse(friends_money < 0, 0, friends_money),
     # someone gave neg number
@@ -510,12 +523,13 @@ dat_long  <- dat |>
     hours_exercise_log = log(hours_exercise + 1)
   ) |>
   dplyr::rename(sample_weights = w_gend_age_euro) |>
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
+  dplyr::mutate(sample_origin = as.factor( sample_origin_names_combined)) |>  #shorter name
   arrange(id, wave) |>
   droplevels() |>
-  select(-h_19, -k_19, -h_20, -k_20) |>
-  data.frame() |>
+  select(-h_18, -k_18, -h_19, -k_19) |>
   droplevels() |>
+  ungroup() %>%
+  mutate(time = as.numeric(wave)) |>
   arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
@@ -539,6 +553,16 @@ mutate(
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
+
+table(dat_long$time)
+table(dat_long$wave)
+  
+  
+  
+  
+  
+  
+
 
 
  # check n

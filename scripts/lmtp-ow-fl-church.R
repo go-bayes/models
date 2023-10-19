@@ -424,7 +424,7 @@ dat_long  <- dat |>
     hours_friends_log = sqrt(hours_friends + 1),
     hours_family_log = sqrt(hours_family + 1)
   ) |>
-  mutate(male = as.numeric(male) - 1) |>
+  mutate(male = as.numeric(male)) |>
   mutate(total_siblings_factor = ordered(round(
     ifelse(total_siblings > 7, 7, total_siblings), 0
   ))) |>
@@ -514,6 +514,14 @@ mutate(
 
 # check n
 n_unique(dat_long$id) #33198 # reports hours with community at baseline
+
+
+table1::table1(data = dat_long, ~ religion_church_round | wave * male)
+
+
+
+
+
 
 # double check path
 push_mods

@@ -823,13 +823,6 @@ push_mods
 
 nzavs_exposure
 
-# use function
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-#source("/Users/joseph/GIT/templates/functions/funs.R")
-graph_density_of_exposure <- create_density_sd(dt_19, nzavs_exposure)
-graph_density_of_exposure
-
-
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
 dev.off()
@@ -1169,7 +1162,7 @@ df_clean <- as.data.frame(df_clean)
 
 #check n
 nrow(df_clean)
-
+str(df_clean)
 
 colnames(df_clean)
 # get names
@@ -1192,7 +1185,9 @@ colnames(df_clean)
 
 #### SET VARIABLE NAMES: Customise for each outcomewide model
 #  model
-A
+A <- "t1_religion_identification_level"
+
+A_z<- "t1_religion_identification_level_z"
 
 
 C <- c("t1_not_lost")
@@ -1212,9 +1207,208 @@ f_1
 min_score + 1
 max_score -1
 
+min_score_z <- min(df_clean$t1_religion_identification_level_z)
+max_score_z <- max(df_clean$t1_religion_identification_level_z)
+sd_score <- mean(df_clean$t1_religion_identification_level)
+one_point_sd_score_units <- 1/sd_score
+
+min_score_z
+max_score_z
+sd_score
+one_point_sd_score_units
+
+# test --------------------------------------------------------------------
+
+
 # make test data (if needed)
 df_clean_test <- df_clean |>
-  slice_head(n = 2000)
+  slice_head(n = 1000)
+
+
+f_test_all_1 <- function(data, trt) {
+  ifelse(data[[trt]] != 1, 1,  data[[trt]])
+}
+
+
+f_test_all_1_z <- function(data, trt) {
+  ifelse(data[[trt]] != min_score_z, min_score_z,  data[[trt]])
+}
+
+
+
+f_test_all_7 <- function(data, trt) {
+  ifelse(data[[trt]] != 7, 7,  data[[trt]])
+}
+
+
+f_test_all_1_z <- function(data, trt) {
+  ifelse(data[[trt]] != min_score_z, min_score_z,  data[[trt]])
+}
+
+
+
+
+
+names_base_t2_kessler_latent_anxiety_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_kessler_latent_anxiety_z")
+names_base_t2_kessler_latent_anxiety_z
+
+
+timing_info <- system.time({
+  t2_kessler_latent_anxiety_z_f_test_all_1 <- lmtp_tmle(
+    data = df_clean_test,
+    trt = A,
+    baseline = names_base_t2_kessler_latent_anxiety_z,
+    outcome = "t2_kessler_latent_anxiety_z",
+    cens = C,
+    shift = f_test_all_1,
+    mtp = TRUE,
+    folds = 5,
+    # trim = 0.99, # if needed
+    # time_vary = NULL,
+    outcome_type = "continuous",
+    #  id = "id",
+    weights = df_clean_test$t0_sample_weights,
+    learners_trt = sl_lib,
+    learners_outcome = sl_lib,
+    parallel = n_cores
+  )
+})
+
+
+
+t2_kessler_latent_anxiety_z_f_test_all_1
+here_save(t2_kessler_latent_anxiety_z_f_test_all_1, "t2_kessler_latent_anxiety_z_f_test_all_1")
+print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))  #59.47  seconds"
+
+
+
+
+t2_kessler_latent_anxiety_f_test_vector_1
+here_save(t2_kessler_latent_anxiety_f_test_vector_1, "t2_kessler_latent_anxiety_f_test_vector_1")
+print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))  #59.47  seconds"
+
+
+
+timing_info <- system.time({
+  t2_kessler_latent_anxiety_z_f_test_all_1_shift_f <- lmtp_tmle(
+    data = df_clean_test,
+    trt = A,
+    baseline = names_base_t2_kessler_latent_anxiety_z,
+    outcome = "t2_kessler_latent_anxiety_z",
+    cens = C,
+    shift = f_test_all_1,
+    mtp = FALSE,
+    folds = 5,
+    # trim = 0.99, # if needed
+    # time_vary = NULL,
+    outcome_type = "continuous",
+    #  id = "id",
+    weights = df_clean_test$t0_sample_weights,
+    learners_trt = sl_lib,
+    learners_outcome = sl_lib,
+    parallel = n_cores
+  )
+})
+
+
+
+t2_kessler_latent_anxiety_z_f_test_all_1_shift_f
+here_save(t2_kessler_latent_anxiety_z_f_test_all_1_shift_f, "t2_kessler_latent_anxiety_z_f_test_all_1_shift_f")
+print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))  #"Time taken:  61.65  seconds"
+
+
+
+
+
+timing_info <- system.time({
+  t2_kessler_latent_anxiety_z_f_test_all_1_z <- lmtp_tmle(
+    data = df_clean_test,
+    trt = A_z,
+    baseline = names_base_t2_kessler_latent_anxiety_z,
+    outcome = "t2_kessler_latent_anxiety_z",
+    cens = C,
+    shift = f_test_all_1_z,
+    mtp = TRUE,
+    folds = 5,
+    # trim = 0.99, # if needed
+    # time_vary = NULL,
+    outcome_type = "continuous",
+    #  id = "id",
+    weights = df_clean_test$t0_sample_weights,
+    learners_trt = sl_lib,
+    learners_outcome = sl_lib,
+    parallel = n_cores
+  )
+})
+
+
+
+t2_kessler_latent_anxiety_z_f_test_all_1_z# same estimate
+here_save(t2_kessler_latent_anxiety_z_f_test_all_1_z, "t2_kessler_latent_anxiety_z_f_test_all_1_z")
+print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds")) # Time taken:  69.16  seconds"
+
+
+
+
+
+f_test_all_7
+timing_info <- system.time({
+  t2_kessler_latent_anxiety_z_f_test_all_7 <- lmtp_tmle(
+    data = df_clean_test,
+    trt = A,
+    baseline = names_base_t2_kessler_latent_anxiety_z,
+    outcome = "t2_kessler_latent_anxiety_z",
+    cens = C,
+    shift = f_test_all_7,
+    mtp = FALSE,
+    folds = 5,
+    # trim = 0.99, # if needed
+    # time_vary = NULL,
+    outcome_type = "continuous",
+    #  id = "id",
+    weights = df_clean_test$t0_sample_weights,
+    learners_trt = sl_lib,
+    learners_outcome = sl_lib,
+    parallel = n_cores
+  )
+})
+
+
+
+t2_kessler_latent_anxiety_z_f_test_all_7
+here_save(t2_kessler_latent_anxiety_z_f_test_all_7, "t2_kessler_latent_anxiety_z_f_test_all_7")
+print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))  #
+
+timing_info <- system.time({
+  t2_kessler_latent_anxiety_z_f_test_null <- lmtp_tmle(
+    data = df_clean_test,
+    trt = A,
+    baseline = names_base_t2_smoker_binary,
+    outcome = "t2_kessler_latent_anxiety_z",
+    cens = C,
+    shift = NULL,
+    mtp = FALSE,
+    folds = 5,
+    # trim = 0.99, # if needed
+    # time_vary = NULL,
+    outcome_type = "continuous",
+    #  id = "id",
+    weights = df_clean_test$t0_sample_weights,
+    learners_trt = sl_lib,
+    learners_outcome = sl_lib,
+    parallel = n_cores
+  )
+})
+
+
+
+t2_kessler_latent_anxiety_z_f_test_null
+here_save(t2_kessler_latent_anxiety_z_f_test_null, "t2_kessler_latent_anxiety_z_f_test_null")
+
+
 
 # "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
 # MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
@@ -1240,32 +1434,36 @@ df_clean_test <- df_clean |>
 baseline_vars
 names_base
 
+A
+f
+f_1
+
 names_base_t2_smoker_binary <-
   select_and_rename_cols(names_base = names_base,
                          baseline_vars = baseline_vars,
                          outcome = "t2_smoker_binary")
 names_base_t2_smoker_binary
 
-timing_info <- system.time({
-  t2_smoker_binary <- lmtp_tmle(
-    data = df_clean,
-    trt = A,
-    baseline = names_base_t2_smoker_binary,
-    outcome = "t2_smoker_binary",
-    cens = C,
-    shift = f,
-    mtp = TRUE,
-    folds = 5,
-    # trim = 0.99, # if needed
-    # time_vary = NULL,
-    outcome_type = "binomial",
-    #  id = "id",
-    weights = df_clean$t0_sample_weights,
-    learners_trt = sl_lib,
-    learners_outcome = sl_lib,
-    parallel = n_cores
-  )
-})
+
+
+t2_smoker_binary <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_smoker_binary,
+  outcome = "t2_smoker_binary",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
 
 
 
@@ -1275,7 +1473,6 @@ here_save(t2_smoker_binary, "t2_smoker_binary")
 # t2_smoker_binary
 
 # print timing info
-print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
 
 
 timing_info <- system.time({
@@ -1304,29 +1501,29 @@ timing_info <- system.time({
 t2_smoker_binary_1
 here_save(t2_smoker_binary_1, "t2_smoker_binary_1")
 
-
-#Do you currently smoke?
-t2_smoker_binary_null  <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_smoker_binary,
-  outcome = "t2_smoker_binary",
-  cens = C,
-  shift = NULL,
-  mtp = FALSE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_smoker_binary_null
-here_save(t2_smoker_binary_null, "t2_smoker_binary_null")
+# 
+# #Do you currently smoke?
+# t2_smoker_binary_null  <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_smoker_binary,
+#   outcome = "t2_smoker_binary",
+#   cens = C,
+#   shift = NULL,
+#   mtp = FALSE,
+#   folds = 5,
+#   # trim = 0.99, # if needed
+#   # time_vary = NULL,
+#   outcome_type = "binomial",
+#   #  id = "id",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_smoker_binary_null
+# here_save(t2_smoker_binary_null, "t2_smoker_binary_null")
 
 
 
@@ -1384,7 +1581,7 @@ t2_alcohol_frequency_z_1
 here_save(t2_alcohol_frequency_z_1, "t2_alcohol_frequency_z_1")
 
 
-
+# 
 #"How often do you have a drink containing alcohol?"
 t2_alcohol_frequency_z_null <- lmtp_tmle(
   data = df_clean,
@@ -4600,50 +4797,56 @@ out_tab_contrast_t2_self_esteem_z_1 <-
 
 out_tab_contrast_t2_self_esteem_z_1
 
-# perfectionism
-# t2_perfectionism_z <- here_read("t2_perfectionism_z")
-# t2_perfectionism_z_1 <- here_read("t2_perfectionism_z_1")
-# t2_perfectionism_z_null <-
-#   here_read("t2_perfectionism_z_null")
-# 
-# # first contrast
-# contrast_t2_perfectionism_z <-
-#   lmtp_contrast(t2_perfectionism_z,
-#                 ref = t2_perfectionism_z_null,
-#                 type = "additive")
-# 
-# 
-# tab_contrast_t2_perfectionism_z <-
-#   margot_tab_lmtp(contrast_t2_perfectionism_z ,
-#                   scale = "RD",
-#                   new_name = "Perfectionism")
-# 
-# 
-# out_tab_contrast_t2_perfectionism_z <-
-#   lmtp_evalue_tab(tab_contrast_t2_perfectionism_z,
-#                   scale = c("RD"))
-# 
-# out_tab_contrast_t2_perfectionism_z
-# 
-# 
-# # second contrast
-# contrast_t2_perfectionism_z_1 <-
-#   lmtp_contrast(t2_perfectionism_z_1,
-#                 ref = t2_perfectionism_z_null,
-#                 type = "additive")
-# 
-# 
-# tab_contrast_t2_perfectionism_z_1 <-
-#   margot_tab_lmtp(contrast_t2_perfectionism_z_1,
-#                   scale = "RD",
-#                   new_name = "Perfectionism")
-# 
-# 
-# out_tab_contrast_t2_perfectionism_z_1 <-
-#   lmtp_evalue_tab(tab_contrast_t2_perfectionism_z_1,
-#                   scale = c("RD"))
-# 
-# out_tab_contrast_t2_perfectionism_z_1
+
+
+
+# perfectionism -----------------------------------------------------------
+
+
+
+t2_perfectionism_z <- here_read("t2_perfectionism_z")
+t2_perfectionism_z_1 <- here_read("t2_perfectionism_z_1")
+t2_perfectionism_z_null <-
+  here_read("t2_perfectionism_z_null")
+
+# first contrast
+contrast_t2_perfectionism_z <-
+  lmtp_contrast(t2_perfectionism_z,
+                ref = t2_perfectionism_z_null,
+                type = "additive")
+
+
+tab_contrast_t2_perfectionism_z <-
+  margot_tab_lmtp(contrast_t2_perfectionism_z ,
+                  scale = "RD",
+                  new_name = "Perfectionism")
+
+
+out_tab_contrast_t2_perfectionism_z <-
+  lmtp_evalue_tab(tab_contrast_t2_perfectionism_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_perfectionism_z
+
+
+# second contrast
+contrast_t2_perfectionism_z_1 <-
+  lmtp_contrast(t2_perfectionism_z_1,
+                ref = t2_perfectionism_z_null,
+                type = "additive")
+
+
+tab_contrast_t2_perfectionism_z_1 <-
+  margot_tab_lmtp(contrast_t2_perfectionism_z_1,
+                  scale = "RD",
+                  new_name = "Perfectionism")
+
+
+out_tab_contrast_t2_perfectionism_z_1 <-
+  lmtp_evalue_tab(tab_contrast_t2_perfectionism_z_1,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_perfectionism_z_1
 
 
 # self control have
@@ -6099,3 +6302,4 @@ dev.off()
 
 
 
+push_mods
