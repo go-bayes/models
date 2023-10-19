@@ -1209,8 +1209,10 @@ f
 
 f_1
 
-min_score + 1
-max_score -1
+table(df_clean$t1_religion_identification_level)
+
+A
+
 
 # make test data (if needed)
 df_clean_test <- df_clean |>
@@ -5465,7 +5467,7 @@ tab_reflective <- rbind(
   out_tab_contrast_t2_pwb_your_future_security_z,
   out_tab_contrast_t2_pwb_your_relationships_z,
   out_tab_contrast_t2_pwb_standard_living_z,
-  #out_tab_contrast_t2_lifemeaning_z
+  out_tab_contrast_t2_lifemeaning_z
   out_tab_contrast_t2_meaning_purpose_z,
   out_tab_contrast_t2_meaning_sense_z
 )
@@ -5522,7 +5524,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Perfectionism: shift DOWN 1x point (min 1), N = 34,762"
+sub_title = "Religious Identification: shift DOWN 1, N = 33,398"
 
 
 # graph health
@@ -5808,7 +5810,7 @@ group_tab_social_1
 
 # check N
 N
-sub_title_1 = "Perfectionism: shift UP 1x point (max 7), N = 34,762"
+sub_title_1 ="Religious Identification: shift UP to max 7, N = 33,398"
 
 f_1
 # graph health
