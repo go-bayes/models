@@ -5655,7 +5655,7 @@ tab_body <- rbind(
 tab_ego <- rbind(
   out_tab_contrast_t2_power_no_control_composite_z,
   out_tab_contrast_t2_self_esteem_z,
-  # out_tab_contrast_t2_perfectionism_z,
+  out_tab_contrast_t2_perfectionism_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
   out_tab_contrast_t2_emotion_regulation_out_control_z,
@@ -5941,7 +5941,7 @@ tab_body_1  <- rbind(
 tab_ego_1  <- rbind(
   out_tab_contrast_t2_power_no_control_composite_z_1 ,
   out_tab_contrast_t2_self_esteem_z_1,
-  # out_tab_contrast_t2_perfectionism_z_1,
+  out_tab_contrast_t2_perfectionism_z_1,
   out_tab_contrast_t2_self_control_have_lots_z_1,
   out_tab_contrast_t2_self_control_wish_more_reversed_z_1,
   out_tab_contrast_t2_emotion_regulation_out_control_z_1,
