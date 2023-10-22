@@ -6359,4 +6359,3 @@ test2 <-rbind( belong_results_lmer$Coef_Exposure,
 out_tab_contrast_t2_support_z_1
 out_tab_contrast_t2_belong_z_1
 
-

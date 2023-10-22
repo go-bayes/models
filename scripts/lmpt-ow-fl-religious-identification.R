@@ -1505,27 +1505,27 @@ here_save(t2_smoker_binary_1, "t2_smoker_binary_1")
 
 # 
 # #Do you currently smoke?
-# t2_smoker_binary_null  <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_smoker_binary,
-#   outcome = "t2_smoker_binary",
-#   cens = C,
-#   shift = NULL,
-#   mtp = FALSE,
-#   folds = 5,
-#   # trim = 0.99, # if needed
-#   # time_vary = NULL,
-#   outcome_type = "binomial",
-#   #  id = "id",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_smoker_binary_null
-# here_save(t2_smoker_binary_null, "t2_smoker_binary_null")
+t2_smoker_binary_null  <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_smoker_binary,
+  outcome = "t2_smoker_binary",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_smoker_binary_null
+here_save(t2_smoker_binary_null, "t2_smoker_binary_null")
 
 
 
@@ -4046,7 +4046,9 @@ t2_belong_z_null <- lmtp_tmle(
 t2_belong_z_null
 here_save(t2_belong_z_null, "t2_belong_z_null")
 
-
+t2_smoker_binary
+t2_smoker_binary_1
+t2_smoker_binary_null
 # contrasts health ---------------------------------------------------------------
 push_mods
 # smoker
@@ -4055,7 +4057,7 @@ t2_smoker_binary_1 <- here_read("t2_smoker_binary_1")
 t2_smoker_binary_null <-
   here_read("t2_smoker_binary_null")
 
-
+t2_smoker_binary_null
 # first contrast
 contrast_t2_smoker_binary <-
   lmtp_contrast(t2_smoker_binary,
@@ -4100,6 +4102,32 @@ out_tab_contrast_t2_smoker_binary_1 <-
 out_tab_contrast_t2_smoker_binary_1
 
 
+
+# Third contrast
+# second contrast
+contrast_t2_smoker_binary_full <-
+  lmtp_contrast(t2_smoker_binary_1,
+                ref = t2_smoker_binary,
+                type = "rr")
+
+
+tab_contrast_t2_smoker_binary_full <-
+  margot_tab_lmtp(contrast_t2_smoker_binary_full,
+                  scale = "RR",
+                  new_name = "Smoker")
+
+tab_contrast_t2_smoker_binary_full
+
+
+out_tab_contrast_t2_smoker_binary_full <-
+  lmtp_evalue_tab(tab_contrast_t2_smoker_binary_full,
+                  scale = c("RR"))
+
+out_tab_contrast_t2_smoker_binary_full
+
+
+
+
 # # sf health
 # t2_sfhealth_z <- here_read("t2_sfhealth_z")
 # t2_sfhealth_z_null <- here_read("t2_sfhealth_z_null")
@@ -4125,7 +4153,6 @@ out_tab_contrast_t2_smoker_binary_1
 # sf health, your health
 t2_sfhealth_your_health_z <- here_read("t2_sfhealth_your_health_z")
 t2_sfhealth_your_health_z_1 <- here_read("t2_sfhealth_your_health_z_1")
-
 t2_sfhealth_your_health_z_null <-
   here_read("t2_sfhealth_your_health_z_null")
 
@@ -4169,13 +4196,33 @@ out_tab_contrast_t2_sfhealth_your_health_z_1
 
 
 
+# full contrast
+
+contrast_t2_sfhealth_your_health_z_full <-
+  lmtp_contrast(t2_sfhealth_your_health_z_1,
+                ref = t2_sfhealth_your_health_z,
+                type = "additive")
+
+
+tab_contrast_t2_sfhealth_your_health_z_full <-
+  margot_tab_lmtp(contrast_t2_sfhealth_your_health_z_full,
+                  scale = "RD",
+                  new_name = "Short form health, your health")
+
+
+out_tab_contrast_t2_sfhealth_your_health_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_sfhealth_your_health_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_sfhealth_your_health_z_full
+
+
 
 # excercise
 t2_hours_exercise_log_z <-
   here_read("t2_hours_exercise_log_z")
 t2_hours_exercise_log_z_1 <-
   here_read("t2_hours_exercise_log_z_1")
-
 t2_hours_exercise_log_z_null <-
   here_read("t2_hours_exercise_log_z_null")
 
@@ -4214,6 +4261,28 @@ out_tab_contrast_t2_hours_exercise_log_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_hours_exercise_log_z_1
+
+
+# full
+# second contrast
+contrast_t2_hours_exercise_log_z_full <-
+  lmtp_contrast(t2_hours_exercise_log_z_1,
+                ref = t2_hours_exercise_log_z,
+                type = "additive")
+
+tab_contrast_t2_hours_exercise_log_z_full <-
+  margot_tab_lmtp(contrast_t2_hours_exercise_log_z_full,
+                  scale = "RD",
+                  new_name = "Hours excercise")
+
+
+out_tab_contrast_t2_hours_exercise_log_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_hours_exercise_log_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_hours_exercise_log_z_full
+
+
 
 # alcohol freq
 
@@ -4266,7 +4335,27 @@ out_tab_contrast_t2_alcohol_frequency_z_1 <-
 out_tab_contrast_t2_alcohol_frequency_z_1
 
 
-# alcohol intensity
+#full
+contrast_t2_alcohol_frequency_z_full <-
+  lmtp_contrast(t2_alcohol_frequency_z_1,
+                ref = t2_alcohol_frequency_z,
+                type = "additive")
+
+
+tab_contrast_t2_alcohol_frequency_z_full <-
+  margot_tab_lmtp(contrast_t2_alcohol_frequency_z_full,
+                  scale = "RD",
+                  new_name = "Alcohol frequency")
+
+
+out_tab_contrast_t2_alcohol_frequency_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_alcohol_frequency_z_full,
+                  scale = c("RD"))
+
+
+out_tab_contrast_t2_alcohol_frequency_z_full
+
+
 
 t2_alcohol_intensity_z <-
   here_read("t2_alcohol_intensity_z")
@@ -4315,12 +4404,31 @@ out_tab_contrast_t2_alcohol_intensity_z_1 <-
 
 out_tab_contrast_t2_alcohol_intensity_z_1
 
+# full
+# second contrast
+contrast_t2_alcohol_intensity_z_full <-
+  lmtp_contrast(t2_alcohol_intensity_z_1,
+                ref = t2_alcohol_intensity_z,
+                type = "additive")
+
+
+tab_contrast_t2_alcohol_intensity_z_full <-
+  margot_tab_lmtp(contrast_t2_alcohol_intensity_z_full,
+                  scale = "RD",
+                  new_name = "Alcohol intensity")
+
+
+out_tab_contrast_t2_alcohol_intensity_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_alcohol_intensity_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_alcohol_intensity_z_full
+
+
 
 # hour sleep
 t2_hlth_sleep_hours_z <- here_read("t2_hlth_sleep_hours_z")
 t2_hlth_sleep_hours_z_1 <- here_read("t2_hlth_sleep_hours_z_1")
-
-
 t2_hlth_sleep_hours_z_null <-
   here_read("t2_hlth_sleep_hours_z_null")
 
@@ -4361,10 +4469,28 @@ out_tab_contrast_t2_hours_sleep_z_1 <-
 out_tab_contrast_t2_hours_sleep_z_1
 
 
+# full contrast
+contrast_t2_hours_sleep_z_full <-
+  lmtp_contrast(t2_hlth_sleep_hours_z_1,
+                ref = t2_hlth_sleep_hours_z,
+                type = "additive")
+
+tab_contrast_t2_hours_sleep_z_full <-
+  margot_tab_lmtp(contrast_t2_hours_sleep_z_full,
+                  scale = "RD",
+                  new_name = "Hours sleep")
+
+
+out_tab_contrast_t2_hours_sleep_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_hours_sleep_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_hours_sleep_z_full
+
+
 # bmi
 t2_hlth_bmi_z <- here_read("t2_hlth_bmi_z")
 t2_hlth_bmi_z_1 <- here_read("t2_hlth_bmi_z_1")
-
 t2_hlth_bmi_z_null <- here_read("t2_hlth_bmi_z_null")
 
 # first contrast
@@ -4398,12 +4524,27 @@ out_tab_contrast_t2_bmi_z_1  <-
 out_tab_contrast_t2_bmi_z_1 
 
 
+# full
+contrast_t2_bmi_z_full <- lmtp_contrast(t2_hlth_bmi_z_1,
+                                     ref = t2_hlth_bmi_z,
+                                     type = "additive")
+
+tab_contrast_t2_bmi_z_full  <-
+  margot_tab_lmtp(contrast_t2_bmi_z_full, scale = "RD", new_name = "BMI")
+
+
+out_tab_contrast_t2_bmi_z_full  <-
+  lmtp_evalue_tab(tab_contrast_t2_bmi_z_full, scale = c("RD"))
+
+out_tab_contrast_t2_bmi_z_full 
+
+
+
 # contrast embodied -------------------------------------------------------
 
 # bodysat
 t2_bodysat_z <- here_read("t2_bodysat_z")
 t2_bodysat_z_1 <- here_read("t2_bodysat_z_1")
-
 t2_bodysat_z_null <- here_read("t2_bodysat_z_null")
 
 # first contrast
@@ -4425,7 +4566,6 @@ out_tab_contrast_t2_bodysat_z
 contrast_t2_bodysat_z_1 <- lmtp_contrast(t2_bodysat_z_1,
                                          ref = t2_bodysat_z_null,
                                          type = "additive")
-contrast_t2_bodysat_z_1
 tab_contrast_t2_bodysat_z_1 <-
   margot_tab_lmtp(contrast_t2_bodysat_z_1, scale = "RD", new_name = "Body satisfaction")
 
@@ -4434,6 +4574,20 @@ out_tab_contrast_t2_bodysat_z_1 <-
   lmtp_evalue_tab(tab_contrast_t2_bodysat_z_1,
                   scale = c("RD"))
 out_tab_contrast_t2_bodysat_z_1
+
+# full
+contrast_t2_bodysat_z_full <- lmtp_contrast(t2_bodysat_z_1,
+                                         ref = t2_bodysat_z,
+                                         type = "additive")
+tab_contrast_t2_bodysat_z_full <-
+  margot_tab_lmtp(contrast_t2_bodysat_z_full, scale = "RD", new_name = "Body satisfaction")
+
+
+out_tab_contrast_t2_bodysat_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_bodysat_z_full,
+                  scale = c("RD"))
+out_tab_contrast_t2_bodysat_z_full
+
 
 
 # kessler 6
@@ -4466,7 +4620,6 @@ t2_kessler_latent_depression_z <-
   here_read("t2_kessler_latent_depression_z")
 t2_kessler_latent_depression_z_1 <-
   here_read("t2_kessler_latent_depression_z_1")
-
 t2_kessler_latent_depression_z_null <-
   here_read("t2_kessler_latent_depression_z_null")
 
@@ -4508,6 +4661,26 @@ out_tab_contrast_t2_kessler_latent_depression_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_kessler_latent_depression_z_1
+
+
+# full
+contrast_t2_kessler_latent_depression_z_full <-
+  lmtp_contrast(t2_kessler_latent_depression_z_1,
+                ref = t2_kessler_latent_depression_z,
+                type = "additive")
+
+tab_contrast_t2_kessler_latent_depression_z_full <-
+  margot_tab_lmtp(contrast_t2_kessler_latent_depression_z_full,
+                  scale = "RD",
+                  new_name = "Kessler 6 depression")
+
+
+out_tab_contrast_t2_kessler_latent_depression_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_kessler_latent_depression_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_kessler_latent_depression_z_full
+
 
 
 #anxiety
@@ -4558,11 +4731,31 @@ out_tab_contrast_t2_kessler_latent_anxiety_z_1 <-
 out_tab_contrast_t2_kessler_latent_anxiety_z_1
 
 
+# full
+# second contrast
+contrast_t2_kessler_latent_anxiety_z_full <-
+  lmtp_contrast(t2_kessler_latent_anxiety_z_1,
+                ref = t2_kessler_latent_anxiety_z,
+                type = "additive")
+
+tab_contrast_t2_kessler_latent_anxiety_z_full <-
+  margot_tab_lmtp(contrast_t2_kessler_latent_anxiety_z_full,
+                  scale = "RD",
+                  new_name = "Kessler 6 anxiety")
+
+
+out_tab_contrast_t2_kessler_latent_anxiety_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_kessler_latent_anxiety_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_kessler_latent_anxiety_z_full
+
+
+
+
 # fatigue
 t2_hlth_fatigue_z <- here_read("t2_hlth_fatigue_z")
-
 t2_hlth_fatigue_z_1 <- here_read("t2_hlth_fatigue_z_1")
-
 t2_hlth_fatigue_z_null <-
   here_read("t2_hlth_fatigue_z_null")
 
@@ -4605,6 +4798,30 @@ out_tab_contrast_t2_hlth_fatigue_z_1  <-
 
 out_tab_contrast_t2_hlth_fatigue_z_1 
 
+
+# full
+
+# second contrast
+contrast_t2_hlth_fatigue_z_full <-
+  lmtp_contrast(t2_hlth_fatigue_z_1,
+                ref = t2_hlth_fatigue_z,
+                type = "additive")
+
+
+tab_contrast_t2_hlth_fatigue_z_full  <-
+  margot_tab_lmtp(contrast_t2_hlth_fatigue_z_full,
+                  scale = "RD",
+                  new_name = "Fatigue")
+
+
+out_tab_contrast_t2_hlth_fatigue_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_hlth_fatigue_z_full ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_hlth_fatigue_z_full 
+
+
+
 # rumination
 t2_rumination_z <- here_read("t2_rumination_z")
 t2_rumination_z_1 <- here_read("t2_rumination_z_1")
@@ -4626,9 +4843,9 @@ out_tab_contrast_t2_rumination_z <-
   lmtp_evalue_tab(tab_contrast_t2_rumination_z,
                   scale = c("RD"))
 
-out_tab_contrast_t2_rumination_z                  
-# second contrast
+out_tab_contrast_t2_rumination_z   
 
+# second contrast
 contrast_t2_rumination_z_1 <-
   lmtp_contrast(t2_rumination_z_1,
                 ref = t2_rumination_z_null,
@@ -4646,7 +4863,23 @@ out_tab_contrast_t2_rumination_z_1 <-
 
 out_tab_contrast_t2_rumination_z_1
 
+# full
+contrast_t2_rumination_z_full <-
+  lmtp_contrast(t2_rumination_z_1,
+                ref = t2_rumination_z,
+                type = "additive")
 
+tab_contrast_t2_rumination_z_full <-
+  margot_tab_lmtp(contrast_t2_rumination_z_full ,
+                  scale = "RD",
+                  new_name = "Rumination")
+
+
+out_tab_contrast_t2_rumination_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_rumination_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_rumination_z_full
 
 
 # sex sat
@@ -4697,6 +4930,26 @@ out_tab_contrast_t2_sexual_satisfaction_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_sexual_satisfaction_z_1
+
+
+## full
+contrast_t2_sexual_satisfaction_z_full <-
+  lmtp_contrast(t2_sexual_satisfaction_z_1,
+                ref = t2_sexual_satisfaction_z,
+                type = "additive")
+
+
+tab_contrast_t2_sexual_satisfaction_z_full <-
+  margot_tab_lmtp(contrast_t2_sexual_satisfaction_z_full,
+                  scale = "RD",
+                  new_name = "Sexual satisfaction")
+
+
+out_tab_contrast_t2_sexual_satisfaction_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_sexual_satisfaction_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_sexual_satisfaction_z_full
 
 
 
@@ -4752,9 +5005,29 @@ out_tab_contrast_t2_power_no_control_composite_z_1  <-
 
 out_tab_contrast_t2_power_no_control_composite_z_1 
 
+# full
+contrast_t2_power_no_control_composite_z_full <-
+  lmtp_contrast(t2_power_no_control_composite_z_1,
+                ref = t2_power_no_control_composite_z,
+                type = "additive")
+
+
+tab_contrast_t2_power_no_control_composite_z_full  <-
+  margot_tab_lmtp(contrast_t2_power_no_control_composite_z_full ,
+                  scale = "RD",
+                  new_name = "Power no control")
+
+
+out_tab_contrast_t2_power_no_control_composite_z_full  <-
+  lmtp_evalue_tab(tab_contrast_t2_power_no_control_composite_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_power_no_control_composite_z_full 
+
+
+
 
 # self esteem
-
 t2_self_esteem_z <- here_read("t2_self_esteem_z")
 t2_self_esteem_z_1 <- here_read("t2_self_esteem_z_1")
 t2_self_esteem_z_null <-
@@ -4800,11 +5073,30 @@ out_tab_contrast_t2_self_esteem_z_1 <-
 out_tab_contrast_t2_self_esteem_z_1
 
 
+# full contrast
+contrast_t2_self_esteem_z_full <-
+  lmtp_contrast(t2_self_esteem_z_1,
+                ref = t2_self_esteem_z,
+                type = "additive")
+
+tab_contrast_t2_self_esteem_z_full <-
+  margot_tab_lmtp(contrast_t2_self_esteem_z_full,
+                  scale = "RD",
+                  new_name = "Self esteem")
+
+out_tab_contrast_t2_self_esteem_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_self_esteem_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_self_esteem_z_full
+
+
+
+
+
 
 
 # perfectionism -----------------------------------------------------------
-
-
 
 t2_perfectionism_z <- here_read("t2_perfectionism_z")
 t2_perfectionism_z_1 <- here_read("t2_perfectionism_z_1")
@@ -4851,6 +5143,27 @@ out_tab_contrast_t2_perfectionism_z_1 <-
 out_tab_contrast_t2_perfectionism_z_1
 
 
+# full contrast
+contrast_t2_perfectionism_z_full <-
+  lmtp_contrast(t2_perfectionism_z_1,
+                ref = t2_perfectionism_z,
+                type = "additive")
+
+
+tab_contrast_t2_perfectionism_z_full <-
+  margot_tab_lmtp(contrast_t2_perfectionism_z_full,
+                  scale = "RD",
+                  new_name = "Perfectionism")
+
+
+out_tab_contrast_t2_perfectionism_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_perfectionism_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_perfectionism_z_full
+
+
+
 # self control have
 t2_self_control_have_lots_z <-
   here_read("t2_self_control_have_lots_z")
@@ -4881,6 +5194,7 @@ out_tab_contrast_t2_self_control_have_lots_z <-
 out_tab_contrast_t2_self_control_have_lots_z
 
 
+
 # second contrast
 contrast_t2_self_control_have_lots_z_1 <-
   lmtp_contrast(t2_self_control_have_lots_z_1,
@@ -4899,6 +5213,26 @@ out_tab_contrast_t2_self_control_have_lots_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_self_control_have_lots_z_1
+
+
+# full contrast
+contrast_t2_self_control_have_lots_z_full <-
+  lmtp_contrast(t2_self_control_have_lots_z_1,
+                ref = t2_self_control_have_lots_z,
+                type = "additive")
+
+
+tab_contrast_t2_self_control_have_lots_z_full <-
+  margot_tab_lmtp(contrast_t2_self_control_have_lots_z_full,
+                  scale = "RD",
+                  new_name = "Self control have")
+
+
+out_tab_contrast_t2_self_control_have_lots_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_self_control_have_lots_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_self_control_have_lots_z_full
 
 
 
@@ -4934,7 +5268,7 @@ out_tab_contrast_t2_self_control_wish_more_reversed_z <-
 out_tab_contrast_t2_self_control_wish_more_reversed_z
 
 
-# secind contrast
+# second contrast
 contrast_t2_self_control_wish_more_reversed_z_1 <-
   lmtp_contrast(t2_self_control_wish_more_reversed_z_1,
                 ref = t2_self_control_wish_more_reversed_z_null,
@@ -4953,6 +5287,30 @@ out_tab_contrast_t2_self_control_wish_more_reversed_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_self_control_wish_more_reversed_z_1
+
+
+# full contrast
+contrast_t2_self_control_wish_more_reversed_z_full <-
+  lmtp_contrast(t2_self_control_wish_more_reversed_z_1,
+                ref = t2_self_control_wish_more_reversed_z,
+                type = "additive")
+
+tab_contrast_t2_self_control_wish_more_reversed_z_full <-
+  margot_tab_lmtp(
+    contrast_t2_self_control_wish_more_reversed_z_full,
+    scale = "RD",
+    new_name = "Self control wish more (reversed)"
+  )
+
+
+out_tab_contrast_t2_self_control_wish_more_reversed_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_self_control_wish_more_reversed_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_self_control_wish_more_reversed_z_1
+
+
+
 
 # emotional regulation
 t2_emotion_regulation_out_control_z <-
@@ -5007,6 +5365,30 @@ out_tab_contrast_t2_emotion_regulation_out_control_z_1 <-
 out_tab_contrast_t2_emotion_regulation_out_control_z_1
 
 
+## Full contrast
+contrast_t2_emotion_regulation_out_control_z_full <-
+  lmtp_contrast(t2_emotion_regulation_out_control_z_1,
+                ref = t2_emotion_regulation_out_control_z,
+                type = "additive")
+
+
+
+tab_contrast_t2_emotion_regulation_out_control_z_full <-
+  margot_tab_lmtp(
+    contrast_t2_emotion_regulation_out_control_z_full ,
+    scale = "RD",
+    new_name = "Emotional regulation (out of control)"
+  )
+
+
+out_tab_contrast_t2_emotion_regulation_out_control_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_emotion_regulation_out_control_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_emotion_regulation_out_control_z_full
+
+
+
 
 #  permeability individual
 t2_permeability_individual_z <-
@@ -5056,6 +5438,25 @@ out_tab_contrast_t2_permeability_individual_z_1 <-
 out_tab_contrast_t2_permeability_individual_z_1
 
 
+## Full contrast
+
+contrast_t2_permeability_individual_z_full <-
+  lmtp_contrast(t2_permeability_individual_z_1,
+                ref = t2_permeability_individual_z,
+                type = "additive")
+
+tab_contrast_t2_permeability_individual_z_full <-
+  margot_tab_lmtp(contrast_t2_permeability_individual_z_full,
+                  scale = "RD",
+                  new_name = "Permeability self")
+
+
+out_tab_contrast_t2_permeability_individual_z_full<-
+  lmtp_evalue_tab(tab_contrast_t2_permeability_individual_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_permeability_individual_z_full
+
 
 # more a political view
 # t2_impermeability_group_z<- here_read("t2_impermeability_group_z")
@@ -5073,7 +5474,6 @@ out_tab_contrast_t2_permeability_individual_z_1
 t2_gratitude_z <- here_read("t2_gratitude_z")
 t2_gratitude_z
 t2_gratitude_z_1 <- here_read("t2_gratitude_z_1")
-
 
 t2_gratitude_z_null <- here_read("t2_gratitude_z_null")
 
@@ -5108,6 +5508,24 @@ out_tab_contrast_t2_gratitude_z_1  <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_gratitude_z_1 
+
+# full contrast
+contrast_t2_gratitude_z_full <- lmtp_contrast(t2_gratitude_z_1,
+                                           ref = t2_gratitude_z,
+                                           type = "additive")
+tab_contrast_t2_gratitude_z_full <-
+  margot_tab_lmtp(contrast_t2_gratitude_z_full ,
+                  scale = "RD",
+                  new_name = "Gratitude")
+
+
+out_tab_contrast_t2_gratitude_z_full  <-
+  lmtp_evalue_tab(tab_contrast_t2_gratitude_z_full ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_gratitude_z_full 
+
+
 
 
 # 
@@ -5154,8 +5572,27 @@ out_tab_contrast_t2_vengeful_rumin_z_1  <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_vengeful_rumin_z_1
-# 
 
+# full
+contrast_t2_vengeful_rumin_z_full <-
+  lmtp_contrast(t2_vengeful_rumin_z_1,
+                ref = t2_vengeful_rumin_z,
+                type = "additive")
+
+tab_contrast_t2_vengeful_rumin_z_full  <-
+  margot_tab_lmtp(contrast_t2_vengeful_rumin_z_full ,
+                  scale = "RD",
+                  new_name = "Vengefulness (forgiveness")
+
+
+out_tab_contrast_t2_vengeful_rumin_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_vengeful_rumin_z_full ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_vengeful_rumin_z_full
+
+
+# 
 # pwb your health
 
 t2_pwb_your_health_z <-
@@ -5203,6 +5640,25 @@ out_tab_contrast_t2_pwb_your_health_z_1 <-
 
 out_tab_contrast_t2_pwb_your_health_z_1
 
+# full contrast
+contrast_t2_pwb_your_health_z_full <-
+  lmtp_contrast(t2_pwb_your_health_z_1,
+                ref = t2_pwb_your_health_z,
+                type = "additive")
+
+tab_contrast_t2_pwb_your_health_z_full <-
+  margot_tab_lmtp(contrast_t2_pwb_your_health_z_full,
+                  scale = "RD",
+                  new_name = "PWB your health")
+
+
+out_tab_contrast_t2_pwb_your_health_z_full<-
+  lmtp_evalue_tab(tab_contrast_t2_pwb_your_health_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_pwb_your_health_z_full
+
+
 # pwb your furture security
 
 t2_pwb_your_future_security_z <-
@@ -5249,6 +5705,24 @@ out_tab_contrast_t2_pwb_your_future_security_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_pwb_your_future_security_z_1
+
+## full
+contrast_t2_pwb_your_future_security_z_full <-
+  lmtp_contrast(t2_pwb_your_future_security_z_1,
+                ref = t2_pwb_your_future_security_z,
+                type = "additive")
+
+tab_contrast_t2_pwb_your_future_security_z_full <-
+  margot_tab_lmtp(contrast_t2_pwb_your_future_security_z_full,
+                  scale = "RD",
+                  new_name = "PWB your future security")
+
+
+out_tab_contrast_t2_pwb_your_future_security_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_pwb_your_future_security_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_pwb_your_future_security_z_full
 
 
 
@@ -5303,6 +5777,29 @@ out_tab_contrast_t2_pwb_your_relationships_z_1  <-
 out_tab_contrast_t2_pwb_your_relationships_z_1 
 
 
+## Full
+# second contrast
+contrast_t2_pwb_your_relationships_z_full <-
+  lmtp_contrast(t2_pwb_your_relationships_z_1 ,
+                ref = t2_pwb_your_relationships_z,
+                type = "additive")
+
+
+tab_contrast_t2_pwb_your_relationships_z_full <-
+  margot_tab_lmtp(contrast_t2_pwb_your_relationships_z_full ,
+                  scale = "RD",
+                  new_name = "PWB your relationships")
+
+
+out_tab_contrast_t2_pwb_your_relationships_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_pwb_your_relationships_z_full ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_pwb_your_relationships_z_full 
+
+
+
+
 
 # pwb your standard of living
 
@@ -5351,6 +5848,25 @@ out_tab_contrast_t2_pwb_standard_living_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_pwb_standard_living_z_1
+
+
+## full
+contrast_t2_pwb_standard_living_z_full <-
+  lmtp_contrast(t2_pwb_standard_living_z_1,
+                ref = t2_pwb_standard_living_z,
+                type = "additive")
+
+tab_contrast_t2_pwb_standard_living_z_full <-
+  margot_tab_lmtp(contrast_t2_pwb_standard_living_z_full ,
+                  scale = "RD",
+                  new_name = "PWB your standard living")
+
+
+out_tab_contrast_t2_pwb_standard_living_z_full<-
+  lmtp_evalue_tab(tab_contrast_t2_pwb_standard_living_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_pwb_standard_living_z_full
 
 
 
@@ -5419,6 +5935,24 @@ out_tab_contrast_t2_meaning_purpose_z_1  <-
 
 out_tab_contrast_t2_meaning_purpose_z_1 
 
+#full
+
+contrast_t2_meaning_purpose_z_full<-
+  lmtp_contrast(t2_meaning_purpose_z_1 ,
+                ref = t2_meaning_purpose_z,
+                type = "additive")
+
+tab_contrast_t2_meaning_purpose_z_full  <-
+  margot_tab_lmtp(contrast_t2_meaning_purpose_z_full ,
+                  scale = "RD",
+                  new_name = "Meaning: clear sense of purpose")
+
+
+out_tab_contrast_t2_meaning_purpose_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_meaning_purpose_z_full ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_meaning_purpose_z_full 
 
 
 
@@ -5426,7 +5960,6 @@ out_tab_contrast_t2_meaning_purpose_z_1
 
 t2_meaning_sense_z <- here_read("t2_meaning_sense_z")
 t2_meaning_sense_z_1 <- here_read("t2_meaning_sense_z_1")
-
 t2_meaning_sense_z_null <-
   here_read("t2_meaning_sense_z_null")
 
@@ -5468,6 +6001,25 @@ out_tab_contrast_t2_meaning_sense_z_1 <-
 out_tab_contrast_t2_meaning_sense_z_1
 
 
+# full contrast
+contrast_t2_meaning_sense_z_full<-
+  lmtp_contrast(t2_meaning_sense_z_1,
+                ref = t2_meaning_sense_z,
+                type = "additive")
+
+tab_contrast_t2_meaning_sense_z_full <-
+  margot_tab_lmtp(contrast_t2_meaning_sense_z_full,
+                  scale = "RD",
+                  new_name = "Meaning: good sense of what makes my life meaningful")
+
+
+out_tab_contrast_t2_meaning_sense_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_meaning_sense_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_meaning_sense_z_full
+
+
 
 # lifesat
 
@@ -5506,6 +6058,26 @@ out_tab_contrast_t2_lifesat_z_1 <-
 
 out_tab_contrast_t2_lifesat_z_1
 
+
+## full
+
+contrast_t2_lifesat_z_full <- lmtp_contrast(t2_lifesat_z_1,
+                                         ref = t2_lifesat_z,
+                                         type = "additive")
+
+tab_contrast_t2_lifesat_z_full <-
+  margot_tab_lmtp(contrast_t2_lifesat_z_full, scale = "RD", new_name = "Satisfaction with life")
+
+
+out_tab_contrast_t2_lifesat_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_lifesat_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_lifesat_z_full
+
+
+
+
 # contrasts social --------------------------------------------------------
 
 # social support
@@ -5540,6 +6112,23 @@ out_tab_contrast_t2_support_z_1 <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_support_z_1
+
+
+# full
+contrast_t2_support_z_full <- lmtp_contrast(t2_support_z_1,
+                                         ref = t2_support_z,
+                                         type = "additive")
+tab_contrast_t2_support_z_full <-
+  margot_tab_lmtp(contrast_t2_support_z_full, scale = "RD", new_name = "Social support")
+
+
+out_tab_contrast_t2_support_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_support_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_support_z_full
+
+
 
 # neighbourhood community
 
@@ -5588,6 +6177,26 @@ out_tab_contrast_t2_neighbourhood_community_z_1 <-
 
 out_tab_contrast_t2_neighbourhood_community_z_1
 
+
+#. full
+
+contrast_t2_neighbourhood_community_z_full <-
+  lmtp_contrast(t2_neighbourhood_community_z_1,
+                ref = t2_neighbourhood_community_z,
+                type = "additive")
+
+tab_contrast_t2_neighbourhood_community_z_full<-
+  margot_tab_lmtp(contrast_t2_neighbourhood_community_z_full,
+                  scale = "RD",
+                  new_name = "Neighbourhood community")
+
+
+out_tab_contrast_t2_neighbourhood_community_z_full <-
+  lmtp_evalue_tab(tab_contrast_t2_neighbourhood_community_z_full,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_neighbourhood_community_z_full
+
 # social belong
 t2_belong_z <- here_read("t2_belong_z")
 t2_belong_z_1 <- here_read("t2_belong_z_1")
@@ -5627,6 +6236,25 @@ out_tab_contrast_t2_belong_z_1  <-
 
 out_tab_contrast_t2_belong_z_1 
 
+#. full
+
+contrast_t2_belong_z_full <- lmtp_contrast(t2_belong_z_1 ,
+                                        ref = t2_belong_z,
+                                        type = "additive")
+
+
+tab_contrast_t2_belong_z_full  <-
+  margot_tab_lmtp(contrast_t2_belong_z_full , scale = "RD",
+                  new_name = "Social belonging")
+
+
+out_tab_contrast_t2_belong_z_full  <-
+  lmtp_evalue_tab(tab_contrast_t2_belong_z_full ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_belong_z_full
+
+
 
 # make tables -------------------------------------------------------------
 
@@ -5634,14 +6262,14 @@ out_tab_contrast_t2_belong_z_1
 
 # bind individual tables
 tab_health <- rbind(
-  # out_tab_contrast_t2_sfhealth_z,
-  out_tab_contrast_t2_sfhealth_your_health_z,
-  out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_alcohol_frequency_z,
   out_tab_contrast_t2_alcohol_intensity_z,
+  out_tab_contrast_t2_bmi_z,
+  out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_hours_sleep_z,
-  out_tab_contrast_t2_bmi_z
+  out_tab_contrast_t2_sfhealth_your_health_z
 )
+
 
 tab_body <- rbind(
   out_tab_contrast_t2_bodysat_z,
@@ -5653,33 +6281,32 @@ tab_body <- rbind(
 )
 
 tab_ego <- rbind(
-  out_tab_contrast_t2_power_no_control_composite_z,
-  out_tab_contrast_t2_self_esteem_z,
+  out_tab_contrast_t2_emotion_regulation_out_control_z,
   out_tab_contrast_t2_perfectionism_z,
+  out_tab_contrast_t2_permeability_individual_z,
+  out_tab_contrast_t2_power_no_control_composite_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
-  out_tab_contrast_t2_emotion_regulation_out_control_z,
-  out_tab_contrast_t2_permeability_individual_z
+  out_tab_contrast_t2_self_esteem_z
 )
 
 
 tab_reflective <- rbind(
   out_tab_contrast_t2_gratitude_z,
-  out_tab_contrast_t2_vengeful_rumin_z,
+  out_tab_contrast_t2_meaning_purpose_z,
+  out_tab_contrast_t2_meaning_sense_z,
   out_tab_contrast_t2_pwb_your_health_z,
   out_tab_contrast_t2_pwb_your_future_security_z,
   out_tab_contrast_t2_pwb_your_relationships_z,
   out_tab_contrast_t2_pwb_standard_living_z,
-  out_tab_contrast_t2_lifemeaning_z
-  out_tab_contrast_t2_meaning_purpose_z,
-  out_tab_contrast_t2_meaning_sense_z
+  out_tab_contrast_t2_vengeful_rumin_z
 )
 
 
 tab_social <- rbind(
-  out_tab_contrast_t2_support_z,
+  out_tab_contrast_t2_belong_z,
   out_tab_contrast_t2_neighbourhood_community_z,
-  out_tab_contrast_t2_belong_z
+  out_tab_contrast_t2_support_z
 )
 
 
@@ -5727,7 +6354,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Religious Identification: shift DOWN 1, N = 33,398"
+sub_title = "Religious Identification: shift DOWN 1 to min 1, contrast NULL; N = 33,928"
 
 
 # graph health
@@ -5751,7 +6378,8 @@ plot_group_tab_health <- margot_plot(
   x_lim_hi =  .5
 )
 plot_group_tab_health
-dev.off()
+
+#dev.off()
 # save graph
 ggsave(
   plot_group_tab_health,
@@ -5787,6 +6415,8 @@ plot_group_tab_body <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
+
+plot_group_tab_body
 
 # save graph
 ggsave(
@@ -5919,17 +6549,16 @@ dev.off()
 # don't forget to report smoking
 
 # bind individual tables
-tab_health_1 <- rbind(
-  # out_tab_contrast_t2_sfhealth_z_1,
-  out_tab_contrast_t2_sfhealth_your_health_z_1 ,
-  out_tab_contrast_t2_hours_exercise_log_z_1 ,
+tab_health_1  <- rbind(
   out_tab_contrast_t2_alcohol_frequency_z_1 ,
   out_tab_contrast_t2_alcohol_intensity_z_1 ,
+  out_tab_contrast_t2_bmi_z_1 ,
+  out_tab_contrast_t2_hours_exercise_log_z_1 ,
   out_tab_contrast_t2_hours_sleep_z_1 ,
-  out_tab_contrast_t2_bmi_z_1 
-)
+  out_tab_contrast_t2_sfhealth_your_health_z_1 
+  )
 
-tab_body_1  <- rbind(
+tab_body_1 <- rbind(
   out_tab_contrast_t2_bodysat_z_1 ,
   out_tab_contrast_t2_kessler_latent_depression_z_1 ,
   out_tab_contrast_t2_kessler_latent_anxiety_z_1 ,
@@ -5939,34 +6568,34 @@ tab_body_1  <- rbind(
 )
 
 tab_ego_1  <- rbind(
+  out_tab_contrast_t2_emotion_regulation_out_control_z_1 ,
+  out_tab_contrast_t2_perfectionism_z_1 ,
+  out_tab_contrast_t2_permeability_individual_z_1 ,
   out_tab_contrast_t2_power_no_control_composite_z_1 ,
-  out_tab_contrast_t2_self_esteem_z_1,
-  out_tab_contrast_t2_perfectionism_z_1,
-  out_tab_contrast_t2_self_control_have_lots_z_1,
-  out_tab_contrast_t2_self_control_wish_more_reversed_z_1,
-  out_tab_contrast_t2_emotion_regulation_out_control_z_1,
-  out_tab_contrast_t2_permeability_individual_z_1 
+  out_tab_contrast_t2_self_control_have_lots_z_1 ,
+  out_tab_contrast_t2_self_control_wish_more_reversed_z_1 ,
+  out_tab_contrast_t2_self_esteem_z_1 
 )
 
 
-tab_reflective_1 <- rbind(
-  out_tab_contrast_t2_gratitude_z_1,
-  out_tab_contrast_t2_vengeful_rumin_z_1,
-  out_tab_contrast_t2_pwb_your_health_z_1,
-  out_tab_contrast_t2_pwb_your_future_security_z_1,
-  out_tab_contrast_t2_pwb_your_relationships_z_1,
-  out_tab_contrast_t2_pwb_standard_living_z_1,
-  #out_tab_contrast_t2_lifemeaning_z_1
-  out_tab_contrast_t2_meaning_purpose_z_1,
-  out_tab_contrast_t2_meaning_sense_z_1
+tab_reflective_1  <- rbind(
+  out_tab_contrast_t2_gratitude_z_1 ,
+  out_tab_contrast_t2_meaning_purpose_z_1 ,
+  out_tab_contrast_t2_meaning_sense_z_1 ,
+  out_tab_contrast_t2_pwb_your_health_z_1 ,
+  out_tab_contrast_t2_pwb_your_future_security_z_1 ,
+  out_tab_contrast_t2_pwb_your_relationships_z_1 ,
+  out_tab_contrast_t2_pwb_standard_living_z_1 ,
+  out_tab_contrast_t2_vengeful_rumin_z_1 
 )
 
 
-tab_social_1 <- rbind(
-  out_tab_contrast_t2_support_z_1,
-  out_tab_contrast_t2_neighbourhood_community_z_1,
-  out_tab_contrast_t2_belong_z_1
+tab_social_1  <- rbind(
+  out_tab_contrast_t2_belong_z_1 ,
+  out_tab_contrast_t2_neighbourhood_community_z_1 ,
+  out_tab_contrast_t2_support_z_1 
 )
+
 
 
 # make group table
@@ -6013,7 +6642,8 @@ group_tab_social_1
 
 # check N
 N
-sub_title_1 ="Religious Identification: shift UP to max 7, N = 33,398"
+sub_title
+sub_title_1 ="Religious Identification: shift UP to max 7, contrast NULL; N = 33,928"
 
 f_1
 # graph health
@@ -6201,20 +6831,302 @@ ggsave(
 dev.off()
 
 
+### SHIFT FULL
+tab_health_full <- rbind(
+  out_tab_contrast_t2_alcohol_frequency_z_full ,
+  out_tab_contrast_t2_alcohol_intensity_z_full ,
+  out_tab_contrast_t2_bmi_z_full ,
+  out_tab_contrast_t2_hours_exercise_log_z_full ,
+  out_tab_contrast_t2_hours_sleep_z_full ,
+  out_tab_contrast_t2_sfhealth_your_health_z_full 
+  
+)
+
+tab_body_full  <- rbind(
+  out_tab_contrast_t2_bodysat_z_full ,
+  out_tab_contrast_t2_kessler_latent_depression_z_full ,
+  out_tab_contrast_t2_kessler_latent_anxiety_z_full ,
+  out_tab_contrast_t2_hlth_fatigue_z_full ,
+  out_tab_contrast_t2_rumination_z_full ,
+  out_tab_contrast_t2_sexual_satisfaction_z_full 
+)
+
+tab_ego_full  <- rbind(
+  out_tab_contrast_t2_emotion_regulation_out_control_z_full ,
+  out_tab_contrast_t2_perfectionism_z_full ,
+  out_tab_contrast_t2_permeability_individual_z_full ,
+  out_tab_contrast_t2_power_no_control_composite_z_full ,
+  out_tab_contrast_t2_self_control_have_lots_z_full ,
+  out_tab_contrast_t2_self_control_wish_more_reversed_z_full ,
+  out_tab_contrast_t2_self_esteem_z_full 
+)
+
+tab_reflective_full <- rbind(
+  out_tab_contrast_t2_gratitude_z_full ,
+  out_tab_contrast_t2_meaning_purpose_z_full ,
+  out_tab_contrast_t2_meaning_sense_z_full ,
+  out_tab_contrast_t2_pwb_your_health_z_full ,
+  out_tab_contrast_t2_pwb_your_future_security_z_full ,
+  out_tab_contrast_t2_pwb_your_relationships_z_full ,
+  out_tab_contrast_t2_pwb_standard_living_z_full ,
+  out_tab_contrast_t2_vengeful_rumin_z_full 
+)
+
+
+tab_social_full <- rbind(
+  out_tab_contrast_t2_belong_z_full ,
+  out_tab_contrast_t2_neighbourhood_community_z_full ,
+  out_tab_contrast_t2_support_z_full 
+)
+
+# make group table
+group_tab_health_full  <- group_tab(tab_health_full, type = "RD")
+
+# save
+here_save(group_tab_health_full , "group_tab_health_full")
+
+
+# make group table
+group_tab_body_full  <- group_tab(tab_body_full, type = "RD")
+
+# save
+here_save(group_tab_body_full , "group_tab_body_full")
+
+# make group table
+group_tab_ego_full  <- group_tab(tab_ego_full, type = "RD")
+
+# save
+here_save(group_tab_ego_full, "group_tab_ego_full")
+
+# make group table
+group_tab_reflective_full  <-
+  group_tab(tab_reflective_full, type = "RD")
+
+# save
+here_save(group_tab_reflective_full , "group_tab_reflective_full")
+
+# make group table
+group_tab_social_full  <- group_tab(tab_social_full , type = "RD")
+
+# save
+here_save(group_tab_social_full, "group_tab_social_full")
+
+
+group_tab_health_full <- here_read("group_tab_health_full")
+group_tab_body_full <- here_read("group_tab_body_full")
+group_tab_ego_full <- here_read("group_tab_ego_full")
+group_tab_reflective_full <- here_read("group_tab_reflective_full")
+group_tab_social_full <- here_read("group_tab_social_full")
+
+
+
+# full graphs
+
+# check N
+N
+sub_title
+sub_title_full ="Religious Identification: shift UP to max 7, contrast shift DOWN to min 1; N = 33,928"
+
+
+# graph health
+plot_group_tab_health_full <- margot_plot(
+  group_tab_health_full,
+  type = "RD",
+  title = "Health effects",
+  subtitle = sub_title_full,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 15,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+plot_group_tab_health_full
+dev.off()
+# save graph
+ggsave(
+  plot_group_tab_health_full,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "plot_group_tab_health_full.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+# graph body
+plot_group_tab_body_full <- margot_plot(
+  group_tab_body_1,
+  type = "RD",
+  title = "Embodied effects",
+  subtitle = sub_title_full,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+
+plot_group_tab_body_full
+# save graph
+ggsave(
+  plot_group_tab_body_full,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "plot_group_tab_body_full.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+plot_group_tab_body_full
+
+# graph ego
+plot_group_tab_ego_full <- margot_plot(
+  group_tab_ego_full,
+  type = "RD",
+  title = "Ego effects",
+  subtitle = sub_title_full,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+plot_group_tab_ego_full
+
+# save graph
+ggsave(
+  plot_group_tab_ego_full,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "plot_group_tab_ego_full.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+plot_group_tab_ego_full
+
+# graph reflective
+plot_group_tab_reflective_full<- margot_plot(
+  group_tab_reflective_full,
+  type = "RD",
+  title = "Reflective effects",
+  subtitle = sub_title_full,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+plot_group_tab_reflective_full
+
+# save graph
+ggsave(
+  plot_group_tab_reflective_full,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "plot_group_tab_reflective_full.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+# graph social
+plot_group_tab_social_full <- margot_plot(
+  group_tab_social_full,
+  type = "RD",
+  title = "Social effects",
+  subtitle = sub_title_full,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+
+plot_group_tab_social_full
+
+# save graph
+ggsave(
+  plot_group_tab_social_full,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "plot_group_tab_social_full.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+dev.off()
+
+
 
 
 # comparative intervention graphs -----------------------------------------
 
 # combo graphs
 
-plot_compare_health <- plot_group_tab_health + plot_group_tab_health_1 + plot_annotation(title = 
-                                                                                           "Shift Intervention Comparisions", tag_level = "A")
+plot_compare_health <- plot_group_tab_health + plot_group_tab_health_1 +  plot_group_tab_health_full +
+  plot_annotation(title = "Shift Intervention Comparisions", tag_level = "A")
 
 plot_compare_health
 ggsave(
   plot_compare_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 25,
+  width = 35,
   height = 10,
   units = "in",
   filename = "plot_compare_health.png",
@@ -6305,3 +7217,4 @@ dev.off()
 
 
 push_mods
+
