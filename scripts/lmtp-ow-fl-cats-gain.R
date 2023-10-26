@@ -554,6 +554,17 @@ n_cats
 # double check path
 push_mods 
 
+
+
+# -------------------------------------------------------------------------
+
+
+
+
+# positivity --------------------------------------------------------------
+
+
+
 # check col names
 colnames(dat)
 
@@ -1097,7 +1108,14 @@ table_social_vars |>
   as_kable_extra( include = everything(),
                   addtl_fmt = TRUE)
 
+table_social_vars
 
+
+table_social_vars |> 
+  as_gt()
+
+# test of inline table
+inline_text(table_social_vars, variable = "Belong")
 
 
 ## Collect demographic variables
