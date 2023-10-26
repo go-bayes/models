@@ -952,9 +952,13 @@ table_gtsummary <- tbl_summary(data,
 # convert gtsummary to kable object
 table_kable_gt_summary <- as_kable(table_gtsummary, format = "markdown", booktabs = TRUE)
 table_kable_gt_summary
-
-
 here_save(table_kable_gt_summary, "table_kable_gt_summary")
+
+
+table_kable_gt_summary_latex <- as_kable(table_gtsummary, format = "latex", booktabs = TRUE)
+table_kable_gt_summary_latex
+
+here_save(table_kable_gt_summary_latex, "table_kable_gt_summary_latex")
 # clean -------------------------------------------------------------------
 
 

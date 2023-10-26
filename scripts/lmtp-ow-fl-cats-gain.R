@@ -448,7 +448,7 @@ dat_long  <- dat |>
   #   hours_friends_log = sqrt(hours_friends + 1),
   #   hours_family_log = sqrt(hours_family + 1)
   # ) |>
-  mutate(male = as.numeric(male) - 1) |>
+  mutate(male = as.numeric(male)) |>
   mutate(total_siblings_factor = ordered(round(
     ifelse(total_siblings > 7, 7, total_siblings), 0
   ))) |>
@@ -459,7 +459,7 @@ dat_long  <- dat |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
   mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
-    eth_cat = as.integer(eth_cat),
+   # eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
@@ -550,7 +550,7 @@ push_mods
 here_save(n_cats, "n_cats")
 
 n_cats
-N # 5376
+#N # 5376
 # double check path
 push_mods 
 
@@ -659,7 +659,7 @@ baseline_vars = c(
   #  "religion_scripture_binary",
   #  "religion_believe_god",
   #  "religion_believe_spirit",
-  "sample_weights"#,
+  "sample_weights"
   #"alert_level_combined_lead"
 )
 
@@ -762,9 +762,367 @@ outcome_vars = c(
 
 
 
-# make data wide and impute baseline missing values -----------------------
+# REAL tables -----------------------
 
-baseline_vars
+
+dt_18 <- dat_long |> 
+  dplyr::filter(wave == 1)
+ 
+
+# get names
+names_base_tab <- setdiff(baseline_vars, dt_18)
+names_base_sorted <- sort(names_base_tab)
+names_base_final <- c(nzavs_exposure, names_base_sorted)
+
+
+
+##
+selected_base_cols <- dt_18 %>% select(all_of(names_base_final)) #|>  dplyr::select(-sample_weights) 
+colnames(selected_base_cols)
+
+
+# baseline table
+
+table_baseline <- selected_base_cols %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+              missing = "no", 
+              percent = "column") |> 
+  add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Baseline Variables**") %>% # update the column header
+  bold_labels() 
+
+# save baseline
+here_save(table_baseline, "table_baseline")
+
+table_baseline
+
+## all outcomes
+
+names_outcomes_tab <- setdiff(outcome_vars, dt_18)
+names_outcomes_sorted <- sort(names_outcomes_tab)
+names_outcomes_final <- names_outcomes_sorted # consistent workflow
+names_outcomes_final
+
+names_outcomes_final
+
+
+# baseline by category: personality 
+
+table_baseline_personality  <- selected_base_cols %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(include = c(Agreeableness, Conscientiousness, Extraversion, Neuroticism, Openness, "Honesty Humility"),
+    missing = "no", 
+    percent = "column") |> 
+#  add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Personality Variables**") %>% # update the column header
+  bold_labels() 
+
+table_baseline_personality
+# save baseline
+here_save(table_baseline_personality, "table_baseline_personality")
+
+table_baseline_personality
+
+table_baseline
+
+# baseline by category: demographic
+demographic_vars = c(
+  "male",
+  "age",
+  "education_level_coarsen",
+  "eth_cat",
+#  "sample_origin",
+  "nz_dep2018",
+  "nzsei13",
+  "total_siblings_factor",
+  "born_nz",
+  "hlth_disability",
+  "household_inc_log",
+  "partner",
+#  "political_conservative",
+  "urban",
+  "children_num"#,
+#  "hours_children_log",
+#  "hours_work_log",
+#  "hours_housework_log",
+#  "hours_exercise_log",
+ # "religion_church_round",
+#  "religion_identification_level"
+)
+
+
+# select
+names_demographic_vars <- setdiff(demographic_vars, dt_18)
+
+# sort
+sorted_names_demographic_vars <- sort(demographic_vars)
+
+
+# add exposure
+names_demographic_final <- c(nzavs_exposure, sorted_names_demographic_vars)
+
+
+# fetch data
+selected_sorted_names_demographic_vars <- dt_18 %>% select(all_of(names_demographic_final)) #|>  dplyr::select(-sample_weights) 
+
+# make table with correct names
+table_demographic_vars <- selected_sorted_names_demographic_vars %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+    missing = "no", 
+    percent = "column") |> 
+ # add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Exposure + Demographic Variables**") %>% # update the column header
+  bold_labels() 
+
+# inspect
+table_demographic_vars
+
+# save
+here_save(table_demographic_vars, "table_demographic_vars")
+
+# test
+table_demographic_vars|> 
+  as_kable(format = "markdown", booktabs = TRUE)
+
+
+## Confounding control
+
+# baseline by category: confounding controul
+confounding_control_vars = c(
+  "sample_origin",
+  "political_conservative",
+  "hours_children_log",
+  "hours_work_log",
+  "hours_housework_log",
+  "hours_exercise_log",
+  "religion_church_round",
+  "religion_identification_level"
+)
+
+
+names_confounding_control_vars <- setdiff(confounding_control_vars, dt_18)
+
+# sort
+sorted_names_confounding_control_vars <- sort(names_confounding_control_vars)
+
+# fetch data
+selected_sorted_names_confounding_control_vars <- dt_18 %>% select(all_of(sorted_names_confounding_control_vars)) #|>  dplyr::select(-sample_weights) 
+
+## make table
+table_confounding_control_vars <- selected_sorted_names_confounding_control_vars %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+    missing = "no", 
+    percent = "column") |> 
+ # add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Confounding Control Variables**") %>% # update the column header
+  bold_labels() 
+
+# view
+table_confounding_control_vars
+
+# check
+table_confounding_control_vars|> 
+  as_kable(format = "markdown", booktabs = TRUE)
+
+
+# save
+here_save(table_confounding_control_vars, "table_confounding_control_vars")
+
+
+
+# OUTCOMES 
+
+## health
+health_vars = c(
+  "alcohol_frequency",
+  # health
+  "alcohol_intensity",
+  # health
+  "hlth_bmi",
+  # health
+  "hours_exercise_log",
+  # health
+  #"sfhealth",
+  # health
+  "sfhealth_your_health",
+  # "In general, would you say your health is...
+  # "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
+  # "sfhealth_expect_worse_health",
+  "hlth_sleep_hours",
+  # health
+  "smoker")
+
+
+names_health_vars<- setdiff(health_vars, dt_18)
+sorted_names_health_vars <- sort(names_health_vars)
+
+selected_sorted_names_health_vars<- dt_18 %>% select(all_of(sorted_names_health_vars)) #|>  dplyr::select(-sample_weights) 
+
+table_health_vars <- selected_sorted_names_health_vars %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+    missing = "no", 
+    percent = "column") |> 
+ # add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Health Variables**") %>% # update the column header
+  bold_labels() 
+
+table_health_vars
+
+here_save(table_health_vars, "table_health_vars")
+
+
+table_health_vars|> 
+  as_kable(format = "markdown", booktabs = TRUE)
+
+
+
+# embody tables 
+
+
+embody_vars = c(
+  # health
+  "hlth_fatigue",
+  # embodied
+  #"rumination", # not at baseline 
+  "kessler6_sum",
+  # embodied
+  "bodysat")
+
+names_embody_vars<- setdiff(embody_vars, dt_18)
+sorted_names_embody_vars <- sort(names_embody_vars)
+
+
+selected_sorted_names_embody_vars<- dt_18 %>% select(all_of(sorted_names_embody_vars)) #|>  dplyr::select(-sample_weights) 
+
+table_embody_vars <- selected_sorted_names_embody_vars %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+    missing = "no", 
+    percent = "column") |> 
+#  add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Embodied Well-Being Variables**") %>% # update the column header
+  bold_labels() 
+
+table_embody_vars
+
+table_embody_vars|> 
+  as_kable(format = "markdown")
+
+table_embody_vars |> 
+  as_kable_extra( include = everything(),
+                  addtl_fmt = TRUE)
+
+table_embody_vars
+here_save(table_embody_vars, "table_embody_vars")
+
+
+
+
+reflective_vars = c(
+  "self_esteem",
+  "pwb_your_health",
+  #Your health.
+  "pwb_your_relationships",
+  #Your personal relationships.
+  "pwb_your_future_security",
+  #Your future security.
+  "pwb_standard_living",
+  #Your standard of living.
+  "lifesat")
+
+names_reflective_vars<- setdiff(reflective_vars, dt_18)
+sorted_names_reflective_vars <- sort(names_reflective_vars)
+
+
+selected_sorted_names_reflective_vars<- dt_18 %>% select(all_of(sorted_names_reflective_vars)) #|>  dplyr::select(-sample_weights) 
+
+table_reflective_vars <- selected_sorted_names_reflective_vars %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+    missing = "no", 
+    percent = "column") |> 
+#  add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Reflective Well-Being Variables**") %>% # update the column header
+  bold_labels() 
+
+table_reflective_vars
+
+table_embody_vars|> 
+  as_kable(format = "markdown")
+
+table_embody_vars |> 
+  as_kable_extra( include = everything(),
+                  addtl_fmt = TRUE)
+
+here_save(table_reflective_vars, "table_reflective_vars")
+
+
+
+social_vars = c(  
+  "neighbourhood_community",
+  #I feel a sense of community with others in my local neighbourhood.
+  "belong",
+  "support"
+)
+
+names_social_vars<- setdiff(social_vars, dt_18)
+sorted_names_social_vars<- sort(names_social_vars)
+selected_sorted_names_social_vars <- dt_18 %>% select(all_of(sorted_names_social_vars)) #|>  dplyr::select(-sample_weights) 
+
+
+table_social_vars <- selected_sorted_names_social_vars %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+    missing = "no", 
+    percent = "column") |> 
+#  add_n() %>% # add column with total number of non-missing observations
+  modify_header(label = "**Social Well-Being Outcomes**") %>% # update the column header
+  bold_labels() 
+
+table_social_vars
+
+
+here_save(table_social_vars, "table_social_vars")
+
+
+
+table_social_vars|> 
+  as_kable(format = "markdown")
+
+table_social_vars |> 
+  as_kable_extra( include = everything(),
+                  addtl_fmt = TRUE)
+
+
+
+
+## Collect demographic variables
+
+# merge demographics
+# table_baseline_personality
+# tbl_merge_demographics <-
+#   tbl_merge(
+#     tbls = list(table_demographic_vars, table_baseline_personality),
+#     tab_spanner = c("**Demographics**", "**Personality**")
+#   )
+# 
+# 
+# tbl_merge_demographics
+
+
+
+
+# outcome tables ----------------------------------------------------------
+
+
+# imputation --------------------------------------------------------------
+
+
+
 # custom function
 prep_coop_all <- margot_wide_impute_baseline(
   dat_long,
@@ -826,131 +1184,135 @@ str(df_wide_censored)
 
 
 # table1 ------------------------------------------------------------------
+## NO LONGER RELEVANT
+# 
+# nzavs_exposure
+# # object
+# df_wide_censored$t0_only_cat
+# 
+# selected_cols <- df_wide_censored %>% select(starts_with("t0"), -t0_sample_weights, -t0_not_lost, -t0_smoker) |> 
+#   mutate(t0_only_dog = as.factor(t0_only_cat))
+# 
+# 
+# # select
+# names_base_table <- colnames(selected_cols)
+# 
+# # rename
+# selected_cols <- selected_cols %>% rename_with(~str_replace_all(.x, "t0_", ""))
+# 
+# selected_cols
+# 
+# names_base_table <- colnames(selected_cols)
+# 
+# names_base_table
+# 
+# names_base_filtered <- setdiff(names_base_table, nzavs_exposure)
+# 
+# names_base_sorted <- sort(names_base_filtered)
+# 
+# 
+# 
+# names_base_final <- c(nzavs_exposure, names_base_sorted)
+# 
+# names_base_final
+# 
+# 
+# formula_baseline_obj <- as.formula(paste("~", paste(names_base_final, collapse = " + ")))
+# formula_baseline_obj
+# 
+# 
+# 
+# library(gtsummary)
+# # specify the data
+# selected_cols <- selected_cols %>% select(all_of(names_base_final))
+# 
+# 
+# data <- selected_cols
+# 
+# # build table
+# table_gt <- 
+#   tbl_summary(data,
+#               type = list(all_continuous() ~ "continuous2",
+#                           all_categorical() ~ "categorical"),
+#               statistic = list(all_continuous() ~ "{mean} ({sd})",
+#                                all_categorical() ~ "{n} ({p}%)")) %>% 
+#   as_gt() %>% 
+#   gt::tab_header(title = "Descriptive Baseline Table")
+# 
+# 
+# 
+# 
+# 
+# table_gtsummary <- tbl_summary(data,
+#                                type = list(all_continuous() ~ "continuous2",
+#                                            all_categorical() ~ "categorical"),
+#                                statistic = list(all_continuous() ~ "{mean} ({sd})",
+#                                                 all_categorical() ~ "{n} ({p}%)"))
+# 
+# 
+# table_gtsummary
+# 
+# # convert gtsummary to kable object
+# table_kable_gt_summary <- as_kable(table_gtsummary, format = "markdown", booktabs = TRUE)
+# table_kable_gt_summary
+# 
+# 
+# here_save(table_kable_gt_summary, "table_kable_gt_summary")
+# 
+# 
+# # another approach --------------------------------------------------------
+# 
+# 
+# summary_df <- as_tibble(table_gtsummary)
+# 
+# # ft <- qflextable(summary_df)
+# # ft <- set_header_labels(ft, Characteristic = "Measure")
+# # ft <- set_flextable_defaults(ft, font.size = 10, padding = 2)
+# # ft
+# #print(ft, preview = "markdown", align = "left")
+# 
+# 
+# summary_df |> 
+#   kbl(format = "markdown", booktabs = TRUE)
+# 
+# see::print_table(summary_df, format = "markdown")
+# 
+# library(pander)
+# panderOptions("table.alignment.default", "left")
+# 
+# pander::pander(summary_df, style = "rmarkdown")
+# 
+# pandoc.table(summary_df, style = 'simple', keep.line.breaks = TRUE)
+# 
+# 
+# 
+# 
+# # use wide censored 
+# t1 <- table1::table1(formula_baseline_obj, selected_cols, overall = TRUE)
+# 
+# t1
+# # markdown
+# table_baseline <- t1 |> 
+#   kbl(format = "markdown",  digits = 3) 
+# 
+# table_baseline
+# 
+# here_save(table_baseline, "table_baseline")
+# 
+# 
+# 
+# 
+# 
+# # table 1
+# 
+# table1::table1()
+# 
+
+# gt experiment table -----------------------------------------------------
 
 
-nzavs_exposure
-# object
-df_wide_censored$t0_only_cat
 
-selected_cols <- df_wide_censored %>% select(starts_with("t0"), -t0_sample_weights, -t0_not_lost, -t0_smoker) |> 
-  mutate(t0_only_dog = as.factor(t0_only_cat))
-
-
-# select
-names_base_table <- colnames(selected_cols)
-
-# rename
-selected_cols <- selected_cols %>% rename_with(~str_replace_all(.x, "t0_", ""))
-
-selected_cols
-
-names_base_table <- colnames(selected_cols)
-
-names_base_table
-
-names_base_filtered <- setdiff(names_base_table, nzavs_exposure)
-
-names_base_sorted <- sort(names_base_filtered)
-
-
-
-names_base_final <- c(nzavs_exposure, names_base_sorted)
-
-names_base_final
-
-
-formula_baseline_obj <- as.formula(paste("~", paste(names_base_final, collapse = " + ")))
-formula_baseline_obj
-
-
-
-library(gtsummary)
-
-
-library(gtsummary)
-
-# specify the data
-selected_cols <- selected_cols %>% select(all_of(names_base_final))
-
-
-data <- selected_cols
-
-# build table
-table_gt <- 
-  tbl_summary(data,
-              type = list(all_continuous() ~ "continuous2",
-                          all_categorical() ~ "categorical"),
-              statistic = list(all_continuous() ~ "{mean} ({sd})",
-                               all_categorical() ~ "{n} ({p}%)")) %>% 
-  as_gt() %>% 
-  gt::tab_header(title = "Descriptive Baseline Table")
-
-table_gt
-
-
-
-
-table_gtsummary <- tbl_summary(data,
-                               type = list(all_continuous() ~ "continuous2",
-                                           all_categorical() ~ "categorical"),
-                               statistic = list(all_continuous() ~ "{mean} ({sd})",
-                                                all_categorical() ~ "{n} ({p}%)"))
-
-# convert gtsummary to kable object
-table_kable_gt_summary <- as_kable(table_gtsummary, format = "markdown", booktabs = TRUE)
-table_kable_gt_summary
-
-
-here_save(table_kable_gt_summary, "table_kable_gt_summary")
-
-
-# another approach --------------------------------------------------------
-
-
-summary_df <- as_tibble(table_gtsummary)
-
-# ft <- qflextable(summary_df)
-# ft <- set_header_labels(ft, Characteristic = "Measure")
-# ft <- set_flextable_defaults(ft, font.size = 10, padding = 2)
-# ft
-#print(ft, preview = "markdown", align = "left")
-
-
-summary_df |> 
-  kbl(format = "markdown", booktabs = TRUE)
-
-see::print_table(summary_df, format = "markdown")
-
-library(pander)
-panderOptions("table.alignment.default", "left")
-
-pander::pander(summary_df, style = "rmarkdown")
-
-pandoc.table(summary_df, style = 'simple', keep.line.breaks = TRUE)
-
-
-
-
-# use wide censored 
-t1 <- table1::table1(formula_baseline_obj, selected_cols, overall = TRUE)
-
-t1
-# markdown
-table_baseline <- t1 |> 
-  kbl(format = "markdown",  digits = 3) 
-
-table_baseline
-
-here_save(table_baseline, "table_baseline")
-
-
-
-
-
-# table 1
-
-table1::table1()
-
+# -------------------------------------------------------------------------
 
 
 
@@ -3065,7 +3427,7 @@ plot_group_tab_compare_cats_sleep <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
-plot_group_tab_compare_cats_sleep
+here_save(plot_group_tab_compare_cats_sleep, "plot_group_tab_compare_cats_sleep")
 
 
 dev.off()
