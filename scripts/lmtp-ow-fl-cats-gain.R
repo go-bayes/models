@@ -57,6 +57,12 @@ f <- function(data, trt){
 }
 
 
+f_0 <- function(data, trt){
+  ifelse( data[[trt]] !=0, 0,  data[[trt]] )
+}
+
+
+
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 5
 
@@ -537,8 +543,13 @@ mutate(
 
 
 # check n
-N <- n_unique(dat_long$id) #
+n_cats <- n_unique(dat_long$id) #
+n_cats
 
+push_mods
+here_save(n_cats, "n_cats")
+
+n_cats
 N # 5376
 # double check path
 push_mods 
@@ -557,9 +568,14 @@ table ( is.na( dt_positivity_full$sample_weights) ) # no nas
 
 out <- msm::statetable.msm(only_cat, id, data = dat_long)
 
+out
+
+t_tab_cats_labels <- c("No Cats", "Cats")
 # transition table
-t_tab <- transition_table(out, state_names = NULL)
-t_tab
+t_tab_cats <- transition_table(out, state_names = t_tab_cats_labels)
+t_tab_cats
+
+here_save(t_tab_cats, "t_tab_cats")
 
 
 # double check path
@@ -773,6 +789,9 @@ here_save(prep_coop_all, "prep_coop_all_1")
 # read function
 prep_coop_all <- here_read("prep_coop_all_1")
 
+
+str(prep_coop_all)
+
 head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
 dev.off()
@@ -783,7 +802,10 @@ str(prep_coop_all)
 nrow(prep_coop_all)
 colnames(prep_coop_all)
 
-
+unique_levels <- sort(unique(prep_coop_all$t0_education_level_coarsen))
+prep_coop_all$t0_education_level_coarsen <- factor(prep_coop_all$t0_education_level_coarsen, 
+                                                   levels = unique_levels, 
+                                                   ordered = TRUE)
 # arrange data for analysis -----------------------------------------------
 # spit and shine
 df_wide_censored <-
@@ -799,6 +821,138 @@ df_wide_censored <-
 head(df_wide_censored)
 dim(df_wide_censored)
 str(df_wide_censored)
+
+
+
+
+# table1 ------------------------------------------------------------------
+
+
+nzavs_exposure
+# object
+df_wide_censored$t0_only_cat
+
+selected_cols <- df_wide_censored %>% select(starts_with("t0"), -t0_sample_weights, -t0_not_lost, -t0_smoker) |> 
+  mutate(t0_only_dog = as.factor(t0_only_cat))
+
+
+# select
+names_base_table <- colnames(selected_cols)
+
+# rename
+selected_cols <- selected_cols %>% rename_with(~str_replace_all(.x, "t0_", ""))
+
+selected_cols
+
+names_base_table <- colnames(selected_cols)
+
+names_base_table
+
+names_base_filtered <- setdiff(names_base_table, nzavs_exposure)
+
+names_base_sorted <- sort(names_base_filtered)
+
+
+
+names_base_final <- c(nzavs_exposure, names_base_sorted)
+
+names_base_final
+
+
+formula_baseline_obj <- as.formula(paste("~", paste(names_base_final, collapse = " + ")))
+formula_baseline_obj
+
+
+
+library(gtsummary)
+
+
+library(gtsummary)
+
+# specify the data
+selected_cols <- selected_cols %>% select(all_of(names_base_final))
+
+
+data <- selected_cols
+
+# build table
+table_gt <- 
+  tbl_summary(data,
+              type = list(all_continuous() ~ "continuous2",
+                          all_categorical() ~ "categorical"),
+              statistic = list(all_continuous() ~ "{mean} ({sd})",
+                               all_categorical() ~ "{n} ({p}%)")) %>% 
+  as_gt() %>% 
+  gt::tab_header(title = "Descriptive Baseline Table")
+
+table_gt
+
+
+
+
+table_gtsummary <- tbl_summary(data,
+                               type = list(all_continuous() ~ "continuous2",
+                                           all_categorical() ~ "categorical"),
+                               statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                                all_categorical() ~ "{n} ({p}%)"))
+
+# convert gtsummary to kable object
+table_kable_gt_summary <- as_kable(table_gtsummary, format = "markdown", booktabs = TRUE)
+table_kable_gt_summary
+
+
+here_save(table_kable_gt_summary, "table_kable_gt_summary")
+
+
+# another approach --------------------------------------------------------
+
+
+summary_df <- as_tibble(table_gtsummary)
+
+# ft <- qflextable(summary_df)
+# ft <- set_header_labels(ft, Characteristic = "Measure")
+# ft <- set_flextable_defaults(ft, font.size = 10, padding = 2)
+# ft
+#print(ft, preview = "markdown", align = "left")
+
+
+summary_df |> 
+  kbl(format = "markdown", booktabs = TRUE)
+
+see::print_table(summary_df, format = "markdown")
+
+library(pander)
+panderOptions("table.alignment.default", "left")
+
+pander::pander(summary_df, style = "rmarkdown")
+
+pandoc.table(summary_df, style = 'simple', keep.line.breaks = TRUE)
+
+
+
+
+# use wide censored 
+t1 <- table1::table1(formula_baseline_obj, selected_cols, overall = TRUE)
+
+t1
+# markdown
+table_baseline <- t1 |> 
+  kbl(format = "markdown",  digits = 3) 
+
+table_baseline
+
+here_save(table_baseline, "table_baseline")
+
+
+
+
+
+# table 1
+
+table1::table1()
+
+
+
 
 # spit and shine
 df_clean <- df_wide_censored %>%
@@ -866,12 +1020,58 @@ names_base <-
                      -t0_not_lost,
                      -t0_smoker_z) |> colnames()
 
-names_base
-names_outcomes <-
-  df_clean |> select(starts_with("t2")) |> colnames()
 
 
-names_outcomes
+# table one ---------------------------------------------------------------
+nzavs_exposure
+# object
+df_wide_censored$t0_only_cat
+
+selected_cols <- df_wide_censored %>% select(starts_with("t0"), -t0_sample_weights, -t0_not_lost, -t0_smoker) |> 
+  mutate(t0_only_cat = as.factor(t0_only_cat))
+
+
+# select
+names_base_table <- colnames(selected_cols)
+
+# rename
+selected_cols <- selected_cols %>% rename_with(~str_replace_all(.x, "t0_", ""))
+
+selected_cols
+
+# give new names
+names_base_table <- colnames(selected_cols)
+
+names_base_table
+
+names_base_filtered <- setdiff(names_base_table, nzavs_exposure)
+
+names_base_sorted <- sort(names_base_filtered)
+
+names_base_final <- c(nzavs_exposure, names_base_sorted)
+
+
+
+formula_baseline_obj <- as.formula(paste("~", paste(names_base_final, collapse = " + ")))
+formula_baseline_obj
+
+# use wide censored 
+t1 <- table1::table1(formula_baseline_obj, selected_cols, overall = FALSE)
+
+t1
+# markdown
+table_baseline <- t1 |> 
+  kbl(format = "markdown",  digits = 3) 
+
+table_baseline
+
+here_save(table_baseline, "table_baseline")
+
+
+
+
+# make table --------------------------------------------------------------
+
 
 
 # set variables for models ------------------------------------------------
@@ -961,6 +1161,29 @@ t2_smoker_binary
 here_save(t2_smoker_binary, "t2_smoker_binary")
 
 
+t2_smoker_binary_0 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_smoker_binary,
+  outcome = "t2_smoker_binary",
+  cens = C,
+  shift = f_0,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_smoker_binary_0
+here_save(t2_smoker_binary_0, "t2_smoker_binary_0")
+
+
 # print timing info
 print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
 
@@ -1018,9 +1241,33 @@ t2_alcohol_frequency_z <- lmtp_tmle(
 )
 
 
-
 t2_alcohol_frequency_z
 here_save(t2_alcohol_frequency_z, "t2_alcohol_frequency_z")
+
+
+
+t2_alcohol_frequency_z_0 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_alcohol_frequency_z,
+  outcome = "t2_alcohol_frequency_z",
+  cens = C,
+  shift = f_0 ,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+
+t2_alcohol_frequency_z_0 
+here_save(t2_alcohol_frequency_z_0 , "t2_alcohol_frequency_z_0")
+
+
+
 
 #"How often do you have a drink containing alcohol?"
 t2_alcohol_frequency_z_null <- lmtp_tmle(
@@ -1251,6 +1498,27 @@ t2_hlth_sleep_hours_z <- lmtp_tmle(
 )
 t2_hlth_sleep_hours_z
 here_save(t2_hlth_sleep_hours_z, "t2_hlth_sleep_hours_z")
+
+
+
+t2_hlth_sleep_hours_z_0 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_hlth_sleep_hours_z,
+  outcome = "t2_hlth_sleep_hours_z",
+  cens = C,
+  shift = f_0,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+t2_hlth_sleep_hours_z_0 
+here_save(t2_hlth_sleep_hours_z_0, "t2_hlth_sleep_hours_z_0")
+
 
 #During the past month, on average, how many hours of actual sleep did you get per night?
 t2_hlth_sleep_hours_z_null <- lmtp_tmle(
@@ -1538,110 +1806,110 @@ here_save(t2_hlth_fatigue_z_null, "t2_hlth_fatigue_z_null")
 # ego models --------------------------------------------------------------
 
 
-# 
-# names_base_t2_sexual_satisfaction_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_sexual_satisfaction_z")
-# names_base_t2_sexual_satisfaction_z
-# 
-# #  How satisfied are you with your sex life?
-# t2_sexual_satisfaction_z <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_sexual_satisfaction_z,
-#   outcome = "t2_sexual_satisfaction_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_sexual_satisfaction_z
-# here_save(t2_sexual_satisfaction_z, "t2_sexual_satisfaction_z")
-# 
-# #  How satisfied are you with your sex life?
-# t2_sexual_satisfaction_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_sexual_satisfaction_z,
-#   outcome = "t2_sexual_satisfaction_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_sexual_satisfaction_z_null
-# here_save(t2_sexual_satisfaction_z_null,
-#           "t2_sexual_satisfaction_z_null")
-# 
-# 
-# 
-# 
-# names_base_t2_power_no_control_composite_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_power_no_control_composite_z")
-# names_base_t2_power_no_control_composite_z
-# 
-# # I do not have enough power or control over\nimportant parts of my life.
-# # Other people have too much power or control over\nimportant parts of my life.
-# t2_power_no_control_composite_z <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_power_no_control_composite_z,
-#   outcome = "t2_power_no_control_composite_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_power_no_control_composite_z
-# here_save(t2_power_no_control_composite_z,
-#           "t2_power_no_control_composite_z")
-# 
-# 
-# 
-# # I do not have enough power or control over\nimportant parts of my life.
-# # Other people have too much power or control over\nimportant parts of my life.
-# t2_power_no_control_composite_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_power_no_control_composite_z,
-#   outcome = "t2_power_no_control_composite_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_power_no_control_composite_z_null
-# here_save(t2_power_no_control_composite_z_null,
-#           "t2_power_no_control_composite_z_null")
-# 
-# 
+
+names_base_t2_sexual_satisfaction_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_sexual_satisfaction_z")
+names_base_t2_sexual_satisfaction_z
+
+#  How satisfied are you with your sex life?
+t2_sexual_satisfaction_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_sexual_satisfaction_z,
+  outcome = "t2_sexual_satisfaction_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_sexual_satisfaction_z
+here_save(t2_sexual_satisfaction_z, "t2_sexual_satisfaction_z")
+
+#  How satisfied are you with your sex life?
+t2_sexual_satisfaction_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_sexual_satisfaction_z,
+  outcome = "t2_sexual_satisfaction_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_sexual_satisfaction_z_null
+here_save(t2_sexual_satisfaction_z_null,
+          "t2_sexual_satisfaction_z_null")
+
+
+
+
+names_base_t2_power_no_control_composite_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_power_no_control_composite_z")
+names_base_t2_power_no_control_composite_z
+
+# I do not have enough power or control over\nimportant parts of my life.
+# Other people have too much power or control over\nimportant parts of my life.
+t2_power_no_control_composite_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_power_no_control_composite_z,
+  outcome = "t2_power_no_control_composite_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_power_no_control_composite_z
+here_save(t2_power_no_control_composite_z,
+          "t2_power_no_control_composite_z")
+
+
+
+# I do not have enough power or control over\nimportant parts of my life.
+# Other people have too much power or control over\nimportant parts of my life.
+t2_power_no_control_composite_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_power_no_control_composite_z,
+  outcome = "t2_power_no_control_composite_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_power_no_control_composite_z_null
+here_save(t2_power_no_control_composite_z_null,
+          "t2_power_no_control_composite_z_null")
+
+
 
 
 names_base_t2_self_esteem_z <-
@@ -1673,7 +1941,7 @@ t2_self_esteem_z <- lmtp_tmle(
 t2_self_esteem_z
 here_save(t2_self_esteem_z, "t2_self_esteem_z")
 
-
+t2_self_esteem_z<- here_read("t2_self_esteem_z")
 #  On the whole am satisfied with myself.
 #  Take a positive attitude toward myself
 #  Am inclined to feel that I am a failure.
@@ -1911,55 +2179,6 @@ here_save(t2_self_esteem_z_null, "t2_self_esteem_z_null")
 #   "t2_emotion_regulation_out_control_z_null"
 # )
 # 
-
-#
-# Not relevant
-# names_base_t2_impermeability_group_z <- select_and_rename_cols(names_base = names_base, baseline_vars = baseline_vars, outcome = "t2_impermeability_group_z")
-# names_base_t2_impermeability_group_z
-#
-# # The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
-# ##(NEG CONTROL)
-# t2_impermeability_group_z<- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_impermeability_group_z,
-#   outcome = "t2_impermeability_group_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-#
-# t2_impermeability_group_z
-# here_save(t2_impermeability_group_z, "t2_impermeability_group_z")
-#
-# # The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
-# ##(NEG CONTROL)
-# t2_impermeability_group_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_impermeability_group_z,
-#   outcome = "t2_impermeability_group_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-#
-# t2_impermeability_group_z_null
-# here_save(t2_impermeability_group_z_null, "t2_impermeability_group_z_null")
-#
-
 # 
 # 
 # names_base_t2_perfectionism_z <-
@@ -2016,66 +2235,66 @@ here_save(t2_self_esteem_z_null, "t2_self_esteem_z_null")
 
 # reflective models --------------------------------------------------------------
 
+
+names_base_t2_gratitude_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_gratitude_z")
+names_base_t2_gratitude_z
+
 # 
-# names_base_t2_gratitude_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_gratitude_z")
-# names_base_t2_gratitude_z
-# 
-# 
-# 
-# ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-# t2_gratitude_z <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_gratitude_z,
-#   outcome = "t2_gratitude_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_gratitude_z
-# here_save(t2_gratitude_z, "t2_gratitude_z")
-# 
-# ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-# t2_gratitude_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_gratitude_z,
-#   outcome = "t2_gratitude_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_gratitude_z_null
-# here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
-# 
-# 
-# 
-# 
-# names_base_t2_vengeful_rumin_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_vengeful_rumin_z")
-# names_base_t2_vengeful_rumin_z
-# 
-# 
-# 
+
+## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+t2_gratitude_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_gratitude_z,
+  outcome = "t2_gratitude_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_gratitude_z
+here_save(t2_gratitude_z, "t2_gratitude_z")
+
+## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+t2_gratitude_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_gratitude_z,
+  outcome = "t2_gratitude_z",
+  cens = C,
+  shift = NULL,
+  # mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_gratitude_z_null
+here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
+
+
+
+
+names_base_t2_vengeful_rumin_z <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_vengeful_rumin_z")
+names_base_t2_vengeful_rumin_z
+
+
+
 # 
 # # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
 # t2_vengeful_rumin_z <- lmtp_tmle(
@@ -2609,7 +2828,7 @@ contrast_t2_smoker_binary <-
 tab_contrast_t2_smoker_binary <-
   margot_tab_lmtp(contrast_t2_smoker_binary,
                   scale = "RR",
-                  new_name = "Smoker:Gain cat if not have pets.")
+                  new_name = "Smoker")
 
 tab_contrast_t2_smoker_binary
 
@@ -2632,7 +2851,7 @@ out_tab_contrast_t2_smoker_binary
 # tab_contrast_t2_sfhealth_z <-
 #   margot_tab_lmtp(contrast_t2_sfhealth_z,
 #                   scale = "RD",
-#                   new_name = "Short form health:Gain cat if not have pets.")
+#                   new_name = "Short form health")
 #
 #
 # out_tab_contrast_t2_sfhealth_z <-
@@ -2657,7 +2876,7 @@ contrast_t2_sfhealth_your_health_z <-
 tab_contrast_t2_sfhealth_your_health_z <-
   margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
                   scale = "RD",
-                  new_name = "Short form health, your health:Gain cat if not have pets.")
+                  new_name = "Short form health, your health")
 
 
 out_tab_contrast_t2_sfhealth_your_health_z <-
@@ -2682,7 +2901,7 @@ contrast_t2_hours_exercise_log_z <-
 tab_contrast_t2_hours_exercise_log_z <-
   margot_tab_lmtp(contrast_t2_hours_exercise_log_z,
                   scale = "RD",
-                  new_name = "Hours excercise:Gain cat if not have pets.")
+                  new_name = "Hours excercise")
 
 
 out_tab_contrast_t2_hours_exercise_log_z <-
@@ -2706,7 +2925,7 @@ contrast_t2_alcohol_frequency_z <-
 tab_contrast_t2_alcohol_frequency_z <-
   margot_tab_lmtp(contrast_t2_alcohol_frequency_z ,
                   scale = "RD",
-                  new_name = "Alcohol frequency:Gain cat if not have pets.")
+                  new_name = "Alcohol frequency")
 
 
 out_tab_contrast_t2_alcohol_frequency_z <-
@@ -2734,7 +2953,7 @@ contrast_t2_alcohol_intensity_z <-
 tab_contrast_t2_alcohol_intensity_z <-
   margot_tab_lmtp(contrast_t2_alcohol_intensity_z,
                   scale = "RD",
-                  new_name = "Alcohol intensity:Gain cat if not have pets.")
+                  new_name = "Alcohol intensity")
 
 
 out_tab_contrast_t2_alcohol_intensity_z <-
@@ -2746,10 +2965,11 @@ out_tab_contrast_t2_alcohol_intensity_z
 
 # hour sleep
 t2_hlth_sleep_hours_z <- here_read("t2_hlth_sleep_hours_z")
-
+t2_hlth_sleep_hours_z_0 <- here_read("t2_hlth_sleep_hours_z_0")
 t2_hlth_sleep_hours_z_null <-
   here_read("t2_hlth_sleep_hours_z_null")
 
+# first
 contrast_t2_hours_sleep_z <-
   lmtp_contrast(t2_hlth_sleep_hours_z,
                 ref = t2_hlth_sleep_hours_z_null,
@@ -2758,7 +2978,7 @@ contrast_t2_hours_sleep_z <-
 tab_contrast_t2_hours_sleep_z <-
   margot_tab_lmtp(contrast_t2_hours_sleep_z,
                   scale = "RD",
-                  new_name = "Hours sleep:Gain cat if not have pets.")
+                  new_name = "Hours sleep")
 
 
 out_tab_contrast_t2_hours_sleep_z <-
@@ -2767,6 +2987,99 @@ out_tab_contrast_t2_hours_sleep_z <-
 
 
 out_tab_contrast_t2_hours_sleep_z
+
+here_save(out_tab_contrast_t2_hours_sleep_z, "out_tab_contrast_t2_hours_sleep_z")
+
+
+# for table
+n_cats
+tab_contrast_t2_hours_sleep_z_shift <-
+  margot_tab_lmtp(contrast_t2_hours_sleep_z,
+                  scale = "RD",
+                  new_name = "Hours sleep (SD): shift estimand")
+
+
+out_tab_contrast_t2_hours_sleep_z_shift <-
+  lmtp_evalue_tab(tab_contrast_t2_hours_sleep_z_shift,
+                  scale = c("RD"))
+
+
+out_tab_contrast_t2_hours_sleep_z_shift
+
+here_save(out_tab_contrast_t2_hours_sleep_z_shift, "out_tab_contrast_t2_hours_sleep_z_shift")
+
+# second
+contrast_t2_hours_sleep_z_0 <-
+  lmtp_contrast(t2_hlth_sleep_hours_z,
+                ref = t2_hlth_sleep_hours_z_0,
+                type = "additive")
+
+tab_contrast_t2_hours_sleep_z_0 <-
+  margot_tab_lmtp(contrast_t2_hours_sleep_z_0,
+                  scale = "RD",
+                  new_name = "Hours sleep (SD): trational estimand")
+
+
+out_tab_contrast_t2_hours_sleep_z_0<-
+  lmtp_evalue_tab(tab_contrast_t2_hours_sleep_z_0,
+                  scale = c("RD"))
+
+
+out_tab_contrast_t2_hours_sleep_z_0
+
+
+here_save(out_tab_contrast_t2_hours_sleep_z_0, "out_tab_contrast_t2_hours_sleep_z_0")
+
+
+compare_cats_sleep <- rbind(out_tab_contrast_t2_hours_sleep_z_shift,
+out_tab_contrast_t2_hours_sleep_z_0)
+
+compare_cats_sleep
+here_save(compare_cats_sleep, "compare_cats_sleep")
+
+compare_cats_sleep
+
+group_tab_compare_cats_sleep<-
+  group_tab(compare_cats_sleep, type = "RD")
+
+
+sub_title = "Cat ownership, N = 5376"
+
+# graph health
+plot_group_tab_compare_cats_sleep <- margot_plot(
+  group_tab_compare_cats_sleep,
+  type = "RD",
+  title = "Health effects",
+  subtitle = sub_title,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 15,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+plot_group_tab_compare_cats_sleep
+
+
+dev.off()
+# save graph
+ggsave(
+  plot_group_tab_compare_cats_sleep,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "plot_group_tab_compare_cats_sleep.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi =600)
 
 
 # bmi
@@ -2778,7 +3091,7 @@ contrast_t2_bmi_z <- lmtp_contrast(t2_hlth_bmi_z,
                                    type = "additive")
 
 tab_contrast_t2_bmi_z <-
-  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI:Gain cat if not have pets.")
+  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI")
 
 
 out_tab_contrast_t2_bmi_z <-
@@ -2799,7 +3112,7 @@ contrast_t2_bodysat_z <- lmtp_contrast(t2_bodysat_z,
 
 contrast_t2_bodysat_z
 tab_contrast_t2_bodysat_z <-
-  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction:Gain cat if not have pets.")
+  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction")
 
 
 out_tab_contrast_t2_bodysat_z <-
@@ -2821,7 +3134,7 @@ contrast_t2_kessler6_sum_z <-
 tab_contrast_t2_kessler6_sum_z <-
   margot_tab_lmtp(contrast_t2_kessler6_sum_z,
                   scale = "RD",
-                  new_name = "Kessler 6 distress:Gain cat if not have pets.")
+                  new_name = "Kessler 6 distress")
 
 
 out_tab_contrast_t2_kessler6_sum_z <-
@@ -2845,7 +3158,7 @@ contrast_t2_hlth_fatigue_z <-
 tab_contrast_t2_hlth_fatigue_z <-
   margot_tab_lmtp(contrast_t2_hlth_fatigue_z ,
                   scale = "RD",
-                  new_name = "Fatigue:Gain cat if not have pets.")
+                  new_name = "Fatigue")
 
 
 out_tab_contrast_t2_hlth_fatigue_z <-
@@ -2867,7 +3180,7 @@ out_tab_contrast_t2_hlth_fatigue_z
 # tab_contrast_t2_rumination_z <-
 #   margot_tab_lmtp(contrast_t2_rumination_z ,
 #                   scale = "RD",
-#                   new_name = "Rumination:Gain cat if not have pets.")
+#                   new_name = "Rumination")
 # 
 # 
 # out_tab_contrast_t2_rumination_z <-
@@ -2892,7 +3205,7 @@ out_tab_contrast_t2_hlth_fatigue_z
 # tab_contrast_t2_sexual_satisfaction_z <-
 #   margot_tab_lmtp(contrast_t2_sexual_satisfaction_z,
 #                   scale = "RD",
-#                   new_name = "Sexual satisfaction:Gain cat if not have pets.")
+#                   new_name = "Sexual satisfaction")
 # 
 # 
 # out_tab_contrast_t2_sexual_satisfaction_z <-
@@ -2920,7 +3233,7 @@ out_tab_contrast_t2_hlth_fatigue_z
 # tab_contrast_t2_power_no_control_composite_z <-
 #   margot_tab_lmtp(contrast_t2_power_no_control_composite_z,
 #                   scale = "RD",
-#                   new_name = "Power no control:Gain cat if not have pets.")
+#                   new_name = "Power no control")
 # 
 # 
 # out_tab_contrast_t2_power_no_control_composite_z <-
@@ -2944,7 +3257,7 @@ contrast_t2_self_esteem_z <-
 tab_contrast_t2_self_esteem_z <-
   margot_tab_lmtp(contrast_t2_self_esteem_z,
                   scale = "RD",
-                  new_name = "Self esteem:Gain cat if not have pets.")
+                  new_name = "Self esteem")
 
 
 out_tab_contrast_t2_self_esteem_z <-
@@ -2968,7 +3281,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_perfectionism_z <-
 #   margot_tab_lmtp(contrast_t2_perfectionism_z ,
 #                   scale = "RD",
-#                   new_name = "Perfectionism:Gain cat if not have pets.")
+#                   new_name = "Perfectionism")
 # 
 # 
 # out_tab_contrast_t2_perfectionism_z <-
@@ -2993,7 +3306,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_self_control_have_lots_z <-
 #   margot_tab_lmtp(contrast_t2_self_control_have_lots_z ,
 #                   scale = "RD",
-#                   new_name = "Self control have:Gain cat if not have pets.")
+#                   new_name = "Self control have")
 # 
 # 
 # out_tab_contrast_t2_self_control_have_lots_z <-
@@ -3041,7 +3354,7 @@ out_tab_contrast_t2_self_esteem_z
 #   margot_tab_lmtp(
 #     contrast_t2_emotion_regulation_out_control_z ,
 #     scale = "RD",
-#     new_name = "Emotional regulation (out of control):Gain cat if not have pets."
+#     new_name = "Emotional regulation (out of control)"
 #   )
 # 
 # 
@@ -3066,7 +3379,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_permeability_individual_z <-
 #   margot_tab_lmtp(contrast_t2_permeability_individual_z ,
 #                   scale = "RD",
-#                   new_name = "Permeability self:Gain cat if not have pets.")
+#                   new_name = "Permeability self")
 # 
 # 
 # out_tab_contrast_t2_permeability_individual_z <-
@@ -3099,7 +3412,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_gratitude_z <-
 #   margot_tab_lmtp(contrast_t2_gratitude_z,
 #                   scale = "RD",
-#                   new_name = "Gratitude:Gain cat if not have pets.")
+#                   new_name = "Gratitude")
 # 
 # 
 # out_tab_contrast_t2_gratitude_z <-
@@ -3122,7 +3435,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_vengeful_rumin_z <-
 #   margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
 #                   scale = "RD",
-#                   new_name = "Vengefulness (forgiveness:Gain cat if not have pets.")
+#                   new_name = "Vengefulness (forgiveness")
 # 
 # 
 # out_tab_contrast_t2_vengeful_rumin_z <-
@@ -3147,7 +3460,7 @@ contrast_t2_pwb_your_health_z <-
 tab_contrast_t2_pwb_your_health_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_health_z,
                   scale = "RD",
-                  new_name = "PWB your health:Gain cat if not have pets.")
+                  new_name = "PWB your health")
 
 
 out_tab_contrast_t2_pwb_your_health_z <-
@@ -3171,7 +3484,7 @@ contrast_t2_pwb_your_future_security_z <-
 tab_contrast_t2_pwb_your_future_security_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_future_security_z,
                   scale = "RD",
-                  new_name = "PWB your future security:Gain cat if not have pets.")
+                  new_name = "PWB your future security")
 
 
 out_tab_contrast_t2_pwb_your_future_security_z <-
@@ -3198,7 +3511,7 @@ contrast_t2_pwb_your_relationships_z <-
 tab_contrast_t2_pwb_your_relationships_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_relationships_z ,
                   scale = "RD",
-                  new_name = "PWB your relationships:Gain cat if not have pets.")
+                  new_name = "PWB your relationships")
 
 
 out_tab_contrast_t2_pwb_your_relationships_z <-
@@ -3222,7 +3535,7 @@ contrast_t2_pwb_standard_living_z <-
 tab_contrast_t2_pwb_standard_living_z <-
   margot_tab_lmtp(contrast_t2_pwb_standard_living_z ,
                   scale = "RD",
-                  new_name = "PWB your standard living:Gain cat if not have pets.")
+                  new_name = "PWB your standard living")
 
 
 out_tab_contrast_t2_pwb_standard_living_z <-
@@ -3247,7 +3560,7 @@ out_tab_contrast_t2_pwb_standard_living_z
 # tab_contrast_t2_lifemeaning_z <-
 #   margot_tab_lmtp(contrast_t2_lifemeaning_z,
 #                   scale = "RD",
-#                   new_name = "Meaning in life:Gain cat if not have pets.")
+#                   new_name = "Meaning in life")
 # 
 # 
 # out_tab_contrast_t2_lifemeaning_z <-
@@ -3267,7 +3580,7 @@ contrast_t2_lifesat_z <- lmtp_contrast(t2_lifesat_z,
 
 
 tab_contrast_t2_lifesat_z <-
-  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life:Gain cat if not have pets.")
+  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life")
 
 
 out_tab_contrast_t2_lifesat_z <-
@@ -3288,7 +3601,7 @@ contrast_t2_support_z <- lmtp_contrast(t2_support_z,
                                        type = "additive")
 
 tab_contrast_t2_support_z <-
-  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support:Gain cat if not have pets.")
+  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support")
 
 
 out_tab_contrast_t2_support_z <-
@@ -3313,7 +3626,7 @@ contrast_t2_neighbourhood_community_z <-
 tab_contrast_t2_neighbourhood_community_z <-
   margot_tab_lmtp(contrast_t2_neighbourhood_community_z,
                   scale = "RD",
-                  new_name = "Neighbourhood community:Gain cat if not have pets.")
+                  new_name = "Neighbourhood community")
 
 
 out_tab_contrast_t2_neighbourhood_community_z <-
@@ -3335,7 +3648,7 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 tab_contrast_t2_belong_z <-
   margot_tab_lmtp(contrast_t2_belong_z, scale = "RD",
-                  new_name = "Social belonging:Gain cat if not have pets.")
+                  new_name = "Social belonging")
 
 
 out_tab_contrast_t2_belong_z <-
@@ -3361,6 +3674,8 @@ tab_health <- rbind(
   out_tab_contrast_t2_bmi_z
 )
 
+here_save(tab_health, "tab_health")
+
 tab_body <- rbind(
   out_tab_contrast_t2_bodysat_z,
   out_tab_contrast_t2_kessler6_sum_z,
@@ -3368,6 +3683,8 @@ tab_body <- rbind(
   # out_tab_contrast_t2_rumination_z,
   #  out_tab_contrast_t2_sexual_satisfaction_z
 )
+
+here_save(tab_body, "tab_body")
 
 # tab_ego <- rbind(
 #   out_tab_contrast_t2_power_no_control_composite_z,
@@ -3379,6 +3696,7 @@ tab_body <- rbind(
 #   out_tab_contrast_t2_permeability_individual_z
 # )
 
+# here_save(tab_ego, "tab_ego")
 
 tab_reflective <- rbind(
   # out_tab_contrast_t2_gratitude_z,
@@ -3391,12 +3709,16 @@ tab_reflective <- rbind(
   # out_tab_contrast_t2_lifemeaning_z
 )
 
+here_save(tab_reflective, "tab_reflective")
+
 
 tab_social <- rbind(
   out_tab_contrast_t2_support_z,
   out_tab_contrast_t2_neighbourhood_community_z,
   out_tab_contrast_t2_belong_z
 )
+
+here_save(tab_social, "tab_social")
 
 
 # make group table
@@ -3442,7 +3764,7 @@ group_tab_social <- here_read("group_tab_social")
 # create plots -------------------------------------------------------------
 N
 
-sub_title = "Cat ownership, N = 4132"
+sub_title = "Cat ownership, N = 5376"
 
 # graph health
 plot_group_tab_health <- margot_plot(

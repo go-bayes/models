@@ -61,6 +61,12 @@ f <- function(data, trt){
 }
 
 
+
+f_0 <- function(data, trt){
+  ifelse( data[[trt]] !=0, 0,  data[[trt]] )
+}
+
+
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 5
 
@@ -543,9 +549,12 @@ mutate(
 
 
 # check n
-N<- n_unique(dat_long$id) #4132 # reports hours with community at baseline
+n_dogs <- n_unique(dat_long$id) #4132 # reports hours with community at baseline
 
-N
+n_dogs
+push_mods
+
+here_save(n_dogs, "n_dogs")
 # double check path
 push_mods # 4132
 
@@ -568,6 +577,15 @@ t_tab <- transition_table(out, state_names = NULL)
 t_tab
 
 
+
+t_tab_labels <- c("No Dogs", "Dogs")
+# transition table
+t_tab <- transition_table(out, state_names = t_tab_labels)
+t_tab
+
+
+here_save(t_tab, "t_tab")
+
 # double check path
 push_mods
 
@@ -579,6 +597,46 @@ table(dat_long$only_cat)
 
 # assocation only 
 summary( lm( kessler6_sum ~ only_dog, data = dat_long) )
+
+
+
+back_transform <- function(effect_sd, lb_sd, ub_sd, sigma) {
+  # calculate the back-transformed effect size
+  effect_original = effect_sd * sigma
+  
+  # calculate the back-transformed lower bound
+  lb_original = lb_sd * sigma
+  
+  # calculate the back-transformed upper bound
+  ub_original = ub_sd * sigma
+  
+  # create a list to store the results
+  result <- list(
+    effect_original = effect_original,
+    lb_original = lb_original,
+    ub_original = ub_original
+  )
+  
+  return(result)
+}
+
+dat_long$wave
+
+dat_sd_tranform <- dat_long |> 
+  filter(wave == 1)
+
+#here_save_arrow(dat_sd_tranform, "dat_sd_tranform")
+saveRDS(dat_sd_tranform, here::here(push_mods, "dat_sd_tranform"))
+
+
+sigma_sleep <- mean(dat_sd_tranform$hlth_sleep_hours, na.rm = TRUE)
+
+
+
+sigma_sleep * .057
+
+back_transform(-.057, lb_sd = -0.096, ub_sd = -0.018, sigma = sigma_sleep)
+
 
 # set variables for baseline exposure and outcome -------------------------
 
@@ -789,7 +847,10 @@ str(prep_coop_all)
 nrow(prep_coop_all)
 colnames(prep_coop_all)
 
-
+unique_levels <- sort(unique(prep_coop_all$t0_education_level_coarsen))
+prep_coop_all$t0_education_level_coarsen <- factor(prep_coop_all$t0_education_level_coarsen, 
+                                                   levels = unique_levels, 
+                                                   ordered = TRUE)
 # arrange data for analysis -----------------------------------------------
 # spit and shine
 df_wide_censored <-
@@ -805,6 +866,100 @@ df_wide_censored <-
 head(df_wide_censored)
 dim(df_wide_censored)
 str(df_wide_censored)
+
+
+
+
+# table one ---------------------------------------------------------------
+nzavs_exposure
+# object
+df_wide_censored$t0_only_dog
+
+selected_cols <- df_wide_censored %>% select(starts_with("t0"), -t0_sample_weights, -t0_not_lost, -t0_smoker) |> 
+  mutate(t0_only_dog = as.factor(t0_only_dog))
+
+
+# select
+names_base_table <- colnames(selected_cols)
+
+# rename
+selected_cols <- selected_cols %>% rename_with(~str_replace_all(.x, "t0_", ""))
+
+selected_cols
+
+names_base_table <- colnames(selected_cols)
+
+names_base_table
+
+names_base_filtered <- setdiff(names_base_table, nzavs_exposure)
+
+names_base_sorted <- sort(names_base_filtered)
+
+names_base_final <- c(nzavs_exposure, names_base_sorted)
+
+names_base_final
+
+formula_baseline_obj <- as.formula(paste("~", paste(names_base_final, collapse = " + ")))
+formula_baseline_obj
+
+
+# use wide censored 
+t1 <- table1::table1(formula_baseline_obj, selected_cols, overall = TRUE)
+
+t1
+# markdown
+table_baseline <- t1 |> 
+  kbl(format = "markdown",  digits = 3) 
+
+table_baseline
+
+here_save(table_baseline, "table_baseline")
+
+
+# gt summary --------------------------------------------------------------
+
+
+
+library(gtsummary)
+
+# specify the data
+selected_cols <- selected_cols %>% select(all_of(names_base_final))
+
+
+data <- selected_cols
+
+# build table
+table_gt <- 
+  tbl_summary(data,
+              type = list(all_continuous() ~ "continuous2",
+                          all_categorical() ~ "categorical"),
+              statistic = list(all_continuous() ~ "{mean} ({sd})",
+                               all_categorical() ~ "{n} ({p}%)")) %>% 
+  as_gt() %>% 
+  gt::tab_header(title = "Descriptive Baseline Table")
+
+table_gt
+
+
+
+
+table_gtsummary <- tbl_summary(data,
+                               type = list(all_continuous() ~ "continuous2",
+                                           all_categorical() ~ "categorical"),
+                               statistic = list(all_continuous() ~ "{mean} ({sd})",
+                                                all_categorical() ~ "{n} ({p}%)"))
+
+# convert gtsummary to kable object
+table_kable_gt_summary <- as_kable(table_gtsummary, format = "markdown", booktabs = TRUE)
+table_kable_gt_summary
+
+
+here_save(table_kable_gt_summary, "table_kable_gt_summary")
+# clean -------------------------------------------------------------------
+
+
+
+
 
 # spit and shine
 df_clean <- df_wide_censored %>%
@@ -1098,7 +1253,7 @@ t2_alcohol_intensity_z_null
 here_save(t2_alcohol_intensity_z_null, "t2_alcohol_intensity_z_null")
 
 
-
+t2_alcohol_intensity_z_null
 
 # names_base_t2_sfhealth_z <-
 #   select_and_rename_cols(names_base = names_base,
@@ -1207,6 +1362,32 @@ t2_hours_exercise_log_z <- lmtp_tmle(
 
 t2_hours_exercise_log_z
 here_save(t2_hours_exercise_log_z, "t2_hours_exercise_log_z")
+
+f_0
+
+# Hours spent … exercising/physical activity
+t2_hours_exercise_log_z_0 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base_t2_hours_exercise_log_z,
+  outcome = "t2_hours_exercise_log_z",
+  cens = C,
+  shift = f_0,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+t2_hours_exercise_log_z_0
+here_save(t2_hours_exercise_log_z_0, "t2_hours_exercise_log_z_0")
+
+
+
+
 
 # Hours spent … exercising/physical activity
 t2_hours_exercise_log_z_null <- lmtp_tmle(
@@ -2599,7 +2780,7 @@ here_save(t2_belong_z_null, "t2_belong_z_null")
 
 
 # contrasts health ---------------------------------------------------------------
-
+push_mods
 # smoker
 t2_smoker_binary <- here_read("t2_smoker_binary")
 t2_smoker_binary_null <-
@@ -2615,7 +2796,7 @@ contrast_t2_smoker_binary <-
 tab_contrast_t2_smoker_binary <-
   margot_tab_lmtp(contrast_t2_smoker_binary,
                   scale = "RR",
-                  new_name = "Smoker: Gain dog if not have pets.")
+                  new_name = "Smoker")
 
 tab_contrast_t2_smoker_binary
 
@@ -2638,7 +2819,7 @@ out_tab_contrast_t2_smoker_binary
 # tab_contrast_t2_sfhealth_z <-
 #   margot_tab_lmtp(contrast_t2_sfhealth_z,
 #                   scale = "RD",
-#                   new_name = "Short form health: Gain dog if not have pets.")
+#                   new_name = "Short form health")
 #
 #
 # out_tab_contrast_t2_sfhealth_z <-
@@ -2651,8 +2832,13 @@ out_tab_contrast_t2_smoker_binary
 # sf health, your health
 t2_sfhealth_your_health_z <-
   here_read("t2_sfhealth_your_health_z")
+
+t2_sfhealth_your_health_z_0 <-
+  here_read("t2_sfhealth_your_health_z_0")
 t2_sfhealth_your_health_z_null <-
   here_read("t2_sfhealth_your_health_z_null")
+
+
 
 
 contrast_t2_sfhealth_your_health_z <-
@@ -2663,7 +2849,7 @@ contrast_t2_sfhealth_your_health_z <-
 tab_contrast_t2_sfhealth_your_health_z <-
   margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
                   scale = "RD",
-                  new_name = "Short form health, your health: Gain dog if not have pets.")
+                  new_name = "Short form health, your health")
 
 
 out_tab_contrast_t2_sfhealth_your_health_z <-
@@ -2680,6 +2866,11 @@ t2_hours_exercise_log_z_null <-
   here_read("t2_hours_exercise_log_z_null")
 
 
+t2_hours_exercise_log_z_0 <-
+  here_read("t2_hours_exercise_log_z_0")
+
+
+# first
 contrast_t2_hours_exercise_log_z <-
   lmtp_contrast(t2_hours_exercise_log_z,
                 ref = t2_hours_exercise_log_z_null,
@@ -2688,7 +2879,7 @@ contrast_t2_hours_exercise_log_z <-
 tab_contrast_t2_hours_exercise_log_z <-
   margot_tab_lmtp(contrast_t2_hours_exercise_log_z,
                   scale = "RD",
-                  new_name = "Hours excercise: Gain dog if not have pets.")
+                  new_name = "Hours excercise")
 
 
 out_tab_contrast_t2_hours_exercise_log_z <-
@@ -2696,6 +2887,104 @@ out_tab_contrast_t2_hours_exercise_log_z <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_hours_exercise_log_z
+
+
+
+# first
+contrast_t2_hours_exercise_log_z_shift <-
+  lmtp_contrast(t2_hours_exercise_log_z,
+                ref = t2_hours_exercise_log_z_null,
+                type = "additive")
+
+tab_contrast_t2_hours_exercise_log_z_shift <-
+  margot_tab_lmtp(contrast_t2_hours_exercise_log_z_shift,
+                  scale = "RD",
+                  new_name = "Hours excercise (SD): shift estimand")
+
+
+out_contrast_t2_hours_exercise_log_z_shift <-
+  lmtp_evalue_tab(tab_contrast_t2_hours_exercise_log_z_shift,
+                  scale = c("RD"))
+
+out_contrast_t2_hours_exercise_log_z_shift
+
+
+# second
+contrast_t2_hours_exercise_log_z_0<-
+  lmtp_contrast(t2_hours_exercise_log_z, 
+                ref = t2_hours_exercise_log_z_0,
+                type = "additive")
+
+tab_contrast_t2_hours_exercise_log_z_0 <-
+  margot_tab_lmtp(contrast_t2_hours_exercise_log_z_0,
+                  scale = "RD",
+                  new_name = "Hours excercise (SD): traditional estimand")
+
+
+out_tab_contrast_t2_hours_exercise_log_z_0 <-
+  lmtp_evalue_tab(tab_contrast_t2_hours_exercise_log_z_0,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_hours_exercise_log_z
+out_tab_contrast_t2_hours_exercise_log_z_0
+
+
+
+# Save for comparisons
+here_save(out_contrast_t2_hours_exercise_log_z_shift, "out_contrast_t2_hours_exercise_log_z_shift")
+here_save(out_tab_contrast_t2_hours_exercise_log_z_shift, "out_tab_contrast_t2_hours_exercise_log_z_shift")
+
+
+
+# for table
+
+
+
+compare_dogs_excercise <- rbind(out_contrast_t2_hours_exercise_log_z_shift,
+                                out_tab_contrast_t2_hours_exercise_log_z_0)
+
+compare_dogs_excercise
+here_save(compare_dogs_excercise, "compare_dogs_excercise")
+
+compare_dogs_excercise
+
+
+group_compare_dogs_excercise<-
+  group_tab(compare_dogs_excercise, type = "RD")
+
+
+sub_title = "Dog ownership, N = 4132"
+n_dogs
+
+group_compare_dogs_excercise
+
+# graph health
+plot_group_compare_dogs_excercise<- margot_plot(
+  group_compare_dogs_excercise,
+  type = "RD",
+  title = "Health effects",
+  subtitle = sub_title,
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 12,
+  text_size = 3.0,
+  point_size = .5,
+  title_size = 15,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+plot_group_compare_dogs_excercise
+
+here_save(plot_group_compare_dogs_excercise, "plot_group_compare_dogs_excercise")
+
+test <- here_read("plot_group_compare_dogs_excercise")
+
+test
 
 # alcohol freq
 t2_alcohol_frequency_z <-
@@ -2712,7 +3001,7 @@ contrast_t2_alcohol_frequency_z <-
 tab_contrast_t2_alcohol_frequency_z <-
   margot_tab_lmtp(contrast_t2_alcohol_frequency_z ,
                   scale = "RD",
-                  new_name = "Alcohol frequency: Gain dog if not have pets.")
+                  new_name = "Alcohol frequency")
 
 
 out_tab_contrast_t2_alcohol_frequency_z <-
@@ -2740,7 +3029,7 @@ contrast_t2_alcohol_intensity_z <-
 tab_contrast_t2_alcohol_intensity_z <-
   margot_tab_lmtp(contrast_t2_alcohol_intensity_z,
                   scale = "RD",
-                  new_name = "Alcohol intensity: Gain dog if not have pets.")
+                  new_name = "Alcohol intensity")
 
 
 out_tab_contrast_t2_alcohol_intensity_z <-
@@ -2764,7 +3053,7 @@ contrast_t2_hours_sleep_z <-
 tab_contrast_t2_hours_sleep_z <-
   margot_tab_lmtp(contrast_t2_hours_sleep_z,
                   scale = "RD",
-                  new_name = "Hours sleep: Gain dog if not have pets.")
+                  new_name = "Hours sleep")
 
 
 out_tab_contrast_t2_hours_sleep_z <-
@@ -2784,7 +3073,7 @@ contrast_t2_bmi_z <- lmtp_contrast(t2_hlth_bmi_z,
                                    type = "additive")
 
 tab_contrast_t2_bmi_z <-
-  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI: Gain dog if not have pets.")
+  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI")
 
 
 out_tab_contrast_t2_bmi_z <-
@@ -2805,7 +3094,7 @@ contrast_t2_bodysat_z <- lmtp_contrast(t2_bodysat_z,
 
 contrast_t2_bodysat_z
 tab_contrast_t2_bodysat_z <-
-  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction: Gain dog if not have pets.")
+  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction")
 
 
 out_tab_contrast_t2_bodysat_z <-
@@ -2827,7 +3116,7 @@ contrast_t2_kessler6_sum_z <-
 tab_contrast_t2_kessler6_sum_z <-
   margot_tab_lmtp(contrast_t2_kessler6_sum_z,
                   scale = "RD",
-                  new_name = "Kessler 6 distress: Gain dog if not have pets.")
+                  new_name = "Kessler 6 distress")
 
 
 out_tab_contrast_t2_kessler6_sum_z <-
@@ -2851,7 +3140,7 @@ contrast_t2_hlth_fatigue_z <-
 tab_contrast_t2_hlth_fatigue_z <-
   margot_tab_lmtp(contrast_t2_hlth_fatigue_z ,
                   scale = "RD",
-                  new_name = "Fatigue: Gain dog if not have pets.")
+                  new_name = "Fatigue")
 
 
 out_tab_contrast_t2_hlth_fatigue_z <-
@@ -2873,7 +3162,7 @@ out_tab_contrast_t2_hlth_fatigue_z
 # tab_contrast_t2_rumination_z <-
 #   margot_tab_lmtp(contrast_t2_rumination_z ,
 #                   scale = "RD",
-#                   new_name = "Rumination: Gain dog if not have pets.")
+#                   new_name = "Rumination")
 # 
 # 
 # out_tab_contrast_t2_rumination_z <-
@@ -2898,7 +3187,7 @@ out_tab_contrast_t2_hlth_fatigue_z
 # tab_contrast_t2_sexual_satisfaction_z <-
 #   margot_tab_lmtp(contrast_t2_sexual_satisfaction_z,
 #                   scale = "RD",
-#                   new_name = "Sexual satisfaction: Gain dog if not have pets.")
+#                   new_name = "Sexual satisfaction")
 # 
 # 
 # out_tab_contrast_t2_sexual_satisfaction_z <-
@@ -2926,7 +3215,7 @@ out_tab_contrast_t2_hlth_fatigue_z
 # tab_contrast_t2_power_no_control_composite_z <-
 #   margot_tab_lmtp(contrast_t2_power_no_control_composite_z,
 #                   scale = "RD",
-#                   new_name = "Power no control: Gain dog if not have pets.")
+#                   new_name = "Power no control")
 # 
 # 
 # out_tab_contrast_t2_power_no_control_composite_z <-
@@ -2950,7 +3239,7 @@ contrast_t2_self_esteem_z <-
 tab_contrast_t2_self_esteem_z <-
   margot_tab_lmtp(contrast_t2_self_esteem_z,
                   scale = "RD",
-                  new_name = "Self esteem: Gain dog if not have pets.")
+                  new_name = "Self esteem")
 
 
 out_tab_contrast_t2_self_esteem_z <-
@@ -2974,7 +3263,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_perfectionism_z <-
 #   margot_tab_lmtp(contrast_t2_perfectionism_z ,
 #                   scale = "RD",
-#                   new_name = "Perfectionism: Gain dog if not have pets.")
+#                   new_name = "Perfectionism")
 # 
 # 
 # out_tab_contrast_t2_perfectionism_z <-
@@ -2999,7 +3288,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_self_control_have_lots_z <-
 #   margot_tab_lmtp(contrast_t2_self_control_have_lots_z ,
 #                   scale = "RD",
-#                   new_name = "Self control have: Gain dog if not have pets.")
+#                   new_name = "Self control have")
 # 
 # 
 # out_tab_contrast_t2_self_control_have_lots_z <-
@@ -3047,7 +3336,7 @@ out_tab_contrast_t2_self_esteem_z
 #   margot_tab_lmtp(
 #     contrast_t2_emotion_regulation_out_control_z ,
 #     scale = "RD",
-#     new_name = "Emotional regulation (out of control): Gain dog if not have pets."
+#     new_name = "Emotional regulation (out of control)"
 #   )
 # 
 # 
@@ -3072,7 +3361,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_permeability_individual_z <-
 #   margot_tab_lmtp(contrast_t2_permeability_individual_z ,
 #                   scale = "RD",
-#                   new_name = "Permeability self: Gain dog if not have pets.")
+#                   new_name = "Permeability self")
 # 
 # 
 # out_tab_contrast_t2_permeability_individual_z <-
@@ -3105,7 +3394,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_gratitude_z <-
 #   margot_tab_lmtp(contrast_t2_gratitude_z,
 #                   scale = "RD",
-#                   new_name = "Gratitude: Gain dog if not have pets.")
+#                   new_name = "Gratitude")
 # 
 # 
 # out_tab_contrast_t2_gratitude_z <-
@@ -3128,7 +3417,7 @@ out_tab_contrast_t2_self_esteem_z
 # tab_contrast_t2_vengeful_rumin_z <-
 #   margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
 #                   scale = "RD",
-#                   new_name = "Vengefulness (forgiveness: Gain dog if not have pets.")
+#                   new_name = "Vengefulness (forgiveness")
 # 
 # 
 # out_tab_contrast_t2_vengeful_rumin_z <-
@@ -3153,7 +3442,7 @@ contrast_t2_pwb_your_health_z <-
 tab_contrast_t2_pwb_your_health_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_health_z,
                   scale = "RD",
-                  new_name = "PWB your health: Gain dog if not have pets.")
+                  new_name = "PWB your health")
 
 
 out_tab_contrast_t2_pwb_your_health_z <-
@@ -3177,7 +3466,7 @@ contrast_t2_pwb_your_future_security_z <-
 tab_contrast_t2_pwb_your_future_security_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_future_security_z,
                   scale = "RD",
-                  new_name = "PWB your future security: Gain dog if not have pets.")
+                  new_name = "PWB your future security")
 
 
 out_tab_contrast_t2_pwb_your_future_security_z <-
@@ -3204,7 +3493,7 @@ contrast_t2_pwb_your_relationships_z <-
 tab_contrast_t2_pwb_your_relationships_z <-
   margot_tab_lmtp(contrast_t2_pwb_your_relationships_z ,
                   scale = "RD",
-                  new_name = "PWB your relationships: Gain dog if not have pets.")
+                  new_name = "PWB your relationships")
 
 
 out_tab_contrast_t2_pwb_your_relationships_z <-
@@ -3228,7 +3517,7 @@ contrast_t2_pwb_standard_living_z <-
 tab_contrast_t2_pwb_standard_living_z <-
   margot_tab_lmtp(contrast_t2_pwb_standard_living_z ,
                   scale = "RD",
-                  new_name = "PWB your standard living: Gain dog if not have pets.")
+                  new_name = "PWB your standard living")
 
 
 out_tab_contrast_t2_pwb_standard_living_z <-
@@ -3253,7 +3542,7 @@ out_tab_contrast_t2_pwb_standard_living_z
 # tab_contrast_t2_lifemeaning_z <-
 #   margot_tab_lmtp(contrast_t2_lifemeaning_z,
 #                   scale = "RD",
-#                   new_name = "Meaning in life: Gain dog if not have pets.")
+#                   new_name = "Meaning in life")
 # 
 # 
 # out_tab_contrast_t2_lifemeaning_z <-
@@ -3273,7 +3562,7 @@ contrast_t2_lifesat_z <- lmtp_contrast(t2_lifesat_z,
 
 
 tab_contrast_t2_lifesat_z <-
-  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life: Gain dog if not have pets.")
+  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life")
 
 
 out_tab_contrast_t2_lifesat_z <-
@@ -3294,7 +3583,7 @@ contrast_t2_support_z <- lmtp_contrast(t2_support_z,
                                        type = "additive")
 
 tab_contrast_t2_support_z <-
-  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support: Gain dog if not have pets.")
+  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support")
 
 
 out_tab_contrast_t2_support_z <-
@@ -3319,7 +3608,7 @@ contrast_t2_neighbourhood_community_z <-
 tab_contrast_t2_neighbourhood_community_z <-
   margot_tab_lmtp(contrast_t2_neighbourhood_community_z,
                   scale = "RD",
-                  new_name = "Neighbourhood community: Gain dog if not have pets.")
+                  new_name = "Neighbourhood community")
 
 
 out_tab_contrast_t2_neighbourhood_community_z <-
@@ -3341,7 +3630,7 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 tab_contrast_t2_belong_z <-
   margot_tab_lmtp(contrast_t2_belong_z, scale = "RD",
-                  new_name = "Social belonging: Gain dog if not have pets.")
+                  new_name = "Social belonging")
 
 
 out_tab_contrast_t2_belong_z <-
@@ -3367,6 +3656,10 @@ tab_health <- rbind(
   out_tab_contrast_t2_bmi_z
 )
 
+tab_health
+
+here_save( tab_health, "tab_health")
+
 tab_body <- rbind(
   out_tab_contrast_t2_bodysat_z,
   out_tab_contrast_t2_kessler6_sum_z,
@@ -3374,6 +3667,8 @@ tab_body <- rbind(
  # out_tab_contrast_t2_rumination_z,
 #  out_tab_contrast_t2_sexual_satisfaction_z
 )
+tab_body
+here_save( tab_body, "tab_body")
 
 # tab_ego <- rbind(
 #   out_tab_contrast_t2_power_no_control_composite_z,
@@ -3385,6 +3680,7 @@ tab_body <- rbind(
 #   out_tab_contrast_t2_permeability_individual_z
 # )
 
+here_save( tab_body, "tab_body")
 
 tab_reflective <- rbind(
  # out_tab_contrast_t2_gratitude_z,
@@ -3397,17 +3693,21 @@ tab_reflective <- rbind(
  # out_tab_contrast_t2_lifemeaning_z
 )
 
+tab_reflective
+here_save(tab_reflective, "tab_reflective")
 
 tab_social <- rbind(
   out_tab_contrast_t2_support_z,
   out_tab_contrast_t2_neighbourhood_community_z,
   out_tab_contrast_t2_belong_z
 )
+tab_social
+here_save(tab_social, "tab_social")
 
 
 # make group table
 group_tab_health <- group_tab(tab_health  , type = "RD")
-
+group_tab_health
 # save
 here_save(group_tab_health, "group_tab_health")
 
@@ -3633,3 +3933,6 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
+
+plot_group_tab_social
+
