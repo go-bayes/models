@@ -1,38 +1,36 @@
-#lmpt-ow-gratitude.R
-
-# sept 30 2023
+# Nov 4. 2023
 # joseph bulbulia : joseph.bulbulia@gmail.com
 # outcome-wide-analysis-template
-
-# Gratitude
+# note that the shift up function results are save in :/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-perfectionism
+# PERFECTIONISM
 
 
 # preliminaries -----------------------------------------------------------
 
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-# source("/Users/joseph/GIT/templates/functions/libs2.R")
-#
-# # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-# source("/Users/joseph/GIT/templates/functions/funs.R")
-#
-# # experimental functions
-# source(
-#   "/Users/joseph/GIT/templates/functions/experimental_funs.R"
-# )
-#
+source("/Users/joseph/GIT/templates/functions/libs2.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+source("/Users/joseph/GIT/templates/functions/funs.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
-
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# experimental functions
 source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+  "/Users/joseph/GIT/templates/functions/experimental_funs.R"
 )
+
+
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
+# 
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 
 
@@ -45,35 +43,70 @@ pull_path <-
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
 
+
+table( (dat$male) )
+
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
+# first analysis was a shift up. here we combine shift up and down.
+
+# used for unweighted
+# push_mods <-
+#   fs::path_expand(
+#     "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-maori-perfectionism"
+#   )
+
+
 push_mods <-
   fs::path_expand(
-    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-gratitude"
+    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-maori-fl-perfectionism-weights"
   )
+
+
+
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
 # set exposure here
-nzavs_exposure <- "gratitude"
+nzavs_exposure <- "perfectionism"
 
 
 # define exposures --------------------------------------------------------
 # define exposure
-A <- "t1_gratitude_z"
+A <- "t1_perfectionism_z"
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-exposure_var = c("gratitude", "not_lost") #
+exposure_var = c("perfectionism", "not_lost") #
+
+nrow(dat |> filter (male == 1))/nrow(dat |> filter (male == 0))
+table(dat$male). # male is really "female"
 
 
 # shift one pont up if under 6
 # f_1 <- function (data, trt) data[[trt]] + 1
 
-#  move to mean
-# f_test <- function(data, trt) {
-#   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+# #  move to mean
+# f <- function(data, trt) {
+#   ifelse(data[[trt]] > 0, 0,  data[[trt]])
 # }
+
+# shift functions
+#  decrease everyone by one point, contrasted with what they would be anyway.
+f <- function(data, trt) {
+  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
+}
+
+f
+
+
+
+#  increase everyone by one point, contrasted with what they would be anyway.
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+}
+
+
 
 
 # see second function below
@@ -91,6 +124,8 @@ set.seed(seed)
 # set cores for estimation
 library(future)
 plan(multisession)
+
+
 n_cores <- parallel::detectCores()
 
 # super learner libraries
@@ -120,7 +155,6 @@ library(glmnet)
 
 # boost speed
 SL.xgboost = list(tree_method = 'gpu_hist')
-
 
 # check options
 listWrappers()
@@ -192,7 +226,7 @@ listWrappers()
 # three_latents <-
 #   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
 #
-#
+
 # # compare models
 # compare <-
 #   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
@@ -552,7 +586,7 @@ dat_long  <- dat |>
     hours_friends_log = sqrt(hours_friends + 1),
     hours_family_log = sqrt(hours_family + 1)
   ) |>
-  mutate(male = as.numeric(male)) |>
+  # mutate(gend_all = as.factor(gend_all)) |>
   mutate(total_siblings_factor = ordered(round(
     ifelse(total_siblings > 7, 7, total_siblings), 0
   ))) |>
@@ -563,7 +597,7 @@ dat_long  <- dat |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
   mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
-    eth_cat = as.integer(eth_cat),
+   # eth_cat = as.integer(eth_cat),
     urban = as.numeric(urban),
     education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
@@ -573,7 +607,7 @@ dat_long  <- dat |>
                   (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
-  dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
+  dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 & eth_cat == "maori" & 
                                                    !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
   dplyr::mutate(sample_origin = as.factor( sample_origin_names_combined)) |>  #shorter name
   arrange(id) |>
@@ -615,7 +649,7 @@ dat_long  <- dat |>
   select(-h_18, -k_18, -h_19, -k_19) |>
   droplevels() |>
   ungroup() %>%
-  mutate(wave = as.numeric(wave)) |>
+  mutate(time = as.numeric(wave)) |>
   arrange(id, wave) |>
   #   mutate(
   #   religion_church_coarsen = cut(
@@ -633,163 +667,120 @@ dat_long  <- dat |>
 # ) |>
 mutate(
   # eth_cat = as.integer(eth_cat),
-  urban = as.numeric(urban),
-  education_level_coarsen = as.integer(education_level_coarsen)
+  urban = as.numeric(urban)#,
+ # education_level_coarsen = as.integer(education_level_coarsen)
 ) |>
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
 
+nzavs_exposure
 
-
-
-
-
-# factors 
-#
-# dt_only_k6 <- dt_19 |> select(kessler_depressed, kessler_effort,kessler_hopeless,
-#                                  kessler_worthless, kessler_nervous,
-#                                  kessler_restless)
-#
-#
-# # check factor structure
-# performance::check_factorstructure(dt_only_k6)
-#
-# # explore a factor structure made of 3 latent variables
-# efa <- psych::fa(dt_only_k6, nfactors = 2) %>%
-#   model_parameters(sort = TRUE, threshold = "max")
-#
-# efa
-#
-#
-# n <- n_factors(dt_only_k6)
-#
-# # plot
-# plot(n) + theme_classic()
-#
-# # CFA
-# part_data <- datawizard::data_partition(dt_only_k6, traing_proportion = .7, seed = seed)
-#
-#
-# # set up training data
-# training <- part_data$p_0.7
-# test <- part_data$test
-#
-#
-# # one factor model
-# structure_k6_one <- psych::fa(training, nfactors = 1) |>
-#   efa_to_cfa()
-#
-# # two factor model model
-# structure_k6_two <- psych::fa(training, nfactors = 2) |>
-#   efa_to_cfa()
-#
-# # three factor model
-# structure_k6_three <- psych::fa(training, nfactors = 3) %>%
-#   efa_to_cfa()
-#
-# # inspect models
-# structure_k6_one
-# structure_k6_two
-# structure_k6_three
-#
-#
-# # Next we perform the confirmatory factor analysis.
-#
-#
-# one_latent <-
-#   suppressWarnings(lavaan::cfa(structure_k6_one, data = test))
-#
-# # two latents model
-# two_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_two, data = test))
-#
-# # three latents model
-# three_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
-#
-#
-# # compare models
-# compare <-
-#   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
-#
-# # view as html table
-# as.data.frame(compare) |>
-#   kbl(format = "markdown")
-#
-
-
+n_unique(dat_long$id) # 3539
 
 # eyeball distribution
 # table(dat_long$wave)
-dt_19 <- dat_long |>
-  filter(year_measured == 1 & wave == 2) |> 
-  mutate(gratitude_z = scale(gratitude))
+dt_19 <- dat_long |> filter(wave == 2019) |> 
+  mutate(perfectionism_z = scale(perfectionism)) |> 
+  mutate(perfectionism_reponses = round(perfectionism, 0))
 
-min_score <- min(dt_19$gratitude_z, na.rm = TRUE)
+hist(dt_19$perfectionism)
+
+table(dt_19$Prefectionism_responses)
+dev.off()
+
+# generate bar plot
+graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "perfectionism", scale_min = 1, scale_max = 7)
+
+graph_density_of_exposure
+
+ggsave(
+  graph_density_of_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "graph_density_of_exposure.jpg",
+  device = 'jpg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+# test 
+dt_19 |> 
+  select(perfectionism) |> 
+  filter(perfectionism < 2) |> 
+  count(n = n())
+dt_19 |> 
+  select(perfectionism) |> 
+  filter(perfectionism > 6) |> 
+  count(n = n())
+
+dt_19 |> 
+  select(perfectionism) |> 
+  filter(perfectionism >=2  &  perfectionism <=6) |> 
+  count(n = n())
+
+
+
+nzavs_exposure
+
+dt_19$perfectionism_z <- scale(dt_19$perfectionism)
+
+min_score <- min(dt_19$perfectionism_z, na.rm = TRUE) # make sure his is SD units
 min_score
 
-max_score <- max(dt_19$gratitude_z, na.rm = TRUE)
+max_score <- max(dt_19$perfectionism_z, na.rm = TRUE) # make sure his is SD units
+
+max_score
 max_score
 
-sd_exposure <- sd(dt_19$gratitude,
+sd_exposure <- sd(dt_19$perfectionism,
                   na.rm = TRUE)
 sd_exposure
 
 one_point_in_sd_units <- 1/sd_exposure
 one_point_in_sd_units
+push_mods
 
-# half_sd <- sd_exposure / 2
-# half_sd
+nzavs_exposure
+# use function
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+source("/Users/joseph/GIT/templates/functions/funs.R")
+graph_density_of_exposure <- create_density_sd(dt_19, nzavs_exposure)
+graph_density_of_exposure
+
+table(dat_long$male)
+table(dat$gend_all)
+
+ggsave(
+  graph_density_of_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "graph_density_of_exposure.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+# screen off
+dev.off()
 
 
 
-# Decrease by one point
-f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
-}
-
-
-
-#  increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
-
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
-}
-
-
-
-
-#  increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
-
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
-}
-
-# check function logic
-max_score - one_point_in_sd_units
-
-# make sure positions align.
-table(dt_19$gratitude_z)
-
-table(dt_19$gratitude)
 
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
 dev.off()
 
-# check
-hist(dat_long$gratitude)
-table(floor(dat_long$kessler_latent_depression))
-
-
-table(scale(dat_long$kessler_latent_anxiety))
-
 
 # check sample 
-N <-n_unique(dat_long$id) #34749 
+N <-n_unique(dat_long$id) #3539 
 N
 
 # double check path
@@ -799,33 +790,35 @@ push_mods
 colnames(dat)
 
 dev.off()
+
 # check
-dt_check_exposure <- dat_long |> filter(wave == 1| wave == 2)
+dt_check_exposure <- dat_long |>   filter(wave == 2018 | wave == 2019)
+
+table (is.na(dt_check_exposure$perfectionism))
 
 # makes sure all is false
-table (is.na(dt_check_exposure$gratitude))
-
-# makes sure all is false
-table ((dt_check_exposure$gratitude))
+table ((dt_check_exposure$perfectionism))
 # make
 dt_18 <- dat_long |>
-  filter(wave == 1 )
+  filter(wave == 2018 )
 
 
 
-dt_positivity_full <- dt_check_exposure |>
-  filter(wave == 1 | wave == 2) |>
-  select(wave, id, gratitude, sample_weights) |> 
-  mutate(gratitude_round = round(gratitude, 0))
+dt_positivity_full <- dat_long |>
+  filter(wave == 2018 | wave == 2019) |>
+  select(wave, id, perfectionism, sample_weights) |> 
+  mutate(perfectionism_round = round(perfectionism, 0))
 
 dt_positivity_full
+
+table(dt_positivity_full$perfectionism_round)
 
 # check sample weights NA - will return to this after impute
 table (is.na(dt_positivity_full$sample_weights)) # 
 
 # test positivity
 out <-
-  msm::statetable.msm(foregivness_round, id, data = dt_positivity_full)
+  msm::statetable.msm(perfectionism_round, id, data = dt_positivity_full)
 
 # transition table
 t_tab <- transition_table(out, state_names = NULL)
@@ -833,7 +826,7 @@ t_tab
 
 
 out <-
-  msm::statetable.msm(gratitude, id, data = dt_positivity_full)
+  msm::statetable.msm(perfectionism, id, data = dt_positivity_full)
 
 # transition table
 t_tab <- transition_table(out, state_names = NULL)
@@ -844,17 +837,16 @@ t_tab
 # set variables for baseline exposure and outcome -------------------------
 
 baseline_vars = c(
-  "male",
+  "male", # actually female
   "age",
   "education_level_coarsen",
   # factors
-  "eth_cat",
-  #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+ # "eth_cat", not needed
   #"bigger_doms", #religious denomination
-  "sample_origin",
+ # "sample_origin",  simplify 
   "nz_dep2018",
   "nzsei13",
-  "born_nz",
+ # "born_nz",
   "hlth_disability",
   # "hlth_bmi",
   # "pwi", # pwi
@@ -903,8 +895,8 @@ baseline_vars = c(
   # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
   "religion_church_round",
   # "religion_religious", #
-  "religion_spiritual_identification",
-  "religion_identification_level",
+ # "religion_spiritual_identification",
+ # "religion_identification_level",
   #  "religion_religious",
   #  "religion_church_binary",
   #  "religion_prayer_binary",
@@ -918,6 +910,7 @@ baseline_vars = c(
 
 # check
 baseline_vars
+
 
 # check
 exposure_var
@@ -952,11 +945,11 @@ outcome_vars = c(
   # embodied
   "bodysat",
   #ego
-  # "vengeful_rumin",
+  "vengeful_rumin",
   #ego
   ## Am satisfied with the appearance, size and shape of my body.
   # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-  "perfectionism",
+  #  "perfectionism",
   # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
   # I am hardly ever satisfied with my performance.
   "power_no_control_composite",
@@ -980,8 +973,8 @@ outcome_vars = c(
   # "emotion_regulation_change_thinking_to_calm",#,#, # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
   # "emp_work_life_balance"# I have a good balance between work and other important things in my life.
   #"respect_self",
-   "vengeful_rumin",
- ################"gratitude",
+  # "vengeful_rumin",
+  "gratitude",
   ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
   "pwb_your_health",
   #Your health.
@@ -1023,6 +1016,7 @@ prep_coop_all <- margot_wide_impute_baseline(
   outcome_vars = outcome_vars
 )
 
+push_mods
 # check mi model
 # outlist <-
 #   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
@@ -1032,6 +1026,8 @@ prep_coop_all <- margot_wide_impute_baseline(
 # head(prep_coop_all$loggedEvents, 10)
 
 push_mods
+
+table( prep_coop_all$t0_sample_weights )
 
 # save function -- will save to your "push_mod" directory
 here_save(prep_coop_all, "prep_coop_all")
@@ -1043,7 +1039,7 @@ head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
 dev.off()
 
-
+N
 #check must be a dataframe
 str(prep_coop_all)
 nrow(prep_coop_all)
@@ -1056,7 +1052,7 @@ prep_coop_all <- as.data.frame(prep_coop_all)
 df_wide_censored <-
   prep_coop_all |>
   mutate(
-    t0_eth_cat = as.factor(t0_eth_cat),
+  #  t0_eth_cat = as.factor(t0_eth_cat),
     t0_smoker_binary = as.integer(ifelse(t0_smoker > 0, 1, 0)),
     t2_smoker_binary = as.integer(ifelse(t2_smoker > 0, 1, 0)),
   ) |>
@@ -1094,7 +1090,6 @@ df_clean <- df_wide_censored %>%
     t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
-    #  t1_permeability_individual, # make sure to change for each study
     t1_not_lost,
     t2_smoker_binary,
     ends_with("_z")
@@ -1103,12 +1098,15 @@ df_clean <- df_wide_censored %>%
   relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
   relocate("t1_not_lost", .before = starts_with("t2_")) |>
-  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
+#  mutate(t0_sample_weights = rep(1, nrow(df_wide_censored))) 
+  mutate(t0_sample_weights = as.numeric(t0_sample_weights) )|>
   data.frame()
 
 dim(df_clean)
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 dev.off()
+naniar::miss_prop_summary(df_clean)
+naniar::miss_case_table(df_clean)
 
 
 # again check path
@@ -1161,6 +1159,8 @@ print(W)
 # check shift
 f
 
+f_1
+min_score + one_point_in_sd_units
 
 # make test data (if needed)
 df_clean_test <- df_clean |>
@@ -1247,6 +1247,8 @@ timing_info <- system.time({
     parallel = n_cores
   )
 })
+
+
 
 t2_smoker_binary_1
 here_save(t2_smoker_binary_1, "t2_smoker_binary_1")
@@ -2761,83 +2763,83 @@ here_save(
 
 
 
-names_base_t2_perfectionism_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_perfectionism_z")
-names_base_t2_perfectionism_z
+# names_base_t2_perfectionism_z <-
+#   select_and_rename_cols(names_base = names_base,
+#                          baseline_vars = baseline_vars,
+#                          outcome = "t2_perfectionism_z")
+# names_base_t2_perfectionism_z
 
 # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # I am hardly ever satisfied with my performance.
-t2_perfectionism_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_perfectionism_z
-here_save(t2_perfectionism_z, "t2_perfectionism_z")
-
-
-
-# # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-t2_perfectionism_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_perfectionism_z_1
-here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
-
-
-
-
-
-
-# # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-t2_perfectionism_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_perfectionism_z_null
-here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
+# t2_perfectionism_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_perfectionism_z,
+#   outcome = "t2_perfectionism_z",
+#   cens = C,
+#   shift = f,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# 
+# t2_perfectionism_z
+# here_save(t2_perfectionism_z, "t2_perfectionism_z")
+# 
+# 
+# 
+# # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+# # I am hardly ever satisfied with my performance.
+# t2_perfectionism_z_1 <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_perfectionism_z,
+#   outcome = "t2_perfectionism_z",
+#   cens = C,
+#   shift = f_1,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# 
+# t2_perfectionism_z_1
+# here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
+# 
+# 
+# 
+# 
+# 
+# 
+# # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
+# # I am hardly ever satisfied with my performance.
+# t2_perfectionism_z_null <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_perfectionism_z,
+#   outcome = "t2_perfectionism_z",
+#   cens = C,
+#   shift = NULL,
+#   # mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_perfectionism_z_null
+# here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
 
 
 
@@ -3029,7 +3031,7 @@ t2_pwb_your_health_z_1 <- lmtp_tmle(
   baseline = names_base_t2_pwb_your_health_z,
   outcome = "t2_pwb_your_health_z",
   cens = C,
-  shift = f,
+  shift = f_1,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
@@ -3800,7 +3802,7 @@ here_save(t2_belong_z_null, "t2_belong_z_null")
 
 
 # contrasts health ---------------------------------------------------------------
-
+push_mods
 # smoker
 t2_smoker_binary <- here_read("t2_smoker_binary")
 t2_smoker_binary_1 <- here_read("t2_smoker_binary_1")
@@ -4553,49 +4555,49 @@ out_tab_contrast_t2_self_esteem_z_1 <-
 out_tab_contrast_t2_self_esteem_z_1
 
 # perfectionism
-t2_perfectionism_z <- here_read("t2_perfectionism_z")
-t2_perfectionism_z_1 <- here_read("t2_perfectionism_z_1")
-t2_perfectionism_z_null <-
-  here_read("t2_perfectionism_z_null")
-
-# first contrast
-contrast_t2_perfectionism_z <-
-  lmtp_contrast(t2_perfectionism_z,
-                ref = t2_perfectionism_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_perfectionism_z <-
-  margot_tab_lmtp(contrast_t2_perfectionism_z ,
-                  scale = "RD",
-                  new_name = "Perfectionism")
-
-
-out_tab_contrast_t2_perfectionism_z <-
-  lmtp_evalue_tab(tab_contrast_t2_perfectionism_z,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_perfectionism_z
-
-
-# second contrast
-contrast_t2_perfectionism_z_1 <-
-  lmtp_contrast(t2_perfectionism_z_1,
-                ref = t2_perfectionism_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_perfectionism_z_1 <-
-  margot_tab_lmtp(contrast_t2_perfectionism_z_1,
-                  scale = "RD",
-                  new_name = "Perfectionism")
-
-
-out_tab_contrast_t2_perfectionism_z_1 <-
-  lmtp_evalue_tab(tab_contrast_t2_perfectionism_z_1,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_perfectionism_z_1
+# t2_perfectionism_z <- here_read("t2_perfectionism_z")
+# t2_perfectionism_z_1 <- here_read("t2_perfectionism_z_1")
+# t2_perfectionism_z_null <-
+#   here_read("t2_perfectionism_z_null")
+# 
+# # first contrast
+# contrast_t2_perfectionism_z <-
+#   lmtp_contrast(t2_perfectionism_z,
+#                 ref = t2_perfectionism_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_perfectionism_z <-
+#   margot_tab_lmtp(contrast_t2_perfectionism_z ,
+#                   scale = "RD",
+#                   new_name = "Perfectionism")
+# 
+# 
+# out_tab_contrast_t2_perfectionism_z <-
+#   lmtp_evalue_tab(tab_contrast_t2_perfectionism_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_perfectionism_z
+# 
+# 
+# # second contrast
+# contrast_t2_perfectionism_z_1 <-
+#   lmtp_contrast(t2_perfectionism_z_1,
+#                 ref = t2_perfectionism_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_perfectionism_z_1 <-
+#   margot_tab_lmtp(contrast_t2_perfectionism_z_1,
+#                   scale = "RD",
+#                   new_name = "Perfectionism")
+# 
+# 
+# out_tab_contrast_t2_perfectionism_z_1 <-
+#   lmtp_evalue_tab(tab_contrast_t2_perfectionism_z_1,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_perfectionism_z_1
 
 
 # self control have
@@ -4815,48 +4817,49 @@ out_tab_contrast_t2_permeability_individual_z_1
 
 
 # contrasts reflective ----------------------------------------------------
-# 
-# # gratitude
-# t2_gratitude_z <- here_read("t2_gratitude_z")
-# t2_gratitude_z_1 <- here_read("t2_gratitude_z_1")
-# 
-# 
-# t2_gratitude_z_null <- here_read("t2_gratitude_z_null")
-# 
-# # first contrast
-# contrast_t2_gratitude_z <- lmtp_contrast(t2_gratitude_z,
-#                                          ref = t2_gratitude_z_null,
-#                                          type = "additive")
-# tab_contrast_t2_gratitude_z <-
-#   margot_tab_lmtp(contrast_t2_gratitude_z,
-#                   scale = "RD",
-#                   new_name = "Gratitude")
-# 
-# 
-# out_tab_contrast_t2_gratitude_z <-
-#   lmtp_evalue_tab(tab_contrast_t2_gratitude_z,
-#                   scale = c("RD"))
-# 
-# out_tab_contrast_t2_gratitude_z
-# 
-# # second contrast
-# contrast_t2_gratitude_z_1 <- lmtp_contrast(t2_gratitude_z_1,
-#                                            ref = t2_gratitude_z_null,
-#                                            type = "additive")
-# tab_contrast_t2_gratitude_z_1 <-
-#   margot_tab_lmtp(contrast_t2_gratitude_z_1 ,
-#                   scale = "RD",
-#                   new_name = "Gratitude")
-# 
-# 
-# out_tab_contrast_t2_gratitude_z_1  <-
-#   lmtp_evalue_tab(tab_contrast_t2_gratitude_z_1 ,
-#                   scale = c("RD"))
-# 
-# out_tab_contrast_t2_gratitude_z_1 
-# 
+
+# gratitude
+t2_gratitude_z <- here_read("t2_gratitude_z")
+t2_gratitude_z
+t2_gratitude_z_1 <- here_read("t2_gratitude_z_1")
 
 
+t2_gratitude_z_null <- here_read("t2_gratitude_z_null")
+
+# first contrast
+contrast_t2_gratitude_z <- lmtp_contrast(t2_gratitude_z,
+                                         ref = t2_gratitude_z_null,
+                                         type = "additive")
+tab_contrast_t2_gratitude_z <-
+  margot_tab_lmtp(contrast_t2_gratitude_z,
+                  scale = "RD",
+                  new_name = "Gratitude")
+
+
+out_tab_contrast_t2_gratitude_z <-
+  lmtp_evalue_tab(tab_contrast_t2_gratitude_z,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_gratitude_z
+
+# second contrast
+contrast_t2_gratitude_z_1 <- lmtp_contrast(t2_gratitude_z_1,
+                                           ref = t2_gratitude_z_null,
+                                           type = "additive")
+tab_contrast_t2_gratitude_z_1 <-
+  margot_tab_lmtp(contrast_t2_gratitude_z_1 ,
+                  scale = "RD",
+                  new_name = "Gratitude")
+
+
+out_tab_contrast_t2_gratitude_z_1  <-
+  lmtp_evalue_tab(tab_contrast_t2_gratitude_z_1 ,
+                  scale = c("RD"))
+
+out_tab_contrast_t2_gratitude_z_1 
+
+
+# 
 # vengence / forgive
 t2_vengeful_rumin_z <- here_read("t2_vengeful_rumin_z")
 t2_vengeful_rumin_z_1 <- here_read("t2_vengeful_rumin_z_1")
@@ -4900,7 +4903,7 @@ out_tab_contrast_t2_vengeful_rumin_z_1  <-
                   scale = c("RD"))
 
 out_tab_contrast_t2_vengeful_rumin_z_1
-
+# 
 
 # pwb your health
 
@@ -5219,7 +5222,6 @@ out_tab_contrast_t2_meaning_sense_z_1
 
 t2_lifesat_z <- here_read("t2_lifesat_z")
 t2_lifesat_z_1 <- here_read("t2_lifesat_z_1")
-
 t2_lifesat_z_null <- here_read("t2_lifesat_z_null")
 
 
@@ -5402,7 +5404,7 @@ tab_body <- rbind(
 tab_ego <- rbind(
   out_tab_contrast_t2_power_no_control_composite_z,
   out_tab_contrast_t2_self_esteem_z,
-  out_tab_contrast_t2_perfectionism_z,
+  # out_tab_contrast_t2_perfectionism_z,
   out_tab_contrast_t2_self_control_have_lots_z,
   out_tab_contrast_t2_self_control_wish_more_reversed_z,
   out_tab_contrast_t2_emotion_regulation_out_control_z,
@@ -5462,6 +5464,7 @@ group_tab_social <- group_tab(tab_social, type = "RD")
 # save
 here_save(group_tab_social, "group_tab_social")
 
+
 group_tab_health <- here_read("group_tab_health")
 group_tab_body <- here_read("group_tab_body")
 group_tab_ego <- here_read("group_tab_ego")
@@ -5473,7 +5476,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Gratitude: shift all below average to average, N = XXXXX"
+sub_title = "Māori Perfectionism: shift DOWN 1x point (min 1), N = 3539"
 
 
 # graph health
@@ -5517,7 +5520,7 @@ ggsave(
 plot_group_tab_body <- margot_plot(
   group_tab_body,
   type = "RD",
-  title = "Body effects",
+  title = "Embodied effects",
   subtitle = sub_title,
   xlab = "",
   ylab = "",
@@ -5687,7 +5690,7 @@ tab_body_1  <- rbind(
 tab_ego_1  <- rbind(
   out_tab_contrast_t2_power_no_control_composite_z_1 ,
   out_tab_contrast_t2_self_esteem_z_1,
-  out_tab_contrast_t2_perfectionism_z_1,
+  # out_tab_contrast_t2_perfectionism_z_1,
   out_tab_contrast_t2_self_control_have_lots_z_1,
   out_tab_contrast_t2_self_control_wish_more_reversed_z_1,
   out_tab_contrast_t2_emotion_regulation_out_control_z_1,
@@ -5697,7 +5700,7 @@ tab_ego_1  <- rbind(
 
 tab_reflective_1 <- rbind(
   out_tab_contrast_t2_gratitude_z_1,
-  # out_tab_contrast_t2_vengeful_rumin_z_1,
+  out_tab_contrast_t2_vengeful_rumin_z_1,
   out_tab_contrast_t2_pwb_your_health_z_1,
   out_tab_contrast_t2_pwb_your_future_security_z_1,
   out_tab_contrast_t2_pwb_your_relationships_z_1,
@@ -5753,15 +5756,15 @@ group_tab_body_1 <- here_read("group_tab_body_1")
 group_tab_ego_1 <- here_read("group_tab_ego_1")
 group_tab_reflective_1 <- here_read("group_tab_reflective_1")
 group_tab_social_1 <- here_read("group_tab_social_1")
-
+group_tab_social_1
 
 # create plots -------------------------------------------------------------
 
 # check N
 N
-sub_title_1 = "Gratitude: shift + 1 point everyone (up to max 7), N = XXXX"
+sub_title_1 = "Māori erfectionism: shift UP 1x point (max 7), N = 3539"
 
-
+f_1
 # graph health
 plot_group_tab_health_1 <- margot_plot(
   group_tab_health_1,
@@ -5782,14 +5785,14 @@ plot_group_tab_health_1 <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
-plot_group_tab_health+ plot_group_tab_health_1
+plot_group_tab_health_1
 dev.off()
 # save graph
 ggsave(
   plot_group_tab_health_1,
   path = here::here(here::here(push_mods, "figs")),
   width = 12,
-  height = 8,,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_health_1.png",
   device = 'png',
@@ -5803,7 +5806,7 @@ ggsave(
 plot_group_tab_body_1 <- margot_plot(
   group_tab_body_1,
   type = "RD",
-  title = "Body effects",
+  title = "Embodied effects",
   subtitle = sub_title_1,
   xlab = "",
   ylab = "",
@@ -5820,13 +5823,13 @@ plot_group_tab_body_1 <- margot_plot(
   x_lim_hi =  .5
 )
 
-plot_group_tab_body + plot_group_tab_body_1
+plot_group_tab_body_1
 # save graph
 ggsave(
   plot_group_tab_body_1,
   path = here::here(here::here(push_mods, "figs")),
   width = 12,
-  height = 8,,
+  height = 8,
   units = "in",
   filename = "plot_group_tab_body_1.png",
   device = 'png',
@@ -5858,9 +5861,6 @@ plot_group_tab_ego_1 <- margot_plot(
   x_lim_hi =  .5
 )
 plot_group_tab_ego_1
-
-
-plot_group_tab_ego + plot_group_tab_ego_1
 
 # save graph
 ggsave(
@@ -5897,7 +5897,7 @@ plot_group_tab_reflective_1 <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
-plot_group_tab_reflective + plot_group_tab_reflective_1
+plot_group_tab_reflective_1
 
 # save graph
 ggsave(
@@ -5917,7 +5917,7 @@ plot_group_tab_social_1 <- margot_plot(
   group_tab_social_1,
   type = "RD",
   title = "Social effects",
-  subtitle = sub_title,
+  subtitle = sub_title_1,
   xlab = "",
   ylab = "",
   estimate_scale = 1,
@@ -5933,7 +5933,7 @@ plot_group_tab_social_1 <- margot_plot(
   x_lim_hi =  .5
 )
 
-
+plot_group_tab_social_1
 
 # save graph
 ggsave(
@@ -5950,6 +5950,8 @@ ggsave(
 dev.off()
 
 
+
+
 # comparative intervention graphs -----------------------------------------
 
 # combo graphs
@@ -5961,8 +5963,8 @@ plot_compare_health
 ggsave(
   plot_compare_health,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_health.png",
   device = 'png',
@@ -5973,14 +5975,14 @@ dev.off()
 
 
 plot_compare_body <- plot_group_tab_body + plot_group_tab_body_1  + plot_annotation(title = 
-                                                                                      "Comparison of shift interventions", tag_level = "A")
+                                                                                      "Shift Intervention Comparisions", tag_level = "A")
 
 plot_compare_body
 ggsave(
   plot_compare_body,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_body.png",
   device = 'png',
@@ -5992,15 +5994,15 @@ dev.off()
 
 
 plot_compare_ego <- plot_group_tab_ego + plot_group_tab_ego_1+ plot_annotation(title = 
-                                                                                 "Comparison of shift interventions", tag_level = "A")
+                                                                                 "Shift Intervention Comparisions", tag_level = "A")
 
 
 plot_compare_ego
 ggsave(
   plot_compare_ego,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_ego.png",
   device = 'png',
@@ -6012,14 +6014,14 @@ dev.off()
 
 
 plot_compare_reflective <- plot_group_tab_reflective + plot_group_tab_reflective_1+ plot_annotation(title = 
-                                                                                                      "Comparison of shift interventions", tag_level = "A")
+                                                                                                      "Shift Intervention Comparisions", tag_level = "A")
 
 plot_compare_reflective
 ggsave(
   plot_compare_reflective,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_reflective.png",
   device = 'png',
@@ -6028,18 +6030,19 @@ ggsave(
 )
 dev.off()
 
+push_mods
 
 
-
+plot_group_tab_social_1
 plot_compare_social  <-plot_group_tab_social + plot_group_tab_social_1+ plot_annotation(title = 
-                                                                                          "Comparison of shift interventions", tag_level = "A")
+                                                                                          "Shift Intervention Comparisions", tag_level = "A")
 
 plot_compare_social
 ggsave(
   plot_compare_social,
   path = here::here(here::here(push_mods, "figs")),
-  width = 16,
-  height = 9,
+  width = 25,
+  height = 10,
   units = "in",
   filename = "plot_compare_social.png",
   device = 'png',
@@ -6047,5 +6050,6 @@ ggsave(
   dpi = 600
 )
 dev.off()
+
 
 
