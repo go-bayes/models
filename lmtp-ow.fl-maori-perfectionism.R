@@ -5806,7 +5806,7 @@ group_tab_social_1
 
 # check N
 N
-sub_title_1 = "Māori erfectionism: shift UP 1x point (max 7), N = 3539"
+sub_title_1 = "Māori Perfectionism: shift UP 1x point (max 7), N = 3539"
 
 f_1
 # graph health
@@ -5830,6 +5830,7 @@ plot_group_tab_health_1 <- margot_plot(
   x_lim_hi =  .5
 )
 plot_group_tab_health_1
+plot_group_tab_health
 dev.off()
 # save graph
 ggsave(
@@ -5868,6 +5869,7 @@ plot_group_tab_body_1 <- margot_plot(
 )
 
 plot_group_tab_body_1
+plot_group_tab_body
 # save graph
 ggsave(
   plot_group_tab_body_1,
@@ -5905,6 +5907,8 @@ plot_group_tab_ego_1 <- margot_plot(
   x_lim_hi =  .5
 )
 plot_group_tab_ego_1
+plot_group_tab_ego
+
 
 # save graph
 ggsave(
