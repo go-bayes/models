@@ -57,6 +57,14 @@ table( (dat$male) )
 #   )
 
 
+# miscalulated results
+# push_mods <-
+#   fs::path_expand(
+#     "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-maori-fl-perfectionism-weights-wrong"
+#   )
+
+
+
 push_mods <-
   fs::path_expand(
     "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-maori-fl-perfectionism-weights"
@@ -236,6 +244,7 @@ listWrappers()
 #   kbl(format = "markdown")
 #
 
+
 # import data and wrangle-------------------------------------------------
 dat_long  <- dat |>
   arrange(id, wave) |>
@@ -383,7 +392,8 @@ dat_long  <- dat |>
     "religion_perceive_religious_discrim",
     #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
     # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
-    "w_gend_age_euro",
+   # "w_gend_age_euro",
+    "w_gend_age_ethnic",  # better
     # sample_weights.
     # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
     "gratitude",
@@ -642,7 +652,7 @@ dat_long  <- dat |>
     hours_housework_log = log(hours_housework + 1),
     hours_exercise_log = log(hours_exercise + 1)
   ) |>
-  dplyr::rename(sample_weights = w_gend_age_euro) |>
+  dplyr::rename(sample_weights = w_gend_age_ethnic) |> ## use the sample ethnicity weights
   dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   arrange(id, wave) |>
   droplevels() |>
@@ -677,6 +687,11 @@ mutate(
 nzavs_exposure
 
 n_unique(dat_long$id) # 3539
+
+
+
+
+
 
 # eyeball distribution
 # table(dat_long$wave)
@@ -1046,6 +1061,35 @@ nrow(prep_coop_all)
 colnames(prep_coop_all)
 
 prep_coop_all <- as.data.frame(prep_coop_all)
+
+# correct weights
+
+ethnic_group_design <- prep_coop_all
+
+pop_size_ethnic_group <- nrow(prep_coop_all)
+
+pop_size_ethnic_group
+
+max( ethnic_group_design$t0_sample_weights )
+ethnic_group_design <- ethnic_group_design %>%
+  mutate(t0_sample_weights = t0_sample_weights / sum(t0_sample_weights) * pop_size_ethnic_group) |> 
+  mutate(t0_sample_weights = t0_sample_weights / mean(t0_sample_weights)) # rescale to 1 for ease of interpretation
+
+max( ethnic_group_design$t0_sample_weights )
+
+
+hist(ethnic_group_design$t0_sample_weights)
+.Machine$double.eps * 100
+
+pop_size_ethnic_group
+sum(ethnic_group_design$t0_sample_weights)
+
+sum(ethnic_group_design$t0_sample_weights)
+
+pop_size_ethnic_group
+
+here_save(ethnic_group_design, "ethnic_group_design")
+ethnic_group_design <- here_read("ethnic_group_design")
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
