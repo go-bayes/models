@@ -720,24 +720,24 @@ print(W)
 f
 
 # model 1
-t2_env_climate_chg_real_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_env_climate_chg_real_z",
-  cens = C,
-  shift = f,
-  outcome_type = "continuous",
-  mtp = TRUE,
-  folds = 5,
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_env_climate_chg_real_z
-here_save(t2_env_climate_chg_real_z, "t2_env_climate_chg_real_z")
+# t2_env_climate_chg_real_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base,
+#   outcome = "t2_env_climate_chg_real_z",
+#   cens = C,
+#   shift = f,
+#   outcome_type = "continuous",
+#   mtp = TRUE,
+#   folds = 5,
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_env_climate_chg_real_z
+# here_save(t2_env_climate_chg_real_z, "t2_env_climate_chg_real_z")
 
 
 
@@ -784,24 +784,24 @@ here_save(t2_env_climate_chg_real_z_null, "t2_env_climate_chg_real_z_null")
 
 
 # model 2 t2_env_climate_chg_cause_z
-t2_env_climate_chg_cause_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_env_climate_chg_cause_z",
-  cens = C,
-  shift = f,
-  outcome_type = "continuous",
-  mtp = TRUE,
-  folds = 5,
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_env_climate_chg_cause_z
-here_save(t2_env_climate_chg_cause_z, "t2_env_climate_chg_cause_z")
+# t2_env_climate_chg_cause_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base,
+#   outcome = "t2_env_climate_chg_cause_z",
+#   cens = C,
+#   shift = f,
+#   outcome_type = "continuous",
+#   mtp = TRUE,
+#   folds = 5,
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_env_climate_chg_cause_z
+# here_save(t2_env_climate_chg_cause_z, "t2_env_climate_chg_cause_z")
 
 
 t2_env_climate_chg_cause_z_1 <- lmtp_tmle(
@@ -846,24 +846,24 @@ here_save(t2_env_climate_chg_cause_z_null, "t2_env_climate_chg_cause_z_null")
 
 # model 3  t2_env_climate_chg_concern_z
 
-t2_env_climate_chg_concern_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_env_climate_chg_concern_z",
-  cens = C,
-  shift = f,
-  outcome_type = "continuous",
-  mtp = TRUE,
-  folds = 5,
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_env_climate_chg_concern_z
-here_save(t2_env_climate_chg_concern_z, "t2_env_climate_chg_concern_z")
+# t2_env_climate_chg_concern_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base,
+#   outcome = "t2_env_climate_chg_concern_z",
+#   cens = C,
+#   shift = f,
+#   outcome_type = "continuous",
+#   mtp = TRUE,
+#   folds = 5,
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_env_climate_chg_concern_z
+# here_save(t2_env_climate_chg_concern_z, "t2_env_climate_chg_concern_z")
 
 
 t2_env_climate_chg_concern_z_1 <- lmtp_tmle(
@@ -908,24 +908,24 @@ here_save(t2_env_climate_chg_concern_z_null, "t2_env_climate_chg_concern_z_null"
 
 # model 4 t2_env_sat_nz_environment_z
 
-t2_env_sat_nz_environment_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_env_sat_nz_environment_z",
-  cens = C,
-  shift = f,
-  outcome_type = "continuous",
-  mtp = TRUE,
-  folds = 5,
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_env_sat_nz_environment_z
-here_save(t2_env_sat_nz_environment_z, "t2_env_sat_nz_environment_z")
+# t2_env_sat_nz_environment_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base,
+#   outcome = "t2_env_sat_nz_environment_z",
+#   cens = C,
+#   shift = f,
+#   outcome_type = "continuous",
+#   mtp = TRUE,
+#   folds = 5,
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_env_sat_nz_environment_z
+# here_save(t2_env_sat_nz_environment_z, "t2_env_sat_nz_environment_z")
 
 t2_env_sat_nz_environment_z_1 <- lmtp_tmle(
   data = df_clean,
@@ -970,31 +970,31 @@ here_save(t2_env_sat_nz_environment_z_null, "t2_env_sat_nz_environment_z_null")
 # contrasts
 
 # contrasts 1 climate change is real
-t2_env_climate_chg_real_z <- here_read("t2_env_climate_chg_real_z")
+#t2_env_climate_chg_real_z <- here_read("t2_env_climate_chg_real_z")
 t2_env_climate_chg_real_z_1 <- here_read("t2_env_climate_chg_real_z_1")
 t2_env_climate_chg_real_z_null <-
   here_read("t2_env_climate_chg_real_z_null")
 
-# first contrast
-contrast_t2_env_climate_chg_real_z <-
-  lmtp_contrast(t2_env_climate_chg_real_z,
-                ref = t2_env_climate_chg_real_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_env_climate_chg_real_z <-
-  margot_tab_lmtp(contrast_t2_env_climate_chg_real_z,
-                  scale = "RD",
-                  new_name = "Climate change is real.")
-
-tab_contrast_t2_env_climate_chg_real_z
-
-
-out_tab_contrast_t2_env_climate_chg_real_z<-
-  lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_real_z,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_env_climate_chg_real_z
+# # first contrast
+# contrast_t2_env_climate_chg_real_z <-
+#   lmtp_contrast(t2_env_climate_chg_real_z,
+#                 ref = t2_env_climate_chg_real_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_env_climate_chg_real_z <-
+#   margot_tab_lmtp(contrast_t2_env_climate_chg_real_z,
+#                   scale = "RD",
+#                   new_name = "Climate change is real.")
+# 
+# tab_contrast_t2_env_climate_chg_real_z
+# 
+# 
+# out_tab_contrast_t2_env_climate_chg_real_z<-
+#   lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_real_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_env_climate_chg_real_z
 
 
 # second contrats
@@ -1022,32 +1022,32 @@ tab_contrast_t2_env_climate_chg_real_z_1
 
 # contrasts: model 2 t2_env_climate_chg_cause_z
 # climate change is real
-t2_env_climate_chg_cause_z <- here_read("t2_env_climate_chg_cause_z")
+#t2_env_climate_chg_cause_z <- here_read("t2_env_climate_chg_cause_z")
 t2_env_climate_chg_cause_z_1 <- here_read("t2_env_climate_chg_cause_z_1")
 
 t2_env_climate_chg_cause_z_null <-
   here_read("t2_env_climate_chg_cause_z_null")
 
 # first contrast
-contrast_t2_env_climate_chg_cause_z <-
-  lmtp_contrast(t2_env_climate_chg_cause_z,
-                ref = t2_env_climate_chg_cause_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_env_climate_chg_cause_z <-
-  margot_tab_lmtp(contrast_t2_env_climate_chg_cause_z,
-                  scale = "RD",
-                  new_name = "Climate change is caused by humans.")
-
-tab_contrast_t2_env_climate_chg_cause_z
-
-
-out_tab_contrast_t2_env_climate_chg_cause_z<-
-  lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_cause_z,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_env_climate_chg_cause_z
+# contrast_t2_env_climate_chg_cause_z <-
+#   lmtp_contrast(t2_env_climate_chg_cause_z,
+#                 ref = t2_env_climate_chg_cause_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_env_climate_chg_cause_z <-
+#   margot_tab_lmtp(contrast_t2_env_climate_chg_cause_z,
+#                   scale = "RD",
+#                   new_name = "Climate change is caused by humans.")
+# 
+# tab_contrast_t2_env_climate_chg_cause_z
+# 
+# 
+# out_tab_contrast_t2_env_climate_chg_cause_z<-
+#   lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_cause_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_env_climate_chg_cause_z
 
 # second contrast
 contrast_t2_env_climate_chg_cause_z_1 <-
@@ -1071,32 +1071,32 @@ out_tab_contrast_t2_env_climate_chg_cause_z_1<-
 out_tab_contrast_t2_env_climate_chg_cause_z_1
 
 #  contrasts: 3: t2_env_climate_chg_concern_z
-t2_env_climate_chg_concern_z <- here_read("t2_env_climate_chg_concern_z")
+#t2_env_climate_chg_concern_z <- here_read("t2_env_climate_chg_concern_z")
 t2_env_climate_chg_concern_z_1 <- here_read("t2_env_climate_chg_concern_z_1")
 t2_env_climate_chg_concern_z_null <-
   here_read("t2_env_climate_chg_concern_z_null")
-
-# first contrast
-contrast_t2_env_climate_chg_concern_z <-
-  lmtp_contrast(t2_env_climate_chg_concern_z,
-                ref = t2_env_climate_chg_concern_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_env_climate_chg_concern_z <-
-  margot_tab_lmtp(contrast_t2_env_climate_chg_concern_z,
-                  scale = "RD",
-                  new_name = "I am deeply concerned about climate change.")
-
-tab_contrast_t2_env_climate_chg_concern_z
-
-
-out_tab_contrast_t2_env_climate_chg_concern_z<-
-  lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_concern_z,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_env_climate_chg_concern_z
-
+# 
+# # first contrast
+# contrast_t2_env_climate_chg_concern_z <-
+#   lmtp_contrast(t2_env_climate_chg_concern_z,
+#                 ref = t2_env_climate_chg_concern_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_env_climate_chg_concern_z <-
+#   margot_tab_lmtp(contrast_t2_env_climate_chg_concern_z,
+#                   scale = "RD",
+#                   new_name = "I am deeply concerned about climate change.")
+# 
+# tab_contrast_t2_env_climate_chg_concern_z
+# 
+# 
+# out_tab_contrast_t2_env_climate_chg_concern_z<-
+#   lmtp_evalue_tab(tab_contrast_t2_env_climate_chg_concern_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_env_climate_chg_concern_z
+# 
 
 # second contrast
 contrast_t2_env_climate_chg_concern_z_1 <-
@@ -1123,31 +1123,31 @@ out_tab_contrast_t2_env_climate_chg_concern_z_1
 
 # contrasts: 4 t2_env_sat_nz_environment_z
 
-t2_env_sat_nz_environment_z <- here_read("t2_env_sat_nz_environment_z")
+#t2_env_sat_nz_environment_z <- here_read("t2_env_sat_nz_environment_z")
 t2_env_sat_nz_environment_z_1 <- here_read("t2_env_sat_nz_environment_z_1")
 t2_env_sat_nz_environment_z_null <-
   here_read("t2_env_sat_nz_environment_z_null")
 
 
 # first contrast
-contrast_t2_env_sat_nz_environment_z <-
-  lmtp_contrast(t2_env_sat_nz_environment_z,
-                ref = t2_env_sat_nz_environment_z_null,
-                type = "additive")
-
-
-tab_contrast_t2_env_sat_nz_environment_z <-
-  margot_tab_lmtp(contrast_t2_env_sat_nz_environment_z,
-                  scale = "RD",
-                  new_name = "(Satisfied with the quality of New Zealand’s natural environment.")
-
-tab_contrast_t2_env_sat_nz_environment_z
-
-out_tab_contrast_t2_env_sat_nz_environment_z<-
-  lmtp_evalue_tab(tab_contrast_t2_env_sat_nz_environment_z,
-                  scale = c("RD"))
-
-out_tab_contrast_t2_env_sat_nz_environment_z
+# contrast_t2_env_sat_nz_environment_z <-
+#   lmtp_contrast(t2_env_sat_nz_environment_z,
+#                 ref = t2_env_sat_nz_environment_z_null,
+#                 type = "additive")
+# 
+# 
+# tab_contrast_t2_env_sat_nz_environment_z <-
+#   margot_tab_lmtp(contrast_t2_env_sat_nz_environment_z,
+#                   scale = "RD",
+#                   new_name = "(Satisfied with the quality of New Zealand’s natural environment.")
+# 
+# tab_contrast_t2_env_sat_nz_environment_z
+# 
+# out_tab_contrast_t2_env_sat_nz_environment_z<-
+#   lmtp_evalue_tab(tab_contrast_t2_env_sat_nz_environment_z,
+#                   scale = c("RD"))
+# 
+# out_tab_contrast_t2_env_sat_nz_environment_z
 
 # second contrast
 contrast_t2_env_sat_nz_environment_z_1 <-
@@ -1170,22 +1170,22 @@ out_tab_contrast_t2_env_sat_nz_environment_z_1<-
 out_tab_contrast_t2_env_sat_nz_environment_z_1
 
 # bind individual tables
-tab_envir <- rbind(
-  out_tab_contrast_t2_env_climate_chg_real_z,
-  out_tab_contrast_t2_env_climate_chg_cause_z,
-  out_tab_contrast_t2_env_climate_chg_concern_z,
-  out_tab_contrast_t2_env_sat_nz_environment_z
-)
-t2_env_climate_chg_real_z
-out_tab_contrast_t2_env_climate_chg_cause_z
-# make group table
-group_tab_envir<- group_tab(tab_envir  , type = "RD")
-
-# save
-here_save(group_tab_envir, "group_tab_envir")
-
-# read
-group_tab_envir <- here_read("group_tab_envir")
+# tab_envir <- rbind(
+#   out_tab_contrast_t2_env_climate_chg_real_z,
+#   out_tab_contrast_t2_env_climate_chg_cause_z,
+#   out_tab_contrast_t2_env_climate_chg_concern_z,
+#   out_tab_contrast_t2_env_sat_nz_environment_z
+# )
+# t2_env_climate_chg_real_z
+# out_tab_contrast_t2_env_climate_chg_cause_z
+# # make group table
+# group_tab_envir<- group_tab(tab_envir  , type = "RD")
+# 
+# # save
+# here_save(group_tab_envir, "group_tab_envir")
+# 
+# # read
+# group_tab_envir <- here_read("group_tab_envir")
 
 
 # second analysis
@@ -1208,44 +1208,44 @@ group_tab_envir_1 <- here_read("group_tab_envir_1")
 
 # create plots -------------------------------------------------------------
 # check N
-N
-sub_title = "Trust in science (place in society): shift those below average to average, otherwise do not shift: N = 32737"
-
-
-# graph health
-plot_group_tab_envir <- margot_plot(
-  group_tab_envir,
-  type = "RD",
-  title = "Environmental attitudes",
-  subtitle = sub_title,
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 12,
-  text_size = 3.0,
-  point_size = .5,
-  title_size = 15,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = -1,
-  x_lim_lo = -1,
-  x_lim_hi =  .5
-)
-plot_group_tab_envir
-dev.off()
-# save graph
-ggsave(
-  plot_group_tab_envir,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "plot_group_tab_envir.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
+# N
+# sub_title = "Trust in science (place in society): shift those below average to average, otherwise do not shift: N = 32737"
+# 
+# 
+# # graph health
+# plot_group_tab_envir <- margot_plot(
+#   group_tab_envir,
+#   type = "RD",
+#   title = "Environmental attitudes",
+#   subtitle = sub_title,
+#   xlab = "",
+#   ylab = "",
+#   estimate_scale = 1,
+#   base_size = 12,
+#   text_size = 3.0,
+#   point_size = .5,
+#   title_size = 15,
+#   subtitle_size = 11,
+#   legend_text_size = 8,
+#   legend_title_size = 10,
+#   x_offset = -1,
+#   x_lim_lo = -1,
+#   x_lim_hi =  .5
+# )
+# plot_group_tab_envir
+# dev.off()
+# # save graph
+# ggsave(
+#   plot_group_tab_envir,
+#   path = here::here(here::here(push_mods, "figs")),
+#   width = 12,
+#   height = 8,
+#   units = "in",
+#   filename = "plot_group_tab_envir.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 600
+# )
 
 # second analysis Graph
 # check N
