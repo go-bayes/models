@@ -2904,7 +2904,7 @@ t2_pwb_your_health_z
 here_save(t2_pwb_your_health_z, "t2_pwb_your_health_z")
 
 
-
+### CORRECTED ###
 # Your health.
 t2_pwb_your_health_z_1 <- lmtp_tmle(
   data = df_clean,
@@ -2912,7 +2912,7 @@ t2_pwb_your_health_z_1 <- lmtp_tmle(
   baseline = names_base_t2_pwb_your_health_z,
   outcome = "t2_pwb_your_health_z",
   cens = C,
-  shift = f,
+  shift = f_1,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
