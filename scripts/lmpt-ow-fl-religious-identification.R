@@ -777,8 +777,8 @@ ggsave(
   width = 12,
   height = 8,
   units = "in",
-  filename = "graph_density_of_exposure.png",
-  device = 'png',
+  filename = "graph_density_of_exposure.jpg",
+  device = 'jpg',
   limitsize = FALSE,
   dpi = 600
 )
@@ -1333,7 +1333,7 @@ f_test_all_1_z <- function(data, trt) {
 
 
 
-
+A
 
 names_base_t2_kessler_latent_anxiety_z <-
   select_and_rename_cols(names_base = names_base,
