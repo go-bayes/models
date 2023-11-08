@@ -1,51 +1,6 @@
----
-  title: "Causal effects of religious service attendance on cooperation"
-subtitle: "An outcomewide approach"
-abstract: |
-  Counterfactual Prediction
-author: 
-  - name: Joseph A. Bulbulia
-affiliation: Victoria University of Wellington, New Zealand
-orcid_id: 0000-0002-5861-2056
-email: joseph.bulbulia@vuw.ac.nz
-corresponding: yes
-- name: Don E Davis
-affiliation: Georgia State University
-orcid_id: 0000-0003-3169-6576 
-- name: Ken Rice
-affiliation: Georgia State University 
-- name: Geoffrey Troughton
-affiliation: Victoria University of Wellington
-- name: Chris G. Sibley
-affiliation: School of Psychology, University of Auckland
-orcid_id: 0000-0002-4064-8800
-execute:
-  warning: false
-eval: false
-keywords:
-  - measurement
-date: last-modified
-editor_options: 
-  chunk_output_type: console
----
-  
-  ```{r}
-#| label: load-libraries
-#| echo: false
-#| include: true
-#| eval: true
-
-# WARNING: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB 
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
-
-# # WARNING: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-
-# for latex graphs
-# for making graphs
-library("tinytex")
-library(extrafont)
-loadfonts(device = "all")
+# 8 Nov 2023
+# original script is in the 00drafts folder. 
+# this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
 
@@ -55,6 +10,11 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/funs.R")
+
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+source(
+  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+)
 
 # experimental functions (more functions)
 # source(
@@ -111,17 +71,11 @@ SL.xgboost = list(tree_method = 'gpu_hist')
 # check
 push_mods
 
-```
-
-```{r}
-#| label: clean data
-#| echo: false
-#| include: false
-#| eval: false
-
-
+# check colnames 
 colnames(dat)
-# THIS WILL ALLOW YOU TO GET THE DATA INTO SHAPE FOR ANALYSIS
+
+
+# process data
 
 dat_long  <- dat |>
   arrange(id, wave) |>
@@ -523,19 +477,19 @@ mutate(
   # religion_church_binary = as.factor(religion_church_binary),
   # eth_cat = as.integer(eth_cat),
   urban = as.numeric(urban),
-  education_level_coarsen = as.integer(education_level_coarsen)
+#  education_level_coarsen = as.integer(education_level_coarsen)
 ) |>
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
 
 #community at baseline 
-N_participants <- n_unique(dat_long$id) #32058 # reports hours with 
+n_participants <- n_unique(dat_long$id) #32058 # reports hours with 
 
 # check
-N_participants
+n_participants
 
-here_save(N_participants, "N_participants")
+here_save(n_participants, "N_participants")
 
 # double check path
 push_mods
@@ -544,14 +498,43 @@ push_mods
 colnames( dat )
 
 
-# check positivity
+# assess positivity
+dat_long$wave
+
+dt_positivity_full <- dat_long|>
+  filter(wave == 2018 | wave == 2019) |> 
+  select(wave, id, religion_church_round, sample_weights) 
+
+
+# create transition matrix
+out <- msm::statetable.msm(religion_church_round, id, data = dat_long)
+
+out
+
+#t_tab_cats_labels <- c("No Cats", "Cats")
+# transition table
+transition_table  <- transition_table(out
+                                      #state_names = t_tab_cats_labels
+                                      )
+transition_table
+
+# for import later 
+here_save(transition_table, "transition_table")
+
+
+# double check path
+push_mods
+
+# check col names
+colnames(dat)
 
 
 
+# check association only 
+summary( lm( charity_donate ~ religion_church_round, data = dat_long) )
 
 
-
-
+#
 baseline_vars = c(
   "male",
   "age",
@@ -631,8 +614,6 @@ baseline_vars
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
 exposure_var = c("religion_church_round","not_lost","hours_community_sqrt_round") # 
-
-
 
 # set outcomes for prosocial domain
 outcome_vars = c(
@@ -839,11 +820,15 @@ f <- function(data, trt){
   ifelse( data[[trt]] <=4, 4,  data[[trt]] )
 }
 
+# what if we lost church attendance? 
+f_1 <- function(data, trt){
+  ifelse( data[[trt]] > 1, 0,  data[[trt]] )
+}
+
+
+
 # simple function # add 1 to all
-
 #f_1 <- function (data, trt) data[[trt]] + 1
-
-
 # Create a vector indicating what algorithms should be R. # used in the SuperLearner 
 
 # libraries
@@ -877,14 +862,6 @@ library(future)
 plan(multisession)
 n_cores <- parallel::detectCores()
 
-```
-
-```{r}
-#| label: run church models
-#| echo: false
-#| include: false
-#| eval: false
-
 # model charitable giving in population 
 # measure time taken to run the model
 timing_info <- system.time({
@@ -906,12 +883,31 @@ timing_info <- system.time({
 }
 )
 
+
 # print timing info
 print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
 m_hours_charity
 here_save(m_hours_charity, "m_hours_charity")
 
-m_hours_charity
+# run EXTRA 
+
+m_hours_charity_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_hours_charity",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+here_save(m_hours_charity_1, "m_hours_charity_1")
+
 
 m_hours_charity_null <- lmtp_tmle(
   data = df_clean,
@@ -936,8 +932,7 @@ here_save(m_hours_charity_null, "m_hours_charity_null")
 
 # Standardized version
 # measure time taken to run the model
-timing_info <- system.time({
-  t2_hours_charity_z <- lmtp_tmle(
+t2_hours_charity_z <- lmtp_tmle(
     data = df_clean,
     trt = A,
     baseline = names_base,
@@ -961,6 +956,28 @@ t2_hours_charity_z
 here_save(t2_hours_charity_z, "t2_hours_charity_z")
 
 
+
+m_hours_charity_z_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_hours_charity_z",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+here_save(m_hours_charity_z_1, "m_hours_charity_z_1")
+
+
+
+
 null_t2_hours_charity_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -980,10 +997,7 @@ null_t2_hours_charity_z <- lmtp_tmle(
 
 null_t2_hours_charity_z
 here_save(null_t2_hours_charity_z, "null_t2_hours_charity_z")
-```
 
-
-```{r}
 # annual charit
 #min_wage_2022 = 21.20
 # 
@@ -1085,8 +1099,32 @@ t2_charity_donate_z <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores 
 )
+
 here_save(t2_charity_donate_z, "t2_charity_donate_z")
 t2_charity_donate_z
+
+
+# run 
+t2_charity_donate_z_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_charity_donate_z",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(t2_charity_donate_z_1, "t2_charity_donate_z_1")
+t2_charity_donate_z_1
+
 # under null
 null_t2_charity_donate_z <- lmtp_tmle(
   data = df_clean,
@@ -1110,15 +1148,11 @@ here_save(null_t2_charity_donate_z, "null_t2_charity_donate_z")
 null_t2_charity_donate_z
 
 
-
-
-
 contrast_donate_full_z <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
 contrast_donate_full_z
 
 
 m_charity_donate_null <- here_read("m_charity_donate_null")
-
 m_charity_donate_null
 
 
@@ -1142,11 +1176,6 @@ m_charity_donate_null <- lmtp_tmle(
 
 here_save(m_charity_donate_null, "m_charity_donate_null")
 m_charity_donate_null <- here_read("m_charity_donate_null")
-
-
-
-
-
 
 
 contrast_donate_full <- lmtp_contrast(m_charity_donate,ref = m_charity_donate_null, type = "additive")
@@ -1303,13 +1332,11 @@ contrast_time_family_full
 church_four_hours <- margot_tab_lmtp(contrast_time_commmunity_full, scale = "RD", new_name = "LMTP + 4")
 grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full,  scale = "RD") 
 
-```
 
-```{r}
-#| label: church warmth models
-#| echo: false
-#| include: false
-#| eval: false
+
+# warmth analysis ---------------------------------------------------------
+
+
 
 m_church_t2_warm_asians_z <- lmtp_tmle(
   data = df_clean,
@@ -1979,15 +2006,14 @@ str(contrast_hours_full)
 contrast_hours_full
 
 church_hours_charity <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "Volunteering LMTP: monthly church + 4")
-
 output_church_hours_charity <- lmtp_evalue_tab(church_hours_charity,  delta = 1, sd = 1, scale = c("RD"))
 output_church_hours_charity
 
+# calculate contrast donate
 t2_charity_donate_z <- here_read("t2_charity_donate_z")
 null_t2_charity_donate_z <- here_read( "null_t2_charity_donate_z")
 
-# contrast volunteering
-# calculate contrast 
+
 contrast_donate_full <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
 contrast_donate_full
 
@@ -1999,13 +2025,14 @@ output_church_donate_charity
 # table
 tab_charity_rd <- rbind(output_church_hours_charity, output_church_donate_charity)
 tab_charity_rd
+
+## TO DO SAVE
+here_save(tab_charity_rd, "tab_charity_rd")
+
 group_tab_charity_rd <- group_tab(tab_charity_rd, type = "RD")
 
 saveRDS(group_tab_charity_rd, here::here(push_mods, "group_tab_charity_rd"))
-```
 
-
-```{r}
 #| label: fig-results-church-charity
 #| fig-cap: "Causal effects of church on charity"
 #| eval: true
@@ -2050,10 +2077,6 @@ ggsave(
   dpi = 600
 )
 
-
-```
-
-```{r}
 #| label: church community model results
 #| echo: false
 #| include: false
@@ -2109,17 +2132,11 @@ tab_church_rr
 group_tab_time_received_church <- group_tab(tab_church_rr, type = "RR")
 
 saveRDS(group_tab_time_received_church, here::here(push_mods, "group_tab_time_received_church"))
-```
 
-```{r}
-#| label: fig-results-church-community
-#| fig-cap: "Causal effects of church on support received"
-#| eval: true
-#| include: true
-#| echo: false
-#| fig-height: 6
 
 group_tab_time_received_church <- here_read("group_tab_time_received_church")
+
+# graph
 
 plot_community_church <- margot_plot(
   group_tab_time_received_church,
@@ -2156,11 +2173,6 @@ ggsave(
   dpi = 600
 )
 
-
-```
-
-
-```{r}
 #| label: church prejudice model results
 #| echo: false
 #| include: false
@@ -2440,10 +2452,6 @@ output_pacific_church <-
 output_pacific_church
 
 
-
-
-
-
 #warm refugees
 m_c_t2_warm_refugees_z <- here_read("m_c_t2_warm_refugees_z")
 null_m_c_t2_warm_refugees_z <-
@@ -2472,12 +2480,6 @@ output_refugees_church <-
     scale = c("RD")
   )
 output_refugees_church
-
-
-
-
-
-
 
 church_religion_perceive_religious_discrim_z <- here_read("church_religion_perceive_religious_discrim_z")
 null_church_religion_perceive_religious_discrim_z <- here_read("null_church_religion_perceive_religious_discrim_z")
@@ -2558,17 +2560,6 @@ tab_warm_church
 group_tab_warm_church <- group_tab(tab_warm_church, type = "RD")
 
 saveRDS(group_tab_warm_church, here::here(push_mods, "group_tab_warm_church"))
-```
-
-
-```{r}
-#| label: fig-results-church-prejudice
-#| fig-cap: "Causal effects of church on prejudice"
-#| eval: true
-#| include: true
-#| echo: false
-#| fig-height: 6
-
 
 group_tab_warm_church <- here_read("group_tab_warm_church")
 
@@ -2605,15 +2596,14 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
-```
 
-```{r}
-#| label: run community time models
-#| echo: false
-#| include: false
-#| eval: false
+# MODEL FOR COMMUNITY TIME 
+# this model is to contrast the church attendance model 
+
 
 prep_coop_all <- here_read("prep_coop_all")
+
+
 # analysis for time
 df_wide_censored_only_time <-
   prep_coop_all |>
