@@ -532,6 +532,7 @@ colnames(dat)
 
 # check association only 
 summary( lm( charity_donate ~ religion_church_round, data = dat_long) )
+summary( lm( hours_charity ~ religion_church_round, data = dat_long) )
 
 
 #
@@ -771,13 +772,10 @@ table(df_clean$t2_community_time_binary)
 # save data
 push_mods
 here_save(df_clean,"df_clean")
-```
-```{r}
-#| label: set-up model
-#| echo: false
-#| include: false
-#| eval: false
 
+
+
+# read data --  start here if previous work already done
 df_clean <-here_read("df_clean")
 
 
@@ -822,7 +820,7 @@ f <- function(data, trt){
 
 # what if we lost church attendance? 
 f_1 <- function(data, trt){
-  ifelse( data[[trt]] > 1, 0,  data[[trt]] )
+  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
 }
 
 
@@ -835,9 +833,9 @@ f_1 <- function(data, trt){
 library(SuperLearner)
 library(xgboost)
 
-listWrappers()
-
+# checks
 f
+f_1
 A
 C
 
@@ -861,6 +859,12 @@ progressr::handlers(global = TRUE)
 library(future)
 plan(multisession)
 n_cores <- parallel::detectCores()
+
+
+
+# charity models ----------------------------------------------------------
+
+
 
 # model charitable giving in population 
 # measure time taken to run the model
@@ -907,7 +911,7 @@ m_hours_charity_1 <- lmtp_tmle(
   parallel = n_cores
 )
 here_save(m_hours_charity_1, "m_hours_charity_1")
-
+m_hours_charity_1 <- here_read("m_hours_charity_1")
 
 m_hours_charity_null <- lmtp_tmle(
   data = df_clean,
@@ -976,8 +980,6 @@ m_hours_charity_z_1 <- lmtp_tmle(
 here_save(m_hours_charity_z_1, "m_hours_charity_z_1")
 
 
-
-
 null_t2_hours_charity_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1017,15 +1019,10 @@ here_save(null_t2_hours_charity_z, "null_t2_hours_charity_z")
 nz_adult_population = 3989000
 nz_annual_budget = 14494000000 * 4
 
-
-
 # nz_annual_budget
 # 1,785,374,282
 
-# 
-
-
-charity_year = 1715270000
+# charity_year = 1715270000
 # hours_year = 1785374282
 # 
 # charity_year/nz_annual_budget
@@ -1036,33 +1033,6 @@ charity_year = 1715270000
 # church_four <- format_tab_tmle(church_four, scale = "RD", new_name = "church_four")
 # church_four
 
-# 
-# margot_tab_lmtp <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
-# 
-#   scale <- match.arg(scale)
-# 
-#   require(dplyr)
-# 
-#   tab_tmle <- cbind.data.frame(
-#     tmtp_output$vals$theta,
-#     tmtp_output$vals$std.error,
-#     tmtp_output$vals$conf.low,
-#     tmtp_output$vals$conf.high
-#   )
-# 
-#   if (scale == "RD") {
-#     colnames(tab_tmle) <- c("E[Y(1)]-E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-#   } else if (scale == "RR") {
-#     colnames(tab_tmle) <- c("E[Y(1)]/E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-#   }
-# 
-#   tab_tmle_round <- tab_tmle |>
-#     dplyr::mutate(across(where(is.numeric), round, digits = 4))
-# 
-#   rownames(tab_tmle_round)[1] <- paste0(new_name)
-# 
-#   return(tab_tmle_round)
-# }
 
 # 
 # theta <- contrast_hours_full$vals$theta
@@ -1081,8 +1051,76 @@ charity_year = 1715270000
 # 
 # 
 # ## donation model 
-# t2_charity_donate
 
+
+## NON STANDARD
+
+t2_charity_donate <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_charity_donate",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(t2_charity_donate, "t2_charity_donate")
+t2_charity_donate
+
+
+# run 
+t2_charity_donate_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_charity_donate",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(t2_charity_donate_1, "t2_charity_donate_1")
+t2_charity_donate_1
+
+# under null
+null_t2_charity_donate <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_charity_donate",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(null_t2_charity_donate, "null_t2_charity_donate")
+null_t2_charity_donate
+
+
+## STANDARD
 t2_charity_donate_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1148,193 +1186,135 @@ here_save(null_t2_charity_donate_z, "null_t2_charity_donate_z")
 null_t2_charity_donate_z
 
 
+
+
+# tables for church charity -----------------------------------------------
+
+m_hours_charity <- here_read( "m_hours_charity")
+m_hours_charity_1 <- here_read( "m_hours_charity_1")
+t2_hours_charity_z <- here_read("t2_hours_charity_z")
+m_hours_charity_z_1 <- here_read( "m_hours_charity_z_1")
+null_t2_hours_charity_z <- here_read( "null_t2_hours_charity_z")
+
+
+
+
+t2_charity_donate_z_1 <- here_read( "t2_charity_donate_z_1")
+
+t2_charity_donate_z_1
+
+
+
+# contrast volunteering
+# calculate contrast 
+contrast_hours_full_z <- lmtp_contrast(t2_hours_charity_z,ref = null_t2_hours_charity_z, type = "additive")
+contrast_hours_full_z
+
+church_hours_charity_z <- margot_tab_lmtp(contrast_hours_full_z, scale = "RD", new_name = "Volunteering: weekly church >= 1")
+output_church_hours_charity_z <- lmtp_evalue_tab(church_hours_charity_z,  delta = 1, sd = 1, scale = c("RD"))
+output_church_hours_charity_z
+
+# contrast loss 
+contrast_hours_full_z_loss <- lmtp_contrast(m_hours_charity_z_1,ref = null_t2_hours_charity_z, type = "additive")
+contrast_hours_full_z_loss
+
+tab_contrast_hours_full_z_loss <- margot_tab_lmtp(contrast_hours_full_z_loss, scale = "RD", new_name = "Volunteering: weekly church >= 1")
+output_tab_contrast_hours_full_z_loss <- lmtp_evalue_tab(tab_contrast_hours_full_z_loss,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_hours_full_z_loss
+
+
+
+
+
+# calculate contrast donate
+t2_charity_donate_z <- here_read("t2_charity_donate_z")
+null_t2_charity_donate_z <- here_read( "null_t2_charity_donate_z")
+
+
 contrast_donate_full_z <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
 contrast_donate_full_z
 
+margot_contrast_donate_full_z <- margot_tab_lmtp(contrast_donate_full_z, scale = "RD", new_name = "Donations")
+output_church_donate_charity_z <- lmtp_evalue_tab(margot_contrast_donate_full_z,  delta = 1, sd = 1, scale = c("RD"))
+output_church_donate_charity_z
 
-m_charity_donate_null <- here_read("m_charity_donate_null")
-m_charity_donate_null
 
 
-m_charity_donate_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_charity_donate",
-  cens = C,
-  shift = NULL,
-  mtp = FALSE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
+## contrast loss
+contrast_donate_full_z_loss <- lmtp_contrast(t2_charity_donate_z_1,ref = null_t2_charity_donate_z, type = "additive")
+contrast_donate_full_z_loss
+
+tab_contrast_donate_full_z_loss <- margot_tab_lmtp(contrast_donate_full_z_loss, scale = "RD", new_name = "Donations: weekly church >= 1")
+output_tab_contrast_donate_full_z_loss <- lmtp_evalue_tab(tab_contrast_donate_full_z_loss,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_donate_full_z_loss
+
+
+
+# table
+tab_charity_rd_z <- rbind(output_church_hours_charity_z, output_church_donate_charity_z)
+tab_charity_rd_z
+
+## TO DO SAVE
+here_save(tab_charity_rd_z, "tab_charity_rd_z")
+
+group_tab_charity_rd_z <- group_tab(tab_charity_rd_z, type = "RD")
+
+saveRDS(tab_charity_rd_z, here::here(push_mods, "tab_charity_rd_z"))
+
+#| label: fig-results-church-charity
+#| fig-cap: "Causal effects of church on charity"
+#| eval: true
+#| include: true
+#| echo: false
+#| fig-height: 6
+
+
+group_tab_charity_rd_z <- here_read("group_tab_charity_rd_z")
+group_tab_charity_rd_z
+
+plot_charity_church_z <- margot_plot(
+  group_tab_charity_rd_z,
+  type = "RD",
+  title = "Religious service effect on charity",
+  subtitle = ">= 1 x weekly service attendance",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
 )
 
-here_save(m_charity_donate_null, "m_charity_donate_null")
-m_charity_donate_null <- here_read("m_charity_donate_null")
-
-
-contrast_donate_full <- lmtp_contrast(m_charity_donate,ref = m_charity_donate_null, type = "additive")
-contrast_donate_full
-
-
-m_time_community <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_community_time_binary",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
-)
-m_time_community
-here_save(m_time_community, "m_time_community")
-
-m_time_community_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_community_time_binary",
-  cens = C,
-  shift = NULL,
-  mtp = FALSE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
+plot_charity_church_z
+# 
+ggsave(
+  plot_charity_church_z,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_charity_church_z.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
 )
 
-here_save(m_time_community_null, "m_time_community_null")
-m_time_community_null
-contrast_time_commmunity_full <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
-contrast_time_commmunity_full
-
-
-m_time_friends <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_friends_time_binary",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
-)
-
-m_time_friends
-here_save(m_time_friends, "m_time_friends")
-
-m_time_friends_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_friends_time_binary",
-  cens = C,
-  shift = NULL,
-  mtp = FALSE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
-)
-
-here_save(m_time_friends_null, "m_time_friends_null")
-m_time_friends_null
+group_tab_charity_rd <- here_read("group_tab_charity_rd")
+group_tab_charity_rd
 
 
 
-m_time_family <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_family_time_binary",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
-)
-
-m_time_family
-here_save(m_time_family, "m_time_family")
-
-m_time_family_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base,
-  outcome = "t2_family_time_binary",
-  cens = C,
-  shift = NULL,
-  mtp = FALSE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
-)
-
-here_save(m_time_family_null, "m_time_family_null")
-m_time_family_null
-
-
-contrast_time_community_full <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
-contrast_time_community_full
-
-contrast_time_friends_full <- lmtp_contrast(m_time_friends,ref = m_time_friends_null, type = "rr")
-contrast_time_friends_full
-
-contrast_time_family_full <- lmtp_contrast(m_time_family,ref = m_time_family_null, type = "rr")
-contrast_time_family_full
-
-
-church_four_hours <- margot_tab_lmtp(contrast_time_commmunity_full, scale = "RD", new_name = "LMTP + 4")
-grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full,  scale = "RD") 
 
 
 
-# warmth analysis ---------------------------------------------------------
+# warmth models ---------------------------------------------------------
 
 
 
@@ -1476,8 +1456,6 @@ null_m_c_t2_warm_immigrants_z <- lmtp_tmle(
 
 here_save(null_m_c_t2_warm_immigrants_z, "null_m_c_t2_warm_immigrants_z")
 null_m_c_t2_warm_immigrants_z
-
-
 
 
 m_c_t2_warm_indians_z <- lmtp_tmle(
@@ -1933,250 +1911,12 @@ null_church_religion_perceive_religious_discrim_z<- lmtp_tmle(
 
 here_save(null_church_religion_perceive_religious_discrim_z, "null_church_religion_perceive_religious_discrim_z")
 null_church_religion_perceive_religious_discrim_z
-```
-```{r}
-#| label: church charity models results
-#| echo: false
-#| include: false
-#| eval: false
 
 
-# volunteering
-# m_hours_charity <- here_read("m_hours_charity")
-# m_hours_charity_null <- here_read( "m_hours_charity_null")
-# 
-# # contrast volunteering
-# # calculate contrast 
-# contrast_hours_full <- lmtp_contrast(m_hours_charity,ref = m_hours_charity_null, type = "additive")
-# str(contrast_hours_full)
-# contrast_hours_full
-# 
-# church_hours_charity <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "Volunteering LMTP + 4")
-# church_hours_charity[1,2]
-# 
-# dim(church_hours_charity)
-
-# 
-# church_hours_charity
-# 
-# df_clean <- here_read("df_clean")
-# 
-# # get sd of hours_charity
-# sd(df_clean$t2_hours_charity, na.rm=TRUE)
-# 
-# 
-# output_church_hours_charity <- lmtp_evalue_tab(church_hours_charity,  delta = 1, sd = 4.101962, scale = c("RD"))
-# 
-# 
-# # charity
-# m_charity_donate <- here_read("m_charity_donate")
-# m_charity_donate_null <- here_read("m_charity_donate_null")
-# 
-# contrast_donate_full <- lmtp_contrast(m_charity_donate,ref = m_charity_donate_null, type = "additive")
-# contrast_donate_full
-# 
-# 
-# 
-# # tables
-# #sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
-# 
-# sd_donate <- sd(df_clean$t2_charity_donate, na.rm=TRUE)
-# 
-# church_donate_charity <- margot_tab_lmtp(contrast_donate_full, scale = "RD", new_name = "Charity Donations: LMTP + 4")
-# output_church_donate_charity <- lmtp_evalue_tab(church_donate_charity,  delta = 1, sd = sd_donate, scale = c("RD"))
-# 
-# m_charity_donate_raw <- here_read("m_charity_donate")
-# m_charity_donate_null_raw <- here_read("m_charity_donate_null")
-# 
-# contrast_donate_full_raw <- lmtp_contrast(m_charity_donate_raw,
-#                                                       ref = m_charity_donate_null_raw,
-#                                                       type = "additive")
-# contrast_donate_full_raw
-# # 
 
 
-# ignore above 
-t2_hours_charity_z <- here_read("t2_hours_charity_z")
-null_t2_hours_charity_z <- here_read( "null_t2_hours_charity_z")
+# church prejudice results ------------------------------------------------
 
-# contrast volunteering
-# calculate contrast 
-contrast_hours_full <- lmtp_contrast(t2_hours_charity_z,ref = null_t2_hours_charity_z, type = "additive")
-str(contrast_hours_full)
-contrast_hours_full
-
-church_hours_charity <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "Volunteering LMTP: monthly church + 4")
-output_church_hours_charity <- lmtp_evalue_tab(church_hours_charity,  delta = 1, sd = 1, scale = c("RD"))
-output_church_hours_charity
-
-# calculate contrast donate
-t2_charity_donate_z <- here_read("t2_charity_donate_z")
-null_t2_charity_donate_z <- here_read( "null_t2_charity_donate_z")
-
-
-contrast_donate_full <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
-contrast_donate_full
-
-margot_contrast_donate_full <- margot_tab_lmtp(contrast_donate_full, scale = "RD", new_name = "Donations LMTP: montly church + 4")
-output_church_donate_charity <- lmtp_evalue_tab(margot_contrast_donate_full,  delta = 1, sd = 1, scale = c("RD"))
-output_church_donate_charity
-
-
-# table
-tab_charity_rd <- rbind(output_church_hours_charity, output_church_donate_charity)
-tab_charity_rd
-
-## TO DO SAVE
-here_save(tab_charity_rd, "tab_charity_rd")
-
-group_tab_charity_rd <- group_tab(tab_charity_rd, type = "RD")
-
-saveRDS(group_tab_charity_rd, here::here(push_mods, "group_tab_charity_rd"))
-
-#| label: fig-results-church-charity
-#| fig-cap: "Causal effects of church on charity"
-#| eval: true
-#| include: true
-#| echo: false
-#| fig-height: 6
-
-
-group_tab_charity_rd <- here_read("group_tab_charity_rd")
-
-plot_charity_church <- margot_plot(
-  group_tab_charity_rd,
-  type = "RD",
-  title = "Religious service effect on charity",
-  subtitle = ">= 1 x weekly service attendance",
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
-  point_size = .5,
-  title_size = 12,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = -1,
-  x_lim_lo = -1,
-  x_lim_hi =  .5
-)
-
-plot_charity_church
-# 
-ggsave(
-  plot_charity_church,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
-  units = "in",
-  filename = "plot_charity_church.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-#| label: church community model results
-#| echo: false
-#| include: false
-#| eval: false
-
-
-## Community GRAPHS 
-
-# time given by community 
-m_time_community <- here_read("m_time_community")
-m_time_community_null <- here_read("m_time_community_null")
-
-contrast_time_commmunity_full <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
-contrast_time_commmunity_full
-
-church_time_community  <- margot_tab_lmtp(contrast_time_commmunity_full, scale = "RR", 
-                                          new_name = "Community time LMTP: monthly church + 4")
-church_time_community
-
-output_church_time_community <- lmtp_evalue_tab(church_time_community,  delta = 1, sd = 1, scale = c("RR"))
-output_church_time_community
-
-
-# time given by friends 
-m_time_friends <- here_read("m_time_friends")
-m_time_friends_null <- here_read("m_time_friends_null")
-
-contrast_time_friends_full <- lmtp_contrast(m_time_friends,ref = m_time_friends_null, type = "rr")
-contrast_time_friends_full
-
-church_time_friends  <- margot_tab_lmtp(contrast_time_friends_full, scale = "RR", 
-                                        new_name = "Friends time LMTP: monthly church + 4")
-
-output_church_time_friends <- lmtp_evalue_tab(church_time_friends,  delta = 1, sd = 1, scale = c("RR"))
-output_church_time_friends
-
-m_time_family <- here_read("m_time_family")
-m_time_family_null <- here_read("m_time_family_null")
-
-contrast_time_family_full <- lmtp_contrast(m_time_family,ref = m_time_family_null, type = "rr")
-contrast_time_family_full
-
-
-church_time_family  <- margot_tab_lmtp(contrast_time_family_full, scale = "RR", 
-                                       new_name = "Family time LMTP: monthly church + 4")
-
-output_church_time_family <- lmtp_evalue_tab(church_time_family,  delta = 1, sd = 1, scale = c("RR"))
-output_church_time_family
-
-tab_church_rr <- rbind( output_church_time_community, output_church_time_friends, output_church_time_family ) 
-tab_church_rr
-
-group_tab_time_received_church <- group_tab(tab_church_rr, type = "RR")
-
-saveRDS(group_tab_time_received_church, here::here(push_mods, "group_tab_time_received_church"))
-
-
-group_tab_time_received_church <- here_read("group_tab_time_received_church")
-
-# graph
-
-plot_community_church <- margot_plot(
-  group_tab_time_received_church,
-  type = "RR",
-  title = "Religious service effect on help received",
-  subtitle = ">= 1 x weekly service attendance",
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
-  point_size = .5,
-  title_size = 12,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = 0,
-  x_lim_lo = 0,
-  x_lim_hi =  2
-)
-
-plot_community_church
-
-
-ggsave(
-  plot_community_church,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
-  units = "in",
-  filename = "plot_community_church.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-#| label: church prejudice model results
-#| echo: false
-#| include: false
-#| eval: false
 
 # asians
 m_church_t2_warm_asians_z <- here_read("m_church_t2_warm_asians_z")
@@ -2190,7 +1930,7 @@ contrast_church_asians
 tab_contrast_church_asians  <-
   margot_tab_lmtp(contrast_church_asians,
                   scale = "RD",
-                  new_name = "Warm Asians LMTP: monthly church + 4")
+                  new_name = "Warm Asians: weekly church >= 1")
 
 tab_contrast_church_asians
 
@@ -2212,7 +1952,7 @@ contrast_church_chinese
 tab_contrast_church_chinese <-
   margot_tab_lmtp(contrast_church_chinese,
                   scale = "RD",
-                  new_name = "Warm Chinese LMTP: monthly church + 4")
+                  new_name = "Warm Chinese: weekly church >= 1")
 tab_contrast_church_chinese
 
 output_chinese_church <- lmtp_evalue_tab(tab_contrast_church_chinese,  delta = 1, sd = 1, scale = c("RD"))
@@ -2230,7 +1970,7 @@ contrast_church_immigrants <- lmtp_contrast(m_c_t2_warm_immigrants_z,
 contrast_church_immigrants
 
 tab_contrast_church_immigrants <- margot_tab_lmtp(contrast_church_immigrants, scale = "RD", 
-                                                  new_name = "Warm Immigrants LMTP: monthly church + 4")
+                                                  new_name = "Warm Immigrants: weekly church >= 1")
 tab_contrast_church_immigrants
 
 
@@ -2251,7 +1991,7 @@ contrast_church_indians <- lmtp_contrast(m_c_t2_warm_indians_z,
 tab_contrast_church_indians <-
   margot_tab_lmtp(contrast_church_indians,
                   scale = "RD",
-                  new_name = "Warm Indians LMTP: monthly church + 4")
+                  new_name = "Warm Indians: weekly church >= 1")
 
 
 
@@ -2269,7 +2009,7 @@ contrast_church_elderly <- lmtp_contrast(m_c_t2_warm_elderly_z,
 
 
 tab_contrast_church_elderly<- margot_tab_lmtp(contrast_church_elderly, scale = "RD", 
-                                              new_name = "Warm Elderly LMTP: monthly church + 4")
+                                              new_name = "Warm Elderly: weekly church >= 1")
 
 tab_contrast_church_elderly
 
@@ -2293,7 +2033,7 @@ contrast_church_maori <- lmtp_contrast(m_c_t2_warm_maori_z,
 
 tab_contrast_church_maori <-
   margot_tab_lmtp(contrast_church_maori, scale = "RD",
-                  new_name = "Warm Maori LMTP: monthly church + 4")
+                  new_name = "Warm Maori: weekly church >= 1")
 
 tab_contrast_church_maori
 
@@ -2323,7 +2063,7 @@ contrast_church_mental_illness <-
 tab_contrast_church_mental_illness <-
   margot_tab_lmtp(contrast_church_mental_illness,
                   scale = "RD",
-                  new_name = "Warm Mental Illness LMTP: monthly church + 4")
+                  new_name = "Warm Mental Illness: weekly church >= 1")
 
 tab_contrast_church_mental_illness
 
@@ -2350,7 +2090,7 @@ contrast_church_muslims <- lmtp_contrast(m_c_t2_warm_muslims_z,
 tab_contrast_church_muslims <-
   margot_tab_lmtp(contrast_church_muslims,
                   scale = "RD",
-                  new_name = "Warm Muslims LMTP: monthly church + 4")
+                  new_name = "Warm Muslims: weekly church >= 1")
 
 tab_contrast_church_muslims
 
@@ -2375,7 +2115,7 @@ contrast_church_euro <- lmtp_contrast(m_c_t2_warm_nz_euro_z,
 
 tab_contrast_church_euro <-
   margot_tab_lmtp(contrast_church_euro, scale = "RD",
-                  new_name = "Warm NZEuro LMTP: monthly church + 4")
+                  new_name = "Warm NZEuro: weekly church >= 1")
 
 
 
@@ -2405,21 +2145,19 @@ contrast_church_overweight
 tab_contrast_church_overweight <-
   margot_tab_lmtp(contrast_church_overweight,
                   scale = "RD",
-                  new_name = "Warm Overweight LMTP: monthly church + 4")
+                  new_name = "Warm Overweight: weekly church >= 1")
 
 tab_contrast_church_overweight
 
 
 output_overweight_church <-
   lmtp_evalue_tab(
-    tab_contrast_church_euro,
+    tab_contrast_church_overweight,
     delta = 1,
     sd = 1,
     scale = c("RD")
   )
 output_overweight_church
-
-
 
 
 
@@ -2437,7 +2175,7 @@ contrast_church_pacific <- lmtp_contrast(m_c_t2_warm_pacific_z,
 tab_contrast_church_pacific <-
   margot_tab_lmtp(contrast_church_pacific,
                   scale = "RD",
-                  new_name = "Warm Pacific LMTP: monthly church + 4")
+                  new_name = "Warm Pacific: weekly church >= 1")
 
 tab_contrast_church_pacific
 
@@ -2466,7 +2204,7 @@ contrast_church_refugees <- lmtp_contrast(m_c_t2_warm_refugees_z,
 tab_contrast_church_refugees <-
   margot_tab_lmtp(contrast_church_refugees,
                   scale = "RD",
-                  new_name = "Warm Refugees LMTP: monthly church + 4")
+                  new_name = "Warm Refugees: weekly church >= 1")
 
 
 tab_contrast_church_refugees
@@ -2488,8 +2226,8 @@ contrast_church_perceive_religious_discrim_z <- lmtp_contrast(church_religion_pe
                                                               ref = null_church_religion_perceive_religious_discrim_z,
                                                               type = "additive")
 
-
-tab_contrast_hours_perceive_religious_discrim_z  <- margot_tab_lmtp(contrast_church_perceive_religious_discrim_z, scale = "RD", new_name = "Perceived Religious Discrimination LMTP: monthly church + 4")
+tab_contrast_hours_perceive_religious_discrim_z  <- margot_tab_lmtp(contrast_church_perceive_religious_discrim_z, scale = "RD", 
+                                                                    new_name = "Perc. Religious Discrim: weekly church >= 1")
 
 output_perceive_rel_discrimination_church <-
   lmtp_evalue_tab(
@@ -2519,7 +2257,7 @@ tab_warm_church <- rbind(
 )
 
 tab_warm_church
-
+here_save(tab_warm_church, "tab_warm_church")
 
 
 # 
@@ -2596,6 +2334,300 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
+
+
+
+
+
+# help received models ----------------------------------------------------
+
+m_time_community <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_community_time_binary",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+m_time_community
+here_save(m_time_community, "m_time_community")
+
+m_time_community_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_community_time_binary",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(m_time_community_null, "m_time_community_null")
+m_time_community_null
+contrast_time_commmunity_full <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
+contrast_time_commmunity_full
+
+
+m_time_friends <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_friends_time_binary",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_time_friends
+here_save(m_time_friends, "m_time_friends")
+
+m_time_friends_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_friends_time_binary",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(m_time_friends_null, "m_time_friends_null")
+m_time_friends_null
+
+
+
+m_time_family <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_family_time_binary",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_time_family
+here_save(m_time_family, "m_time_family")
+
+m_time_family_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_family_time_binary",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+here_save(m_time_family_null, "m_time_family_null")
+m_time_family_null
+
+
+
+## TABLES
+m_time_community <- here_read("m_time_community")
+m_time_community_null<- here_read("m_time_community_null")
+m_time_friends<- here_read("m_time_friends")
+m_time_friends_null<- here_read("m_time_friends_null")
+m_time_family<- here_read("m_time_family")
+m_time_family_null<- here_read("m_time_family_null")
+
+# community 
+contrast_time_community_church <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
+contrast_time_community_church
+
+
+tab_contrast_time_community_church<- margot_tab_lmtp(contrast_time_community_church, scale = "RR", new_name = "Time from Community")
+out_tab_contrast_time_community_church <- lmtp_contrast(tab_contrast_time_community_church,ref = m_time_friends_null, type = "rr")
+
+out_tab_contrast_time_community_church
+
+# friends
+contrast_time_friends_church <- lmtp_contrast(m_time_friends,ref = m_time_friends_null, type = "rr")
+contrast_time_friends_church
+
+
+tab_contrast_time_friends_church <- margot_tab_lmtp(contrast_time_friends_church, scale = "RR", new_name = "Time from Friends")
+out_tab_contrast_time_friends_church <- group_tab( tab_contrast_time_friends_church, contrast_hours_full,  scale = "RR") 
+out_tab_contrast_time_friends_church
+
+
+# family
+contrast_time_family_church <- lmtp_contrast(m_time_family,ref = m_time_family_null, type = "rr")
+contrast_time_family_church
+
+
+tab_contrast_time_family_church <- margot_tab_lmtp(contrast_time_family_church, scale = "RR", new_name = "Time from Family")
+out_tab_contrast_time_family_church <- group_tab( tab_contrast_time_family_church, contrast_hours_full,  scale = "RR") 
+out_tab_contrast_time_family_church
+
+
+tab_time_church <- rbind(out_tab_contrast_time_family_church, out_tab_contrast_time_friends_church, out_tab_contrast_time_community_church)
+tab_time_church
+here_save(tab_time_church, "tab_time_church")
+
+
+# 
+# # time given by community 
+# m_time_community <- here_read("m_time_community")
+# m_time_community_null <- here_read("m_time_community_null")
+# 
+# contrast_time_commmunity_full <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
+# contrast_time_commmunity_full
+# 
+# church_time_community  <- margot_tab_lmtp(contrast_time_commmunity_full, scale = "RR", 
+#                                           new_name = "Community time LMTP: monthly church + 4")
+# church_time_community
+# 
+# output_church_time_community <- lmtp_evalue_tab(church_time_community,  delta = 1, sd = 1, scale = c("RR"))
+# output_church_time_community
+# 
+# 
+# # time given by friends 
+# m_time_friends <- here_read("m_time_friends")
+# m_time_friends_null <- here_read("m_time_friends_null")
+# 
+# contrast_time_friends_full <- lmtp_contrast(m_time_friends,ref = m_time_friends_null, type = "rr")
+# contrast_time_friends_full
+# 
+# church_time_friends  <- margot_tab_lmtp(contrast_time_friends_full, scale = "RR", 
+#                                         new_name = "Friends time LMTP: monthly church + 4")
+# 
+# output_church_time_friends <- lmtp_evalue_tab(church_time_friends,  delta = 1, sd = 1, scale = c("RR"))
+# output_church_time_friends
+# 
+# m_time_family <- here_read("m_time_family")
+# m_time_family_null <- here_read("m_time_family_null")
+# 
+# contrast_time_family_full <- lmtp_contrast(m_time_family,ref = m_time_family_null, type = "rr")
+# contrast_time_family_full
+# 
+# 
+# church_time_family  <- margot_tab_lmtp(contrast_time_family_full, scale = "RR", 
+#                                        new_name = "Family time LMTP: monthly church + 4")
+# 
+# output_church_time_family <- lmtp_evalue_tab(church_time_family,  delta = 1, sd = 1, scale = c("RR"))
+# output_church_time_family
+# 
+# tab_church_rr <- rbind( output_church_time_community, output_church_time_friends, output_church_time_family ) 
+# tab_church_rr
+
+group_tab_time_church <- group_tab(tab_time_church, type = "RR")
+
+saveRDS(group_tab_time_church, here::here(push_mods, "group_tab_time_church"))
+
+
+group_tab_time_church <- here_read("group_tab_time_church")
+
+# graph
+
+plot_group_tab_time_church <- margot_plot(
+  group_tab_time_church,
+  type = "RR",
+  title = "Religious service effect on help received",
+  subtitle = ">= 1 x weekly service attendance",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  2
+)
+
+plot_group_tab_time_church
+
+
+ggsave(
+  plot_group_tab_time_church,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_group_tab_time_church.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+#| label: church prejudice model results
+#| echo: false
+#| include: false
+#| eval: false
+
+
+
+
+
+
+
+
+
+
+
+# SOCIALISING COMPARATIVE STUDY -------------------------------------------
+
 
 # MODEL FOR COMMUNITY TIME 
 # this model is to contrast the church attendance model 
@@ -2794,13 +2826,6 @@ contrast_hours_full_time <- lmtp_contrast(m_hours_charity_time,ref = m_hours_cha
 str(contrast_hours_full_time)
 contrast_hours_full_time
 
-
-
-
-
-
-
-
 # not right
 church_four_time <- format_tab_tmle(church_four_time, scale = "RD", new_name = "church_four")
 church_four_time
@@ -2848,34 +2873,6 @@ here_save(m_hours_charity_null_time_z, "m_hours_charity_null_time_z")
 
 
 
-
-# 
-# margot_tab_lmtp <- function(tmtp_output, scale = c("RD", "RR"), new_name = "character_string") {
-# 
-#   scale <- match.arg(scale)
-# 
-#   require(dplyr)
-# 
-#   tab_tmle <- cbind.data.frame(
-#     tmtp_output$vals$theta,
-#     tmtp_output$vals$std.error,
-#     tmtp_output$vals$conf.low,
-#     tmtp_output$vals$conf.high
-#   )
-# 
-#   if (scale == "RD") {
-#     colnames(tab_tmle) <- c("E[Y(1)]-E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-#   } else if (scale == "RR") {
-#     colnames(tab_tmle) <- c("E[Y(1)]/E[Y(0)]", "standard_error", "2.5 %", "97.5 %")
-#   }
-# 
-#   tab_tmle_round <- tab_tmle |>
-#     dplyr::mutate(across(where(is.numeric), round, digits = 4))
-# 
-#   rownames(tab_tmle_round)[1] <- paste0(new_name)
-# 
-#   return(tab_tmle_round)
-# }
 
 # 
 # theta <- contrast_hours_full$vals$theta
@@ -3018,10 +3015,7 @@ m_time_community_null_time <- lmtp_tmle(
 here_save(m_time_community_null_time, "m_time_community_null_time")
 #m_time_community_null_time <- here_read( "m_time_community_null_time")
 
-m_time_community_null_time
 
-contrast_time_commmunity_full_time <- lmtp_contrast(m_time_community_time,ref = m_time_community_null_time, type = "rr")
-contrast_time_commmunity_full_time
 
 
 m_time_friends_time <- lmtp_tmle(
@@ -3106,17 +3100,52 @@ here_save(m_time_family_null_time, "m_time_family_null_time")
 m_time_family_null_time
 
 
-contrast_time_community_full_time <- lmtp_contrast(m_time_community_time,ref = m_time_community_null_time, type = "rr")
-contrast_time_community_full_time
 
-contrast_time_friends_full_time <- lmtp_contrast(m_time_friends_time,ref = m_time_friends_null_time, type = "rr")
-contrast_time_friends_full_time
+# contrasts church time  ---------------------------------------------
 
-contrast_time_family_full_time <- lmtp_contrast(m_time_family_time,ref = m_time_family_null_time, type = "rr")
-contrast_time_family_full_time
+m_time_family_church <- here_read( "m_time_family_time")
+m_time_family_null_church <- here_read( "m_time_family_null_time")
+
+m_time_friends_church<- here_read( "m_time_friends_time")
+m_time_friends_null_church <- here_read( "m_time_friends_null_time")
+
+m_time_community_church<- here_read( "m_time_community_time")
+m_time_community_null_church <- here_read( "m_time_community_null_time")
 
 
-church_four_hours_time <- margot_tab_lmtp(contrast_time_commmunity_full_time, scale = "RD", new_name = "LMTP + 4")
+
+
+contrast_time_community_full_church <- lmtp_contrast(m_time_community_church,ref = m_time_family_null_church, type = "rr")
+contrast_time_community_full_church
+
+contrast_time_friends_full_church <- lmtp_contrast(m_time_friends_church,ref = m_time_friends_null_church, type = "rr")
+contrast_time_friends_full_church
+
+contrast_time_family_full_church <- lmtp_contrast(m_time_family_church,ref = m_time_family_null_church, type = "rr")
+contrast_time_family_full_church
+
+
+tab_contrast_time_community_full_church <- margot_tab_lmtp(contrast_time_community_full_church, scale = "RD", new_name = "Help from community: ")
+tab_contrast_time_community_full_church <- margot_tab_lmtp(contrast_time_community_full_church, scale = "RD", new_name = "LMTP + 4")
+
+
+
+tab_hours_only_donate_charity_z <- margot_tab_lmtp(contrast_hours_only_donate_full_time_z, 
+                                                   scale = "RD", 
+                                                   new_name = "Donations LMTP: hours socialising >= 1.4 hours pw")
+tab_hours_only_donate_charity_z
+
+output_charity_time <- lmtp_evalue_tab(tab_hours_only_donate_charity_z,  
+                                       delta = 1, sd = 1, scale = c("RD"))
+output_charity_time
+
+tab_charity_time <- rbind(output_volunteering_time,output_charity_time)
+group_tab_charity_time <- group_tab(tab_charity_time, type = "RD")
+group_tab_charity_time
+here_save(group_tab_charity_time,"group_tab_charity_time")
+
+
+
 grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full_time,  scale = "RD") 
 
 #  USE THESE CALCULATIONS
@@ -3749,10 +3778,7 @@ null_hours_only_religion_perceive_religious_discrim_z<- lmtp_tmle(
 
 here_save(null_hours_only_religion_perceive_religious_discrim_z, "null_hours_only_religion_perceive_religious_discrim_z")
 null_hours_only_religion_perceive_religious_discrim_z
-```
 
-
-```{r}
 #| label: Socialising report prejudice
 #| echo: false
 #| include: false
@@ -3826,10 +3852,7 @@ tab_charity_time <- rbind(output_volunteering_time,output_charity_time)
 group_tab_charity_time <- group_tab(tab_charity_time, type = "RD")
 group_tab_charity_time
 here_save(group_tab_charity_time,"group_tab_charity_time")
-```
 
-
-```{r}
 #| label: fig-results-socialising-charity
 #| fig-cap: "Causal effects of socialising on charity"
 #| eval: true
@@ -4009,6 +4032,11 @@ ggsave(
 #| eval: false
 
 
+# Results -----------------------------------------------------------------
+
+sqrt(2)
+
+
 # asians
 m_church_t2_warm_asians_z_time<- here_read("m_church_t2_warm_asians_z_time")
 null_m_church_t2_warm_asians_z_time<- here_read("null_m_church_t2_warm_asians_z_time")
@@ -4017,7 +4045,7 @@ contrast_church_asians_time <- lmtp_contrast(m_church_t2_warm_asians_z_time,ref 
 contrast_church_asians_time
 
 tab_contrast_church_asians_time  <- margot_tab_lmtp(contrast_church_asians_time, scale = "RD", 
-                                                    new_name = "Warm Asians LMTP: hours socialising >= 1.4 hours pw")
+                                                    new_name = "Warm Asians: social >= 1.4 hours pw")
 tab_contrast_church_asians_time 
 # chinese
 m_church_t2_warm_chinese_z_time  <- here_read("m_church_t2_warm_chinese_z_time")
@@ -4029,7 +4057,7 @@ contrast_church_chinese_time <- lmtp_contrast(m_church_t2_warm_chinese_z_time,
 contrast_church_chinese_time
 
 tab_contrast_church_chinese_time <- margot_tab_lmtp(contrast_church_chinese_time, scale = "RD", 
-                                                    new_name = "Warm Chinese LMTP: hours socialising >= 1.4 hours pw")
+                                                    new_name = "Warm Chinese: social >= 1.4 hours pw")
 tab_contrast_church_chinese_time
 
 # immigrants
@@ -4042,7 +4070,7 @@ contrast_church_immigrants_time <- lmtp_contrast(m_c_t2_warm_immigrants_z_time,
 contrast_church_immigrants_time
 
 tab_contrast_church_immigrants_time <- margot_tab_lmtp(contrast_church_immigrants_time, scale = "RD", 
-                                                       new_name = "Warm Immigrants LMTP: hours socialising >= 1.4 hours pw")
+                                                       new_name = "Warm Immigrants: social >= 1.4 hours pw")
 tab_contrast_church_immigrants_time
 
 
@@ -4056,7 +4084,7 @@ contrast_church_indians_time <- lmtp_contrast(m_c_t2_warm_indians_z_time,
 
 
 tab_contrast_church_indians_time <- margot_tab_lmtp(contrast_church_indians_time, scale = "RD", 
-                                                    new_name = "Warm Indians LMTP: hours socialising >= 1.4 hours pw")
+                                                    new_name = "Warm Indians LMTP: social >= 1.4 hours pw")
 
 tab_contrast_church_indians_time
 
@@ -4072,7 +4100,7 @@ contrast_church_elderly_time <- lmtp_contrast(m_c_t2_warm_elderly_z_time,
 contrast_church_elderly_time
 
 tab_contrast_church_elderly_time<- margot_tab_lmtp(contrast_church_elderly_time, scale = "RD", 
-                                                   new_name = "Warm Elderly LMTP: hours socialising >= 1.4 hours pw")
+                                                   new_name = "Warm Elderly LMTP: social >= 1.4 hours pw")
 
 tab_contrast_church_elderly_time
 
@@ -4086,7 +4114,7 @@ contrast_church_maori_time <- lmtp_contrast(m_c_t2_warm_maori_z_time,
 
 contrast_church_maori_time
 tab_contrast_church_maori_time <- margot_tab_lmtp(contrast_church_maori_time, scale = "RD", 
-                                                  new_name = "Warm Maori LMTP: hours socialising >= 1.4 hours pw")
+                                                  new_name = "Warm Maori: social >= 1.4 hours pw")
 
 tab_contrast_church_maori_time
 
@@ -4100,7 +4128,7 @@ contrast_church_mental_illness_time <- lmtp_contrast(m_c_t2_warm_mental_illness_
                                                      type = "additive")
 
 
-tab_contrast_church_mental_illness_time<- margot_tab_lmtp(contrast_church_mental_illness_time, scale = "RD", new_name = "Warm Mental Illness LMTP: hours socialising >= 1.4 hours pw")
+tab_contrast_church_mental_illness_time<- margot_tab_lmtp(contrast_church_mental_illness_time, scale = "RD", new_name = "Warm Mental Illness: social >= 1.4 hours pw")
 
 tab_contrast_church_mental_illness_time
 
@@ -4115,7 +4143,7 @@ contrast_church_muslims_time <- lmtp_contrast(m_c_t2_warm_muslims_z_time,
 
 
 tab_contrast_church_muslims_time <- margot_tab_lmtp(contrast_church_muslims_time, scale = "RD", 
-                                                    new_name = "Warm Muslims LMTP: hours socialising >= 1.4 hours pw")
+                                                    new_name = "Warm Muslim: social >= 1.4 hours pw")
 
 tab_contrast_church_muslims_time
 
@@ -4129,7 +4157,7 @@ contrast_church_euro_time <- lmtp_contrast(m_c_t2_warm_nz_euro_z_time,
 
 
 tab_contrast_church_euro_time <- margot_tab_lmtp(contrast_church_euro_time, scale = "RD", 
-                                                 new_name = "Warm NZEuro LMTP: hours socialising >= 1.4 hours pw")
+                                                 new_name = "Warm NZEuro: social >= 1.4 hours pw")
 
 tab_contrast_church_euro_time
 
@@ -4144,7 +4172,7 @@ contrast_church_overweight_time <- lmtp_contrast(m_c_t2_warm_overweight_z_time,
 contrast_church_overweight_time
 
 tab_contrast_church_overweight_time<- margot_tab_lmtp(contrast_church_overweight_time, scale = "RD", 
-                                                      new_name = "Warm Overweight LMTP: hours socialising >= 1.4 hours pw")
+                                                      new_name = "Warm Overweight: social >= 1.4 hours pw")
 
 tab_contrast_church_overweight_time
 
@@ -4159,7 +4187,7 @@ contrast_church_pacific_time <- lmtp_contrast(m_c_t2_warm_pacific_z_time,
 
 
 tab_contrast_church_pacific_time<- margot_tab_lmtp(contrast_church_pacific_time, scale = "RD", 
-                                                   new_name = "Warm Pacific LMTP: hours socialising >= 1.4 hours pw")
+                                                   new_name = "Warm Pacific: social >= 1.4 hours pw")
 
 tab_contrast_church_pacific_time
 
@@ -4173,7 +4201,7 @@ contrast_church_refugees_time <- lmtp_contrast(m_c_t2_warm_refugees_z_time,
 
 
 tab_contrast_church_refugees_time <- margot_tab_lmtp(contrast_church_refugees_time, scale = "RD", 
-                                                     new_name = "Warm Refugees LMTP: hours socialising >= 1.4 hours pw")
+                                                     new_name = "Warm Refugees: social >= 1.4 hours pw")
 
 
 tab_contrast_church_refugees_time
@@ -4187,9 +4215,12 @@ contrast_hours_perceive_religious_discrim_z <- lmtp_contrast(hours_only_religion
 
 
 tab_contrast_contrast_hours_perceive_religious_discrim_z  <- margot_tab_lmtp(contrast_hours_perceive_religious_discrim_z, scale = "RD", 
-                                                                             new_name = "Perceived Religious Discrimination LMTP: hours socialising >= 1.4 hours pw")
+                                                                             new_name = "Perc. Religious Discrim: social >= 1.4 hours pw")
 
 tab_contrast_contrast_hours_perceive_religious_discrim_z
+
+
+
 
 output_asians_time <- lmtp_evalue_tab(tab_contrast_church_asians_time,  delta = 1, sd = 1, scale = c("RD"))
 output_asians_time
@@ -4314,7 +4345,7 @@ output_perceive_rel_discrimination_time
 
 #tab
 
-tab_warm_time<- rbind(
+tab_warm_socialising <- rbind(
   output_asians_time,
   output_chinese_time,
   output_immigrants_time,
@@ -4330,27 +4361,27 @@ tab_warm_time<- rbind(
   output_perceive_rel_discrimination_time
 )
 
+tab_warm_socialising
+
+here_save(tab_warm_socialising, "tab_warm_socialising")
+
+group_tab_warm_socialising <- group_tab(tab_warm_socialising, type = "RD")
+group_tab_warm_socialising
+
+saveRDS(group_tab_warm_socialising, here::here(push_mods, "group_tab_warm_socialising"))
 
 
-group_tab_warm_hours_only <- group_tab(tab_warm_time, type = "RD")
-group_tab_warm_hours_only
-saveRDS(group_tab_warm_hours_only, here::here(push_mods, "group_tab_warm_hours_only"))
-```
+# graph socialising prejudice ---------------------------------------------
 
 
-```{r}
-#| label: fig-results-socialing-prejudice
-#| fig-cap: "Causal effects of socialing on prejudice/acceptance"
-#| eval: true
-#| include: true
-#| echo: false
-#| fig-height: 6
+
+group_tab_warm_warm_socialising <- here_read("group_tab_warm_socialising")
 
 
-group_tab_warm_hours_only <- here_read("group_tab_warm_hours_only")
 
-plot_prejudice_time <- margot_plot(
-  group_tab_warm_hours_only,
+
+plot_warm_socialising <- margot_plot(
+  group_tab_warm_warm_socialising,
   type = "RD",
   title = "Socialing effect on prejudice/acceptance",
   subtitle = ">= 1.4  x weekly hours socialising",
@@ -4369,29 +4400,23 @@ plot_prejudice_time <- margot_plot(
   x_lim_hi =  .5
 )
 
-plot_prejudice_time
+plot_warm_socialising
 
 ggsave(
-  plot_prejudice_time,
+  plot_warm_socialising,
   path = here::here(here::here(push_mods, "figs")),
   width = 8,
   height = 6,
   units = "in",
-  filename = "plot_prejudice_time.png",
+  filename = "plot_warm_socialising.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
 )
-```
 
 
-```{r}
-#| label: fig-results-omni
-#| fig-cap: "Comparative graphse"
-#| eval: false
-#| include: faslse
-#| echo: false
-#| fig-height: 6
+# omni-plot ---------------------------------------------------------------
+
 
 omni_plot_charity <- plot_charity_time / plot_charity_church
 omni_plot_charity
@@ -4444,15 +4469,8 @@ ggsave(
   dpi = 600
 )
 
-```
+# practical effects -------------------------------------------------------
 
-
-
-```{r}
-#| label: Opportunity of religious service
-#| echo: false
-#| include: false
-#| eval: false
 
 
 #read estimates of unstandardised models 
