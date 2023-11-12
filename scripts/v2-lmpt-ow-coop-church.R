@@ -529,6 +529,27 @@ push_mods
 colnames(dat)
 
 
+# sd values ---------------------------------------------------------------
+
+dt_outcome <- dat_long|>
+  filter(wave == 2020) 
+
+
+mean_donations <- mean(dt_outcome$charity_donate, na.rm = TRUE)
+mean_volunteer <- mean(dt_outcome$hours_charity, na.rm = TRUE)
+
+mean_donations
+mean_volunteer
+
+
+sd_donations <- sd(dt_outcome$charity_donate, na.rm = TRUE)
+sd_volunteer <- sd(dt_outcome$hours_charity, na.rm = TRUE)
+
+
+sd_donations
+sd_volunteer
+
+
 
 # check association only 
 summary( lm( charity_donate ~ religion_church_round, data = dat_long) )
@@ -1190,23 +1211,33 @@ null_t2_charity_donate_z
 
 # tables for church charity -----------------------------------------------
 
+# raw hours
 m_hours_charity <- here_read( "m_hours_charity")
 m_hours_charity_1 <- here_read( "m_hours_charity_1")
+m_hours_charity_null <- here_read( "m_hours_charity_null")
+
+
+# z score hours
 t2_hours_charity_z <- here_read("t2_hours_charity_z")
 m_hours_charity_z_1 <- here_read( "m_hours_charity_z_1")
 null_t2_hours_charity_z <- here_read( "null_t2_hours_charity_z")
 
 
+# raw donations
+
+t2_charity_donate<- here_read( "t2_charity_donate")
+t2_charity_donate_1 <- here_read( "t2_charity_donate_1")
+null_t2_charity_donate <- here_read( "null_t2_charity_donate")
 
 
+# zscore donations
+t2_charity_donate_z<- here_read( "t2_charity_donate_z")
 t2_charity_donate_z_1 <- here_read( "t2_charity_donate_z_1")
-
-t2_charity_donate_z_1
-
+null_t2_charity_donate_z <- here_read( "null_t2_charity_donate_z")
 
 
 # contrast volunteering
-# calculate contrast 
+# calculate contrast volunteering z
 contrast_hours_full_z <- lmtp_contrast(t2_hours_charity_z,ref = null_t2_hours_charity_z, type = "additive")
 contrast_hours_full_z
 
@@ -1214,33 +1245,69 @@ church_hours_charity_z <- margot_tab_lmtp(contrast_hours_full_z, scale = "RD", n
 output_church_hours_charity_z <- lmtp_evalue_tab(church_hours_charity_z,  delta = 1, sd = 1, scale = c("RD"))
 output_church_hours_charity_z
 
-# contrast loss 
-contrast_hours_full_z_loss <- lmtp_contrast(m_hours_charity_z_1,ref = null_t2_hours_charity_z, type = "additive")
-contrast_hours_full_z_loss
 
-tab_contrast_hours_full_z_loss <- margot_tab_lmtp(contrast_hours_full_z_loss, scale = "RD", new_name = "Volunteering: weekly church >= 1")
-output_tab_contrast_hours_full_z_loss <- lmtp_evalue_tab(tab_contrast_hours_full_z_loss,  delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_hours_full_z_loss
+# contrast volunteering raw
+contrast_hours_full <- lmtp_contrast(m_hours_charity,ref = m_hours_charity_null, type = "additive")
+contrast_hours_full
 
-
-
+tab_contrast_hours_full <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "Volunteering: weekly church >= 1")
+output_tab_contrast_hours_full <- lmtp_evalue_tab(tab_contrast_hours_full,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_hours_full
 
 
-# calculate contrast donate
-t2_charity_donate_z <- here_read("t2_charity_donate_z")
-null_t2_charity_donate_z <- here_read( "null_t2_charity_donate_z")
+
+# contrast loss volunteering z
+contrast_t2_hours_charity_z_loss <- lmtp_contrast(m_hours_charity_z_1,ref = null_t2_hours_charity_z, type = "additive")
+contrast_t2_hours_charity_z_loss
+
+tab_contrast_t2_hours_charity_z_loss<- margot_tab_lmtp(contrast_t2_hours_charity_z_loss, scale = "RD", new_name = "Volunteering: weekly church lost (outcome hours)")
+output_tab_contrast_t2_hours_charity_z_loss <- lmtp_evalue_tab(tab_contrast_t2_hours_charity_z_loss,  delta = 1, sd = sd_volunteer, scale = c("RD"))
+output_tab_contrast_t2_hours_charity_z_loss
+
+sd_donations
+# contrast loss volunteering raw
+contrast_t2_hours_charity_loss <- lmtp_contrast(m_hours_charity_1,ref = m_hours_charity_null, type = "additive")
+contrast_t2_hours_charity_loss
+
+tab_contrast_t2_hours_charity_loss<- margot_tab_lmtp(contrast_t2_hours_charity_loss, scale = "RD", new_name = "Volunteering: weekly church lost (outcome hours)")
+output_tab_contrast_t2_hours_charity_loss <- lmtp_evalue_tab(tab_contrast_t2_hours_charity_loss,  delta = 1, sd = sd_volunteer, scale = c("RD"))
+output_tab_contrast_t2_hours_charity_loss
 
 
-contrast_donate_full_z <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
+
+# calculate contrast donate z
+
+
+contrast_donate_full_z<- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
 contrast_donate_full_z
 
-margot_contrast_donate_full_z <- margot_tab_lmtp(contrast_donate_full_z, scale = "RD", new_name = "Donations")
-output_church_donate_charity_z <- lmtp_evalue_tab(margot_contrast_donate_full_z,  delta = 1, sd = 1, scale = c("RD"))
-output_church_donate_charity_z
+tab_contrast_donate_full_z <- margot_tab_lmtp(contrast_donate_full_z, scale = "RD", new_name = "Donations")
+output_tab_contrast_donate_full_z<- lmtp_evalue_tab(tab_contrast_donate_full_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_donate_full_z
+
+
+z
+
+# calculate contrast donate raw
+t2_charity_donate <- here_read("t2_charity_donate")
+
+contrast_donate_full<- lmtp_contrast(t2_charity_donate,ref = null_t2_charity_donate, type = "additive")
+contrast_donate_full
+
+tab_contrast_donate_full <- margot_tab_lmtp(contrast_donate_full, scale = "RD", new_name = "Donations")
+output_tab_contrast_donate_full <- lmtp_evalue_tab(tab_contrast_donate_full,  delta = 1, sd = sd_donations, scale = c("RD"))
+output_tab_contrast_donate_full
+
+sd_donations
+sd_volunteer
+
+# compare:
+output_tab_contrast_donate_full_z
+output_tab_contrast_donate_full
 
 
 
-## contrast loss
+## contrast loss donations z
 contrast_donate_full_z_loss <- lmtp_contrast(t2_charity_donate_z_1,ref = null_t2_charity_donate_z, type = "additive")
 contrast_donate_full_z_loss
 
@@ -1248,15 +1315,26 @@ tab_contrast_donate_full_z_loss <- margot_tab_lmtp(contrast_donate_full_z_loss, 
 output_tab_contrast_donate_full_z_loss <- lmtp_evalue_tab(tab_contrast_donate_full_z_loss,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_donate_full_z_loss
 
+## contrast loss donations raw
+contrast_donate_full_loss <- lmtp_contrast(t2_charity_donate_1,ref = null_t2_charity_donate, type = "additive")
+contrast_donate_full_loss
+
+tab_contrast_donate_full_loss <- margot_tab_lmtp(contrast_donate_full_loss, scale = "RD", new_name = "Donations: weekly church >= 1")
+output_tab_contrast_donate_full_loss<- lmtp_evalue_tab(tab_contrast_donate_full_loss,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_donate_full_loss
+
 
 
 # table
-tab_charity_rd_z <- rbind(output_church_hours_charity_z, output_church_donate_charity_z)
+tab_charity_raw <- rbind(output_church_hours_charity, output_tab_contrast_donate_full)
+tab_charity_raw
+
+tab_charity_raw <- rbind(output_tab_contrast_hours_full, output_church_donate_charity)
 tab_charity_rd_z
+
 
 ## TO DO SAVE
 here_save(tab_charity_rd_z, "tab_charity_rd_z")
-
 group_tab_charity_rd_z <- group_tab(tab_charity_rd_z, type = "RD")
 
 saveRDS(tab_charity_rd_z, here::here(push_mods, "tab_charity_rd_z"))
@@ -1308,6 +1386,9 @@ ggsave(
 
 group_tab_charity_rd <- here_read("group_tab_charity_rd")
 group_tab_charity_rd
+
+
+
 
 
 
@@ -2617,15 +2698,6 @@ ggsave(
 #| eval: false
 
 
-
-
-
-
-
-
-
-
-
 # SOCIALISING COMPARATIVE STUDY -------------------------------------------
 
 
@@ -2748,7 +2820,7 @@ table(df_clean_time$t1_hours_community_sqrt_round)
 # shift function -- what if everyone increased by .5 standard deviation, except those above 2 
 
 # simple shift, 1.41 hours per week. 
-f <- function(data, trt){
+f_s <- function(data, trt){
   ifelse( data[[trt]] <=2, 2,  data[[trt]] )
 }
 
@@ -2789,7 +2861,7 @@ m_hours_charity_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_hours_charity",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -2837,7 +2909,7 @@ m_hours_charity_time_z <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_hours_charity_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -2899,7 +2971,7 @@ m_charity_donate_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_charity_donate",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
@@ -2940,7 +3012,7 @@ m_charity_donate_time_z <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_charity_donate_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
@@ -2981,7 +3053,7 @@ m_time_community_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_community_time_binary",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3024,7 +3096,7 @@ m_time_friends_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_friends_time_binary",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   outcome_type = "binomial",
@@ -3066,7 +3138,7 @@ m_time_family_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_family_time_binary",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3194,7 +3266,7 @@ m_church_t2_warm_asians_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_asians_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3239,7 +3311,7 @@ m_church_t2_warm_chinese_z_time  <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_chinese_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3286,7 +3358,7 @@ m_c_t2_warm_immigrants_z_time  <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_immigrants_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3330,7 +3402,7 @@ m_c_t2_warm_indians_z_time  <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_indians_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3378,7 +3450,7 @@ m_c_t2_warm_elderly_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_elderly_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3424,7 +3496,7 @@ m_c_t2_warm_maori_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_maori_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3470,7 +3542,7 @@ m_c_t2_warm_mental_illness_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_mental_illness_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3515,7 +3587,7 @@ m_c_t2_warm_muslims_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_muslims_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3561,7 +3633,7 @@ m_c_t2_warm_nz_euro_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_nz_euro_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3607,7 +3679,7 @@ m_c_t2_warm_overweight_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_overweight_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3652,7 +3724,7 @@ m_c_t2_warm_pacific_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_pacific_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3697,7 +3769,7 @@ m_c_t2_warm_refugees_z_time <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_warm_refugees_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -3741,7 +3813,7 @@ hours_only_religion_perceive_religious_discrim_z <- lmtp_tmle(
   baseline = names_base,
   outcome = "t2_religion_perceive_religious_discrim_z",
   cens = C,
-  shift = f,
+  shift = f_s,
   mtp = TRUE,
   folds = 5,
   # trim = 0.99, # if needed
@@ -4523,5 +4595,4 @@ nz_annual_budget
 0.04841457
 
 
-```
 
