@@ -862,8 +862,15 @@ table(scale(dat_long$kessler_latent_anxiety))
 
 
 # check sample 
-N <-n_unique(dat_long$id) #34749 
-N
+N_participants <-n_unique(dat_long$id) #34749 
+N_participants
+
+
+# save for paper
+here_save(N_participants, "N_participants")
+
+# for later use
+N <- N_participants
 
 # double check path
 push_mods
@@ -904,6 +911,9 @@ out <-
 t_tab <- transition_table(out, state_names = NULL)
 t_tab
 
+
+# save transition
+here_save(t_tab, "t_tab")
 
 out <-
   msm::statetable.msm(forgiveness, id, data = dt_positivity_full)
@@ -965,9 +975,11 @@ coloured_histogram_sd <- function(df, col_name, binwidth = 30) {
 
 
 standard_deviation_exposure <-
-  coloured_histogram_sd(dt_19, col_name = "religion_identification_level", binwidth = .5)
+  coloured_histogram_sd(dt_19, col_name = "forgiveness", binwidth = .5)
 
 standard_deviation_exposure
+
+#here_save( standard_deviation_exposure, "standard_deviation_exposure")
 
 ggsave(
   standard_deviation_exposure,
@@ -3944,7 +3956,9 @@ here_save(t2_belong_z_null, "t2_belong_z_null")
 
 
 # contrasts health ---------------------------------------------------------------
-
+A
+f
+f_1
 # smoker
 t2_smoker_binary <- here_read("t2_smoker_binary")
 t2_smoker_binary_1 <- here_read("t2_smoker_binary_1")
@@ -4964,9 +4978,8 @@ out_tab_contrast_t2_permeability_individual_z_1
 t2_gratitude_z <- here_read("t2_gratitude_z")
 t2_gratitude_z_1 <- here_read("t2_gratitude_z_1")
 
-
 t2_gratitude_z_null <- here_read("t2_gratitude_z_null")
-
+t2_gratitude_z_null
 # first contrast
 contrast_t2_gratitude_z <- lmtp_contrast(t2_gratitude_z,
                                          ref = t2_gratitude_z_null,
@@ -6204,3 +6217,4 @@ ggsave(
   dpi = 600
 )
 dev.off()
+
