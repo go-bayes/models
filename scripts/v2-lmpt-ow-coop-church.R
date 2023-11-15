@@ -1305,7 +1305,7 @@ sd_volunteer
 output_tab_contrast_donate_full_z
 output_tab_contrast_donate_full
 
-
+0.1397 * sd_donations
 
 ## contrast loss donations z
 contrast_donate_full_z_loss <- lmtp_contrast(t2_charity_donate_z_1,ref = null_t2_charity_donate_z, type = "additive")
