@@ -69,18 +69,18 @@ exposure_var = c("forgiveness", "not_lost") #
 # f_1 <- function (data, trt) data[[trt]] + 1
 
 # #  move to mean
-# f <- function(data, trt) {
-#   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
-# }
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+}
 
 
 # shift functions
 #  decrease everyone by one point, contrasted with what they would be anyway.
-f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
-}
-
-f
+# f <- function(data, trt) {
+#   ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
+# }
+# 
+# f
 
 
 
@@ -783,7 +783,7 @@ library(dplyr)
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
 # generate bar plot
-graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "forgiveness", scale_min = 1, scale_max = 7)
+graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "forgiveness", scale_min = 0, scale_max = 7)
 
 graph_density_of_exposure
 
@@ -5640,7 +5640,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Forgiveness: shift DOWN by 1 point to min of 7, N = 34,749"
+sub_title = "Forgiveness: shift all below average to average, do not shift others, N = 34,749"
 
 
 # graph health
@@ -6136,7 +6136,6 @@ ggsave(
   units = "in",
   filename = "plot_compare_health.png",
   device = 'png',
-  limitsize = FALSE,
   dpi = 600
 )
 dev.off()
