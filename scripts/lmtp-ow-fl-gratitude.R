@@ -71,9 +71,9 @@ exposure_var = c("gratitude", "not_lost") #
 # f_1 <- function (data, trt) data[[trt]] + 1
 
 #  move to mean
-# f_test <- function(data, trt) {
-#   ifelse(data[[trt]] <= 0, 0,  data[[trt]])
-# }
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
+}
 
 
 # see second function below
@@ -563,9 +563,9 @@ dat_long  <- dat |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
   mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
-    eth_cat = as.integer(eth_cat),
-    urban = as.numeric(urban),
-    education_level_coarsen = as.integer(education_level_coarsen)
+ #   eth_cat = as.integer(eth_cat),
+    urban = as.numeric(urban) #,
+ # education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
   dplyr::filter((wave == 2018 & year_measured  == 1) |
                   (wave == 2019  &
@@ -643,7 +643,13 @@ mutate(
 
 
 
+# check sample 
+N_participants <-n_unique(dat_long$id) #34764 
+N_participants
 
+
+# save for paper
+here_save(N_participants, "N_participants")
 
 # factors 
 #
@@ -726,6 +732,10 @@ dt_19 <- dat_long |>
   filter(year_measured == 1 & wave == 2) |> 
   mutate(gratitude_z = scale(gratitude))
 
+
+here_save_arrow(dt_19, "dt_19")
+
+
 min_score <- min(dt_19$gratitude_z, na.rm = TRUE)
 min_score
 
@@ -744,11 +754,10 @@ one_point_in_sd_units
 
 
 
-# Decrease by one point
+# shift to mean
 f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
+  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
 }
-
 
 
 #  increase everyone by one point, contrasted with what they would be anyway.
@@ -825,19 +834,78 @@ table (is.na(dt_positivity_full$sample_weights)) #
 
 # test positivity
 out <-
-  msm::statetable.msm(foregivness_round, id, data = dt_positivity_full)
+  msm::statetable.msm(gratitude_round, id, data = dt_positivity_full)
 
 # transition table
 t_tab <- transition_table(out, state_names = NULL)
 t_tab
 
+here_save(t_tab, "t_tab")
 
-out <-
-  msm::statetable.msm(gratitude, id, data = dt_positivity_full)
 
-# transition table
-t_tab <- transition_table(out, state_names = NULL)
-t_tab
+
+standard_deviation_exposure <-
+  coloured_histogram_sd(dt_19, col_name = "gratitude", binwidth = .1)
+
+standard_deviation_exposure
+
+
+
+#here_save( standard_deviation_exposure, "standard_deviation_exposure")
+
+ggsave(
+  standard_deviation_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "standard_deviation_exposure.jpeg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
+
+histogram_shift <- coloured_histogram_shift(dt_19, col_name = "gratitude", binwidth = .1, range_highlight = "below")
+
+histogram_shift
+
+
+
+ggsave(
+  histogram_shift,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "histogram_shift.jpeg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+# generate bar plot
+graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "gratitude", scale_min = 1, scale_max = 7)
+
+graph_density_of_exposure
+
+
+ggsave(
+  graph_density_of_exposure,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "graph_density_of_exposure.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
+
 
 
 
@@ -2873,47 +2941,47 @@ t2_gratitude_z
 here_save(t2_gratitude_z, "t2_gratitude_z")
 
 
-## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-t2_gratitude_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_gratitude_z,
-  outcome = "t2_gratitude_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_gratitude_z_1
-here_save(t2_gratitude_z_1, "t2_gratitude_z_1")
-
-
-
-## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-t2_gratitude_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_gratitude_z,
-  outcome = "t2_gratitude_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_gratitude_z_null
-here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
+# ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+# t2_gratitude_z_1 <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_gratitude_z,
+#   outcome = "t2_gratitude_z",
+#   cens = C,
+#   shift = f_1,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_gratitude_z_1
+# here_save(t2_gratitude_z_1, "t2_gratitude_z_1")
+# 
+# 
+# 
+# ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
+# t2_gratitude_z_null <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_gratitude_z,
+#   outcome = "t2_gratitude_z",
+#   cens = C,
+#   shift = NULL,
+#   # mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_gratitude_z_null
+# here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
 
 
 
@@ -3029,7 +3097,7 @@ t2_pwb_your_health_z_1 <- lmtp_tmle(
   baseline = names_base_t2_pwb_your_health_z,
   outcome = "t2_pwb_your_health_z",
   cens = C,
-  shift = f,
+  shift = f_1,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
@@ -5411,7 +5479,7 @@ tab_ego <- rbind(
 
 
 tab_reflective <- rbind(
-  out_tab_contrast_t2_gratitude_z,
+ # out_tab_contrast_t2_gratitude_z,
   out_tab_contrast_t2_vengeful_rumin_z,
   out_tab_contrast_t2_pwb_your_health_z,
   out_tab_contrast_t2_pwb_your_future_security_z,
@@ -5428,6 +5496,13 @@ tab_social <- rbind(
   out_tab_contrast_t2_neighbourhood_community_z,
   out_tab_contrast_t2_belong_z
 )
+
+
+here_save(tab_health,"tab_health")
+here_save(tab_body,"tab_body")
+here_save(tab_ego,"tab_ego")
+here_save(tab_reflective,"tab_reflective")
+here_save(tab_social,"tab_social")
 
 
 # make group table
@@ -5473,7 +5548,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Gratitude: shift all below average to average, N = XXXXX"
+sub_title = "Grantitude: shift exposure to average if below average, else take expected natural value, N = 34,764"
 
 
 # graph health
@@ -5696,13 +5771,12 @@ tab_ego_1  <- rbind(
 
 
 tab_reflective_1 <- rbind(
-  out_tab_contrast_t2_gratitude_z_1,
-  # out_tab_contrast_t2_vengeful_rumin_z_1,
+  #out_tab_contrast_t2_gratitude_z_1,
+  out_tab_contrast_t2_vengeful_rumin_z_1,
   out_tab_contrast_t2_pwb_your_health_z_1,
   out_tab_contrast_t2_pwb_your_future_security_z_1,
   out_tab_contrast_t2_pwb_your_relationships_z_1,
   out_tab_contrast_t2_pwb_standard_living_z_1,
-  #out_tab_contrast_t2_lifemeaning_z_1
   out_tab_contrast_t2_meaning_purpose_z_1,
   out_tab_contrast_t2_meaning_sense_z_1
 )
@@ -5713,6 +5787,16 @@ tab_social_1 <- rbind(
   out_tab_contrast_t2_neighbourhood_community_z_1,
   out_tab_contrast_t2_belong_z_1
 )
+
+
+
+here_save(tab_health_1,"tab_health_1")
+here_save(tab_body_1,"tab_body")
+here_save(tab_ego_1,"tab_ego")
+here_save(tab_reflective_1,"tab_reflective")
+here_save(tab_social_1,"tab_social_1")
+
+
 
 
 # make group table
@@ -5759,7 +5843,7 @@ group_tab_social_1 <- here_read("group_tab_social_1")
 
 # check N
 N
-sub_title_1 = "Gratitude: shift + 1 point everyone (up to max 7), N = XXXX"
+sub_title_1 = "Gratitude: shift exposure up by 1 point up to max 7, N = 34,764"
 
 
 # graph health

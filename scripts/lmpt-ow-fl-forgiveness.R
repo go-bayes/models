@@ -745,6 +745,7 @@ dt_19 <- dat_long |>
 
 nrow(dt_19)
 
+here_save_arrow(dt_19, "dt_19")
 
 
 library(ggplot2)
@@ -911,6 +912,8 @@ out <-
 t_tab <- transition_table(out, state_names = NULL)
 t_tab
 
+here_save(t_tab, "t_tab")
+
 
 # save transition
 here_save(t_tab, "t_tab")
@@ -993,6 +996,98 @@ ggsave(
   dpi = 600
 )
 
+
+
+library(ggplot2)
+library(dplyr)
+library(ggplot2)
+library(dplyr)
+
+library(ggplot2)
+library(dplyr)
+
+coloured_histogram_shift <- function(df, col_name, binwidth = 30, range_highlight = NULL) {
+  # Compute statistics
+  avg_val <- mean(df[[col_name]], na.rm = TRUE)
+  
+  # Adjust fill color based on the range_highlight parameter
+  fill_color <- case_when(
+    range_highlight == "below" & df[[col_name]] >= avg_val ~ "grey60",
+    range_highlight == "above" & df[[col_name]] <= avg_val ~ "grey60",
+    TRUE ~ ifelse(range_highlight == "below", "dodgerblue", "gold2")
+  )
+  
+  # Create the base histogram plot
+  p <- ggplot(df, aes_string(x = col_name)) +
+    geom_histogram(aes(y = ..count.., fill = fill_color),
+                   binwidth = binwidth, color = "black") +
+    scale_fill_identity() +
+    geom_vline(xintercept = avg_val, color = "black", size = 1.5) +
+    labs(title = "Histogram of Shift Function",
+         subtitle = "Coloured shows population shifted",
+         fill = "Legend") +
+    theme_minimal()
+  
+  # Add arrow based on range_highlight
+  if (!is.null(range_highlight)) {
+    if (range_highlight == "below") {
+      lowest_val <- min(df[[col_name]], na.rm = TRUE)
+      p <- p + geom_segment(
+        aes(
+          x = lowest_val,
+          y = 0,
+          xend = avg_val,
+          yend = 0
+        ),
+        arrow = arrow(
+          type = "closed",
+          ends = "last",
+          length = unit(0.2, "inches")
+        ),
+        color = "black",
+        size = 1.5
+      )
+    } else if (range_highlight == "above") {
+      highest_val <- max(df[[col_name]], na.rm = TRUE)
+      p <- p + geom_segment(
+        aes(
+          x = highest_val,
+          y = 0,
+          xend = avg_val,
+          yend = 0
+        ),
+        arrow = arrow(
+          type = "closed",
+          ends = "last",
+          length = unit(0.2, "inches")
+        ),
+        color = "black",
+        size = 1.5
+      )
+    }
+  }
+  
+  return(p)
+}
+
+# Example usage
+
+histogram_shift <- coloured_histogram_shift(dt_19, col_name = "forgiveness", binwidth = .5, range_highlight = "below")
+
+
+
+
+ggsave(
+  histogram_shift,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 12,
+  height = 8,
+  units = "in",
+  filename = "histogram_shift.jpg",
+  device = 'jpeg',
+  limitsize = FALSE,
+  dpi = 600
+)
 
 
 # set variables for baseline exposure and outcome -------------------------
@@ -5551,6 +5646,8 @@ tab_health <- rbind(
 tab_health
 
 
+here_save(tab_health , "tab_health")
+
 tab_body <- rbind(
   out_tab_contrast_t2_bodysat_z,
   out_tab_contrast_t2_kessler_latent_anxiety_z,
@@ -5562,6 +5659,7 @@ tab_body <- rbind(
 tab_body
 
 
+here_save(tab_body, "tab_body")
 
 tab_ego <- rbind(
   out_tab_contrast_t2_emotion_regulation_out_control_z,
@@ -5575,6 +5673,7 @@ tab_ego <- rbind(
 
 tab_ego
 
+here_save(tab_ego, "tab_ego")
 
 tab_reflective <- rbind(
   out_tab_contrast_t2_gratitude_z,
@@ -5588,6 +5687,7 @@ tab_reflective <- rbind(
 )
 tab_reflective
 
+here_save(tab_reflective,"tab_reflective")
 
 tab_social <- rbind(
   out_tab_contrast_t2_belong_z,
@@ -5596,6 +5696,7 @@ tab_social <- rbind(
 )
 tab_social
 
+here_save(tab_social,"tab_social")
 
 # make group table
 group_tab_health <- group_tab(tab_health  , type = "RD")
@@ -5640,7 +5741,7 @@ group_tab_social <- here_read("group_tab_social")
 
 # check N
 N
-sub_title = "Forgiveness: shift all below average to average, do not shift others, N = 34,749"
+sub_title = "Forgiveness: shift exposure to average if below average, else take expected natural value, N = 34,749"
 
 
 # graph health
@@ -5928,9 +6029,11 @@ group_tab_social_1 <- here_read("group_tab_social_1")
 
 # create plots -------------------------------------------------------------
 
+f
+f1
 # check N
 N
-sub_title_1 = "Forgiveness: shift UP by 1 point to max of 7, N = 34,749"
+sub_title_1 = "Forgiveness: shift exposure up by 1 point up to max 7, N = 34,749"
 
 # graph health
 plot_group_tab_health_1 <- margot_plot(
@@ -6087,7 +6190,7 @@ plot_group_tab_social_1 <- margot_plot(
   group_tab_social_1,
   type = "RD",
   title = "Social effects",
-  subtitle = sub_title,
+  subtitle = sub_title_1,
   xlab = "",
   ylab = "",
   estimate_scale = 1,
@@ -6103,7 +6206,7 @@ plot_group_tab_social_1 <- margot_plot(
   x_lim_hi =  .5
 )
 
-
+plot_group_tab_social_1
 
 # save graph
 ggsave(
