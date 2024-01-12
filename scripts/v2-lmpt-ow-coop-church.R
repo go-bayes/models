@@ -795,11 +795,8 @@ push_mods
 here_save(df_clean,"df_clean")
 
 
-
 # read data --  start here if previous work already done
 df_clean <-here_read("df_clean")
-
-
 
 #check n
 nrow(df_clean)
@@ -809,6 +806,7 @@ colnames(df_clean)
 names_base <- df_clean |> select( starts_with("t0"), - t0_sample_weights,-t0_not_lost )|> colnames()
 names_outcomes <- df_clean|> select( starts_with("t2"))|> colnames()
 
+names_base
 # check
 # names_base
 # names_outcomes
@@ -882,6 +880,374 @@ plan(multisession)
 n_cores <- parallel::detectCores()
 
 
+colnames(g_X)
+
+
+
+# ignore ------------------------------------------------------------------
+
+
+
+# GRF MODELS --------------------------------------------------------------
+# see: https://grf-labs.github.io/grf/
+#devtools::install_github("grf-labs/grf", subdir = "r-package/grf")
+library(grf)
+
+
+# data wrangle: create binary indicator
+
+table(df_clean$t0_religion_church_round_z)
+df_use_full_f <- df_clean |> 
+  mutate(t1_reg_church_attends = ifelse( t1_religion_church_round >= 4, 1, 0)) |> 
+# mutate(t0_reg_church_attends = ifelse( t0_religion_church_round_z <= 4, 1, 0)) |> 
+  mutate(t0_has_siblings  = ifelse(t0_total_siblings_factor == 0, 0, 1)) |> 
+  select( -t0_total_siblings_factor)
+
+
+
+
+# train causal forest
+
+# sample weights
+t0_sample_weights <- df_use_full_f$t0_sample_weights
+
+# get censoring indicator
+D <- df_use_full_f$t1_not_lost
+
+# get key data features 
+
+# reduce covariates
+df_use_full <-
+  df_use_full_f |> select(
+    starts_with("t1"),
+    starts_with("t2"),
+    starts_with("t0"),
+    -starts_with("t0_warm"),-t0_hlth_disability_z,
+    -t0_hours_family_sqrt_round,
+    -t0_hours_friends_sqrt_round,-t0_sfhealth_z,
+    -t0_has_siblings,
+    -t0_hlth_bmi_z,
+    -t0_born_nz_z,
+    -t0_friends_time_z,-t0_family_time_z,
+    -t0_sample_origin,
+    -t0_vengeful_rumin_z,
+    -t0_religion_perceive_religious_discrim_z,
+    -t0_gratitude_z,
+    -t0_support_z
+  )
+
+
+
+colnames( df_use_full )
+nrow( df_use_full )
+
+
+# Causal forest weights
+grf_names_base <- df_use_full |> select( starts_with("t0"), -starts_with(c("t1","t2")), - t0_sample_weights,-t0_not_lost )|> colnames()
+
+selected_W = matrix( df_use_full$t1_reg_church_attends )
+selected_Y = matrix( df_use_full$t2_charity_donate )
+
+selected_X <- df_use_full %>% select(all_of(grf_names_base)) |> 
+  mutate(across(everything(), ~ {
+    x <- .
+    attributes(x) <- NULL
+    x
+  }))
+
+
+# Y var is censoring time
+Y = D + 1
+D
+sf_censor <- survival_forest(cbind(selected_X, selected_W), Y = Y, D = 1-D, prediction.type="Nelson-Aalen")
+summary(sf_censor)
+
+# K <- 1/predict(sf_censor, failure.times=pmin(Y,D), prediction.times="time")$predictions
+# 
+# hist(K)
+here_save(sf_censor, "sf_censor")
+censoring_prob <- sf_censor$predictions
+hist(censoring_prob)
+
+observed_events <- (D == 1)
+
+# compute sample weights # not  quite right?
+grf_sample_weights <- 1 / censoring_prob[observed_events]
+
+
+grf_sample_weights
+# inspect
+length(grf_sample_weights)
+hist(grf_sample_weights)
+
+
+# try another method
+# library(WeightIt)
+# library(cobalt)
+# 
+# 
+# 
+# grf_names_base
+# # propensity score matching using ebalance -- generally very good
+# 
+# 
+# grf_names_base_2 <- c(grf_names_base, 't1_reg_church_attends')
+# 
+# grf_names_base_2
+# 
+# cen_ebal <- match_mi_general(data = df_use_full, 
+#                                       X = "t1_not_lost", 
+#                                       baseline_vars = grf_names_base_2, 
+#                                       estimand = "ATE",  
+#                                       # focal = "< >", for ATT
+#                                       method = "ebal", 
+#                                       sample_weights = "sample_weights")
+# 
+# summary(cen_ebal)
+# bal.tab(cen_ebal, un = TRUE)
+# love.plot(cen_ebal, binary = "std", thresholds = c(m = .1),
+#           wrap = 50, position = "bottom", size =2) 
+# 
+# # get weights
+# df_use_full$w_weights <- cen_ebal$weights
+# df_use_full
+
+df_use_full <- df_use_full |> filter(t1_not_lost == 1) |> 
+  mutate(weights = grf_sample_weights * t0_sample_weights) 
+
+
+
+g_weights = matrix( df_use_full$weights)
+hist(g_weights)
+
+#  One-hot encoding to make cat vars continuous
+# Load necessary library
+library(dplyr)
+
+# rename dataframe
+df <- df_use_full
+colnames(df)
+# identify categorical variables (excluding 'id')
+categorical_vars <- sapply(df, is.factor) 
+#categorical_vars["id"] <- FALSE
+
+# Apply one-hot encoding to categorical variables and combine results
+df_encoded <- df %>% 
+  select(which(!categorical_vars)) %>% 
+  bind_cols(
+    lapply(names(df)[categorical_vars], function(col) {
+      model.matrix(~ . - 1, data = df[col])
+    })
+  )
+
+
+head(df_encoded)
+
+# Reorder the columns in df_encoded
+df_encoded <- df_encoded %>%
+  select(t0_religion_church_round_z, t0_hours_charity_z,t0_charity_donate_z, everything())
+
+head(df_encoded)
+
+
+
+g_W  = matrix( df_encoded$t1_reg_church_attends )
+t2_charity_donate = matrix( df_encoded$t2_charity_donate )
+t2_hours_charity = matrix( df_encoded$t0_hours_charity_z )
+
+
+
+use_names_base <- df_encoded |> select( starts_with("t0"), - t0_sample_weights,-t0_not_lost )|> colnames()
+use_names_base
+
+
+g_X <- df_encoded %>% select(all_of(use_names_base)) |> 
+  mutate(across(everything(), ~ {
+    x <- .
+    attributes(x) <- NULL
+    x
+  }))
+
+
+# g_XX <- g_X |> 
+#   select(t0_religion_church_round_z,t0_charity_donate_z, t0_eth_euro, t0_age_z, t0_partner_z, t0_urban_z, t0_hours_work_log_z, t0_religion_church_round_z, t0_education_level_coarsen_z, t0_household_inc_log_z) 
+
+str(g_W)
+str(g_X)
+str(g_W)
+str(g_Y)
+str(g_weights)
+
+# model charity
+tau_forest_t2_charity_donate <- grf::causal_forest(X= g_X, Y= t2_charity_donate, W = g_W, sample.weights = g_weights)
+
+# save
+here_save(tau_forest_t2_charity_donate, 'tau_forest_t2_charity_donate')
+
+
+# view
+tau_forest_t2_charity_donate
+
+## ATE
+average_treatment_effect(tau_forest_t2_charity_donate, target.sample = "all")
+
+633.9836
+
+average_treatment_effect(tau_forest_t2_charity_donate, target.sample = "treated")
+
+
+tau.hat.oob <- predict(tau_forest_t2_charity_donate)
+hist(tau.hat.oob$predictions)
+
+best_linear_projection(tau_forest_t2_charity_donate, g_X)
+rate <- rank_average_treatment_effect(tau_forest_t2_charity_donate, g_X[, "t0_religion_church_round_z"])
+plot(rate, ylab = "Church", main = "TOC: ranked by decreasing weight")
+forest.W <- regression_forest(g_X, g_W, tune.parameters = "all")
+W.hat <- predict(forest.W)$predictions
+
+g_Y <- t2_charity_donate
+forest.Y <- regression_forest(g_X, g_Y, tune.parameters = "all")
+Y.hat <- predict(forest.Y)$predictions
+
+
+forest.Y.varimp <- variable_importance(tau_forest_t2_charity_donate)
+forest.Y.varimp
+selected.vars <- which(forest.Y.varimp / mean(forest.Y.varimp) > 0.95)
+selected.vars
+colnames(g_X)
+
+# Forest in most import vars
+tau.forest <- causal_forest(g_X[, selected.vars], g_Y, g_W,
+                            W.hat = W.hat, Y.hat = Y.hat,
+                            tune.parameters = "all", sample.weights = g_weights)
+
+average_treatment_effect(tau.forest, target.sample = "all")
+
+
+
+# get vec for key params
+
+n<-nrow(g_X)
+n
+
+train <- sample(1:n, n / 2)
+train
+train.forest <- causal_forest(g_X[train, ], g_Y[train], g_W[train],  sample.weights = g_weights[train])
+eval.forest <- causal_forest(g_X[-train, ], g_Y[-train], g_W[-train], sample.weights = g_weights[-train])
+rate <- rank_average_treatment_effect(eval.forest,
+                                      predict(train.forest, g_X[-train, ])$predictions)
+plot(rate)
+
+average_treatment_effect(train.forest, target.sample = "all")
+average_treatment_effect(eval.forest, target.sample = "all")
+
+
+# tau.hat <- predict(tau_forest, X.test, estimate.variance = TRUE)
+# paste("AUTOC:", round(rate$estimate, 2), "+/", round(1.96 * rate$std.err, 2))
+
+
+##
+library(policytree)
+library(DiagrammeR)
+
+# get ate
+ate <- average_treatment_effect(tau_forest_t2_charity_donate)
+
+
+# quick eval
+varimp <- variable_importance(tau_forest_t2_charity_donate)
+varimp
+ranked.vars <- order(varimp, decreasing = TRUE)
+ranked.vars
+colnames(g_X)
+
+
+best_linear_projection(tau_forest_t2_charity_donate, g_X[ranked.vars[1:5]])
+
+
+# Compute doubly robust scores
+dr.scores <- grf::get_scores(tau_forest_t2_charity_donate)
+dr.scores
+# dr.scores <- double_robust_scores(tau_forest_t2_charity_donate)
+# dr.scores
+# # Use as the ATE as a "cost" of program treatment to find something non-trivial
+# cost <- ate[["estimate"]]
+# dr.rewards <- cbind(control=-dr.scores, treat=dr.scores - cost)
+
+# plot overlap
+use_X <- g_X[, selected.vars]
+
+tree <- policy_tree(use_X, dr.scores, depth = 2)
+tree_full <- policy_tree(g_X, dr.scores, depth = 2)
+here_save(tree_full,"tree_full")
+print(tree)
+plot(tree)
+
+print(tree)
+plot(tree_full)
+
+# Predict the treatment assignment {1, 2} for each sample.
+predicted <- predict(tree, g_X)
+plot(X[, 1], X[, 2], col = predicted)
+legend("topright", c("control", "treat"), col = c(1, 2), pch = 19)
+abline(0, -1, lty = 2)
+
+node.id <- predict(tree, X, type = "node.id")
+
+values <- aggregate(dr.scores, by = list(leaf.node = node.id),
+                    FUN = function(x) c(mean = mean(x), se = sd(x) / sqrt(length(x))))
+print(values, digits = 2)
+
+
+# eval grf fit ------------------------------------------------------------
+
+
+# eval fit
+
+# The overlap assumption requires a positive probability of treatment for each 𝑋𝑖
+# . We should not be able to deterministically decide the treatment status of an individual based on its covariates, meaning none of the estimated propensity scores should be close to one or zero. One can check this with a histogram:
+hist(e.hat <- tau.forest$W.hat)
+
+W = g_W
+# One can also check that the covariates are balanced across the treated and control group by plotting the inverse-propensity weighted histograms of all samples, overlaid here for each feature (done with ggplot2 which supports weighted histograms):
+IPW <- ifelse(W == 1, 1 / e.hat, 1 / (1 - e.hat))
+
+#Make long
+
+df <- cbind(g_W, g_XX,IPW)
+
+head(df)
+table(df$g_W)
+
+# Load the necessary library
+library(tidyr)
+
+# Reshape the dataframe
+df_long <- df %>%
+  pivot_longer(
+    cols = starts_with("t0_"), 
+    names_to = "variable", 
+    values_to = "value"
+  ) |> 
+  mutate(W = factor(g_W))
+
+df_long$value
+
+ggplot(df_long, aes(x = value, weight = IPW, fill = W)) +
+  geom_histogram(alpha = 0.5, position = "identity", bins = 30) +
+  facet_wrap( ~ variable, ncol = 2)
+
+
+ggplot(df, aes(x = t0_religion_church_round_z, weight = IPW, fill = as.factor(g_W))) +
+  geom_histogram(alpha = 0.5, position = "identity", bins = 30) 
+
+
+
+# resume ------------------------------------------------------------------
+
+
+# LMPT MODELS -------------------------------------------------------------
+
 
 # charity models ----------------------------------------------------------
 
@@ -934,6 +1300,10 @@ m_hours_charity_1 <- lmtp_tmle(
 here_save(m_hours_charity_1, "m_hours_charity_1")
 m_hours_charity_1 <- here_read("m_hours_charity_1")
 
+
+
+
+
 m_hours_charity_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -975,7 +1345,7 @@ t2_hours_charity_z <- lmtp_tmle(
 }
 )
 
-# print timing info
+# print timing info# print timing infog_W
 print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
 t2_hours_charity_z
 here_save(t2_hours_charity_z, "t2_hours_charity_z")
@@ -1075,6 +1445,11 @@ nz_annual_budget = 14494000000 * 4
 
 
 ## NON STANDARD
+null_t2_charity_donate <- here_read("null_t2_charity_donate")
+null_t2_charity_donate
+1113.8434
+
+64.95096 * 4
 
 t2_charity_donate <- lmtp_tmle(
   data = df_clean,
@@ -1096,8 +1471,9 @@ t2_charity_donate <- lmtp_tmle(
 here_save(t2_charity_donate, "t2_charity_donate")
 t2_charity_donate
 
+t2_charity_donate<- here_read("t2_charity_donate")
+t2_charity_donate$density_ratios
 
-# run 
 t2_charity_donate_1 <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1235,7 +1611,7 @@ t2_charity_donate_z<- here_read( "t2_charity_donate_z")
 t2_charity_donate_z_1 <- here_read( "t2_charity_donate_z_1")
 null_t2_charity_donate_z <- here_read( "null_t2_charity_donate_z")
 
-
+null_t2_hours_charity_z
 # contrast volunteering
 # calculate contrast volunteering z
 contrast_hours_full_z <- lmtp_contrast(t2_hours_charity_z,ref = null_t2_hours_charity_z, type = "additive")
