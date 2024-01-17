@@ -111,32 +111,37 @@ listWrappers()
 # belong_routside_reversed = rel_belong02r,
 # select variables that aaron wants:
 dt_init <- dat |> 
-  select(
-    pers_a_ipip02r,
-    pers_a_ipip04r,
-    pers_a_ipip01,
-    sdo02,
-    sdo03,
-    support_help,# rel_support01
-    pers_n_ipip02r,
-    pers_n_ipip04r,
-    vengeful_rumination01,
-    vengeful_rumination03,
-    self_control_have_lots, # self_control01
-    belong_routside_reversed, #rel_belong02r,
-    pers_c_ipip03r,
-    pers_n_ipip01,
-    pers_c_ipip04r,
-    pers_c_ipip01,
-    police_engagement02,
-    pers_hon_hum04r,
-    pers_e_ipip01,
-    pers_e_ipip04,
-    pers_modesty01r,
-    pers_modesty04r,
-    pers_narc01r,
-    pers_modesty02
-  ) #|>   #reverse code
+  dplyr::arrange(id, wave) |>  dplyr::rename(
+    rel_support01 = support_help,# needed to avoid stich ups
+    self_control01 = self_control_have_lots,# needed to avoid stich ups
+    rel_belong02r = belong_routside_reversed # needed to avoid stich ups
+  )
+  # select(
+  #   pers_a_ipip02r,
+  #   pers_a_ipip04r,
+  #   pers_a_ipip01,
+  #   sdo02,
+  #   sdo03,
+  #   support_help,# rel_support01
+  #   pers_n_ipip02r,
+  #   pers_n_ipip04r,
+  #   vengeful_rumination01,
+  #   vengeful_rumination03,
+  #   self_control_have_lots, # self_control01
+  #   belong_routside_reversed, #rel_belong02r,
+  #   pers_c_ipip03r,
+  #   pers_n_ipip01,
+  #   pers_c_ipip04r,
+  #   pers_c_ipip01,
+  #   police_engagement02,
+  #   pers_hon_hum04r,
+  #   pers_e_ipip01,
+  #   pers_e_ipip04,
+  #   pers_modesty01r,
+  #   pers_modesty04r,
+  #   pers_narc01r,
+  #   pers_modesty02
+  # ) #|>   #reverse code
 
 
 
@@ -144,8 +149,11 @@ dt_init <- dat |>
 
 # list of variables to check
 vars_to_check <- c("pers_a_ipip02r",
+                   "pers_a_ipip04r",
                    "pers_a_ipip01",
+                   "rel_support01",
                    "pers_n_ipip02r",
+                   "pers_n_ipip04r",
                    "vengeful_rumination01",
                    "vengeful_rumination03",
                    "pers_c_ipip03r",
@@ -174,27 +182,8 @@ if(all_max_seven) {
 #  all variables have the same maximum scale value of 7
 max_scale_value <- 7 # max score
 
-dt_init_use <- dat |>
-  dplyr::arrange(id, wave) |>
-  dplyr::rename(
-    rel_support01 = support_help,# needed to avoid stich ups
-    self_control01 = self_control_have_lots,# needed to avoid stich ups
-    rel_belong02r = belong_routside_reversed # needed to avoid stich ups
-  ) |> 
-  dplyr::mutate(across(c(pers_a_ipip02r,
-                         pers_a_ipip01,
-                         pers_n_ipip02r,
-                         vengeful_rumination01,
-                         vengeful_rumination03,
-                         pers_c_ipip03r,
-                         pers_c_ipip04r,
-                         pers_c_ipip01,
-                         police_engagement02,
-                         pers_hon_hum04r,
-                         pers_modesty01r,
-                         pers_modesty04r,
-                         pers_narc01r,
-                         pers_modesty02),
+dt_init_use <- dt_init |>
+  dplyr::mutate(across(all_of(vars_to_check),
                        ~ max_scale_value - .x,
                        .names = "aaron_reversed_{.col}"))
 
@@ -204,25 +193,10 @@ dt_init_use <- dat |>
 # step 1: make a vector of the original variable names that need to be reversed
 
 # get vars that are reversed
-reverse_vars_clean <- c(
-  "pers_a_ipip02r",
-  "pers_a_ipip01",
-  "pers_n_ipip02r",
-  "vengeful_rumination01",
-  "vengeful_rumination03",
-  "pers_c_ipip03r",
-  "pers_c_ipip04r",
-  "pers_c_ipip01",
-  "police_engagement02",
-  "pers_hon_hum04r",
-  "pers_modesty01r",
-  "pers_modesty04r",
-  "pers_narc01r",
-  "pers_modesty02"
-)
+
 
 # step 2: prepend "aaron_reversed_" to the names that require reversing
-clean_reversed_vars <- paste0("aaron_reversed_", reverse_vars_clean)
+clean_reversed_vars <- paste0("aaron_reversed_", vars_to_check)
 
 clean_reversed_vars
 
@@ -287,14 +261,7 @@ get_reversed_vars <- function(vars_clean, reverse_vars_clean) {
   unique(reversed_vars)
 }
 
-# Usage of the function for different variable groups
-antagonism_vars_reversed <- get_reversed_vars(antagonism_vars_clean, reverse_vars_clean)
-
-# Check the output
-antagonism_vars_reversed
-
-
-# Usage of the function for different variable groups
+# use function
 antagonism_vars_reversed <- get_reversed_vars(antagonism_vars_clean, reverse_vars_clean)
 
 #check
@@ -319,24 +286,280 @@ emotional_stability_vars_reversed
 disinhibition_vars_reversed
 narcissism_vars_reversed
 
-# check
-antagonism_vars_reversed
-
-# Now 'antagonism_vars_reversed' will have the correct variable names,
-# which you can use to calculate the average.
 
 
-# Step 5: Compute the average for each group
+# define the lists
+antagonism_vars_reversed <- c(
+  "aaron_reversed_pers_a_ipip02r", 
+  "aaron_reversed_pers_a_ipip04r", 
+  "aaron_reversed_pers_a_ipip01",  
+  "sdo03",                        
+  "sdo02",                         
+  "aaron_reversed_rel_support01"
+)
+
+emotional_stability_vars_reversed <- c(
+  "aaron_reversed_pers_n_ipip02r",        
+  "aaron_reversed_pers_n_ipip04r",        
+  "aaron_reversed_vengeful_rumination01",
+  "aaron_reversed_vengeful_rumination03", 
+  "self_control01",                       
+  "rel_belong02r"                       
+)
+
+disinhibition_vars_reversed <- c(
+  "aaron_reversed_pers_c_ipip03r",      
+  "pers_n_ipip01",                      
+  "aaron_reversed_pers_c_ipip04r",     
+  "aaron_reversed_pers_c_ipip01",       
+  "aaron_reversed_police_engagement02", 
+  "aaron_reversed_pers_hon_hum04r"    
+)
+
+narcissism_vars_reversed <- c(
+  "pers_e_ipip01",                  
+  "pers_e_ipip04",                  
+  "aaron_reversed_pers_modesty01r", 
+  "aaron_reversed_pers_modesty04r",
+  "aaron_reversed_pers_narc01r",    
+  "aaron_reversed_pers_modesty02" 
+)
+
+str(psycho_dt$pers_e_ipip01)
+str(psycho_dt$pers_e_ipip04)
+str(psycho_dt$aaron_reversed_pers_modesty01r)
+str(psycho_dt$aaron_reversed_pers_modesty04r)
+str(psycho_dt$aaron_reversed_pers_modesty04r)
+
+
+# combine all the lists into a single vector
+all_vars <- c(antagonism_vars_reversed, emotional_stability_vars_reversed, disinhibition_vars_reversed, narcissism_vars_reversed)
+
+# find duplicates
+duplicate_vars <- all_vars[duplicated(all_vars)]
+
+# print out the duplicated variable names
+duplicate_vars
+
+
+# compute the average for each group
 dat_init_use_2 <- dt_init_use %>%
   mutate(
-    antagonism = rowMeans(select(., all_of(antagonism_vars_clean)), na.rm = TRUE),
+    aaron_antagonism = rowMeans(select(., all_of(antagonism_vars_clean)), na.rm = TRUE),
+    aaron_emotional_stability = rowMeans(select(., all_of(emotional_stability_vars_reversed)), na.rm = TRUE),
+    aaron_disinhibition = rowMeans(select(., all_of(antagonism_vars_reversed)), na.rm = TRUE),
+    aaron_narcissism = rowMeans(select(., all_of(narcissism_vars_reversed)), na.rm = TRUE),
+    aaron_psychopathy = rowMeans(select(., all_of(all_vars)), na.rm = TRUE),
+    aaron_psychopathy_test = rowMeans(select(., all_of(c(antagonism_vars_clean, emotional_stability_vars_reversed, disinhibition_vars_reversed,narcissism_vars_reversed))), na.rm = TRUE))
 
-  )
+
+table(dat_init_use_2$aaron_psychopathy == dat_init_use_2$aaron_psychopathy_test)
+
+
+
+hist(dat_init_use_2$aaron_psychopathy)
+
+
+
+# psychometric validation -------------------------------------------------
+library(psych)
+library(lavaan)
+library(performance)
+library(knitr)
+library(datawizard)
+
+# Assuming dat_init_use_2 is your dataset and you have two sets of variables for the two constructs
+# Replace 'var1', 'var2', etc., with actual variable names for each construct version
+
+# Version 1 Variables
+vars_version_1 <-all_vars
+
+# Version 2 Variables
+vars_subscale <- c('aaron_antagonism', 'aaron_emotional_stability', 'aaron_disinhibition', 'aaron_narcissism')
+
+
+# data frame
+dat_init_use_2$wave
+
+psycho_dt <- dat_init_use_2 |> filter(wave == "2018" & year_measured == 1)
+
+
+hist(psycho_dt$aaron_antagonism)
+hist(psycho_dt$aaron_narcissism)
+hist(psycho_dt$aaron_emotional_stability)
+hist(psycho_dt$aaron_disinhibition)
+hist(psycho_dt$aaron_psychopathy)
+hist(psycho_dt$aaron_psychopathy_test)
+
+
+# Extract relevant variables
+dt_antagonism <- psycho_dt |> select(all_of(antagonism_vars_reversed))
+dt_emotional_stability <- psycho_dt |> select(all_of(emotional_stability_vars_reversed))
+dt_disinhibition<- psycho_dt |> select(all_of(disinhibition_vars_reversed))
+dt_narcissism<- psycho_dt |> select(all_of(narcissism_vars_reversed))
+dt_all_vars<- psycho_dt |> select(all_of(all_vars))
+dt_subscale_vars <- psycho_dt |> select(all_of(vars_subscale))
+
+
+narcissism_vars_reversed
+
+# Check factor structure for each version
+performance::check_factorstructure(dt_antagonism)
+performance::check_factorstructure(dt_emotional_stability)
+performance::check_factorstructure(dt_disinhibition)
+performance::check_factorstructure(dt_narcissism)
+performance::check_factorstructure(dt_all_vars)
+performance::check_factorstructure(dt_subscale_vars)
+
+
+# EFA for each version
+efa_dt_antagonism <- psych::fa(dt_antagonism, nfactors = 1) %>%
+  model_parameters(sort = TRUE, threshold = "max")   
+
+efa_dt_emotional_stability <- psych::fa(dt_emotional_stability, nfactors = 1) %>%
+  model_parameters(sort = TRUE, threshold = "max")
+
+efa_dt_disinhibition <- psych::fa(dt_disinhibition, nfactors = 1) %>%
+  model_parameters(sort = TRUE, threshold = "max")
+
+efa_dt_narcissism <- psych::fa(dt_narcissism, nfactors = 1) %>%
+  model_parameters(sort = TRUE, threshold = "max")
+
+efa_dt_all_vars <- psych::fa(dt_all_vars, nfactors = 4) %>%
+  model_parameters(sort = TRUE, threshold = "max")
+efa_dt_all_vars
+#efa_dt_subscale_vars <- psych::fa(dt_subscale_vars, nfactors = 3) %>%
+  model_parameters(sort = TRUE, threshold = "max")
+
+# Display EFA results
+efa_dt_antagonism
+efa_dt_emotional_stability
+efa_dt_disinhibition
+efa_dt_narcissism
+# efa_dt_all_vars
+# efa_dt_subscale_vars
+
+# Parallel analysis to determine the number of factors
+n_dt_antagonism <- n_factors(dt_antagonism)
+n_dt_emotional_stability <- n_factors(dt_emotional_stability)
+n_dt_disinhibition <- n_factors(dt_disinhibition)
+n_dt_narcissism <- n_factors(dt_narcissism)
+n_dt_all_vars <- n_factors(dt_all_vars)
+n_dt_subscale_vars <- n_factors(dt_subscale_vars)
+n_dt_all_vars
+
+# Plot results
+p_factors_antagonism <- plot(n_dt_antagonism) + theme_classic()
+p_factors_emotional_stability <- plot(n_dt_emotional_stability) + theme_classic()
+p_factors_disinhibition <- plot(n_dt_disinhibition) + theme_classic()
+p_factors_narcissism <- plot(n_dt_narcissism) + theme_classic()
+# p_factors_antagonism + p_factors_emotional_stability + p_factors_disinhibition + p_factors_narcissism
+
+# Split data for training and testing (for CFA)
+part_dt_antagonism <- data_partition(dt_antagonism, training_proportion = .7, seed = 1234)
+part_dt_emotional_stability <- data_partition(dt_emotional_stability, training_proportion = .7, seed = 1234)
+part_dt_disinhibition<- data_partition(dt_disinhibition, training_proportion = .7, seed = 1234)
+part_dt_narcissism <- data_partition(dt_narcissism, training_proportion = .7, seed = 1234)
+# part_dt_all_vars <- data_partition(dt_all_vars, training_proportion = .7, seed = 1234)
+# part_dt_subscale_vars <- data_partition(dt_subscale_vars, training_proportion = .7, seed = 1234)
+
+
+
+# Define CFA models based on EFA results
+
+create_lavaan_model <- function(var_list, latent_factor_name = "latent_factor") {
+  # Concatenate variable names with ' + '
+  var_string <- paste(var_list, collapse = " + ")
+  
+  # Construct the model string
+  model_string <- paste(latent_factor_name, "=~", var_string)
+  
+  return(model_string)
+}
+
+
+# Create the model string
+model_string_antagonism <- create_lavaan_model(antagonism_vars_reversed)
+model_string_emotional_stability <- create_lavaan_model(emotional_stability_vars_reversed)
+model_string_disinhibition <- create_lavaan_model(disinhibition_vars_reversed)
+model_string_narcissism <- create_lavaan_model(narcissism_vars_reversed)
+model_string_all_vars <- create_lavaan_model(all_vars)
+# model_string_subscale <- create_lavaan_model(vars_version_2)
+
+
+# Print the model string
+model_string_antagonism
+model_string_emotional_stability
+model_string_disinhibition
+model_string_narcissism
+model_string_all_vars
+# model_string_subscale
+
+
+model_string_antagonism
+model_string_emotional_stability
+model_string_disinhibition
+model_string_narcissism
+# model_string_all_vars
+# model_string_subscale
+
+# Perform CFA on test data for each version
+cfa_antagonism <- suppressWarnings(lavaan::cfa(model_string_antagonism, data = part_dt_antagonism$test))
+
+cfa_emotional_stability <- suppressWarnings(lavaan::cfa(model_string_emotional_stability, data = part_dt_emotional_stability$test))
+
+cfa_emotional_stability <- suppressWarnings(lavaan::cfa(model_string_emotional_stability, data = part_dt_emotional_stability$test))
+
+cfa_disinhibition <- suppressWarnings(lavaan::cfa(model_string_disinhibition, data = part_dt_disinhibition$test))
+
+cfa_emotional_stability <- suppressWarnings(lavaan::cfa(model_string_emotional_stability, data = part_dt_emotional_stability$test))
+
+cfa_narcissism  <- suppressWarnings(lavaan::cfa(model_string_narcissism, data = part_dt_narcissism $test))
+
+# cfa_all_vars <- suppressWarnings(lavaan::cfa(model_string_all_vars, data = part_dt_all_vars$test))
+
+# cfa_subscale_vars <- suppressWarnings(lavaan::cfa(model_string_subscale, data = part_dt_subscale_vars$test))
+
+
+summary(cfa_antagonism, fit.measures = TRUE)
+summary(cfa_emotional_stability, fit.measures = TRUE)
+summary(cfa_disinhibition, fit.measures = TRUE)
+summary(cfa_narcissism, fit.measures = TRUE)
+# summary(cfa_all_vars, fit.measures = TRUE)
+
+
+
+
+# Antagonism:
+#   
+#   Fit Indices: CFI = 0.896, TLI = 0.827, RMSEA = 0.092, SRMR = 0.051.
+# Interpretation: The model shows a marginally acceptable fit with CFI slightly below the preferred threshold. The RMSEA value indicates a poor fit, and the SRMR value suggests an acceptable fit.
+# Emotional Stability:
+#   
+#   Fit Indices: CFI = 0.860, TLI = 0.767, RMSEA = 0.120, SRMR = 0.062.
+# Interpretation: The model demonstrates a poor fit with both CFI and TLI well below the desired levels. The RMSEA value is high, further indicating a poor fit.
+# Disinhibition:
+#   
+#   Fit Indices: CFI = 0.934, TLI = 0.891, RMSEA = 0.060, SRMR = 0.032.
+# Interpretation: The model has a relatively better fit compared to the other constructs, with CFI and TLI nearing acceptable levels. The RMSEA and SRMR values are within acceptable ranges.
+# Narcissism:
+#   
+#   Fit Indices: CFI = 0.618, TLI = 0.363, RMSEA = 0.193, SRMR = 0.113.
+# Interpretation: The model shows a poor fit across all indices. The CFI and TLI are substantially below the acceptable threshold, and the RMSEA is very high.
+# In summary, the Disinhibition construct's model demonstrates the best fit among the four, though it's not entirely within the ideal fit thresholds. The Antagonism and Emotional Stability constructs show a marginally acceptable to poor fit. The Narcissism construct's model, however, indicates a particularly poor fit, suggesting a need for model reevaluation or revision. These interpretations should be contextualized within your theoretical framework and consider potential modifications to the model structure or measurement approach.
+
+fit_antagonism <- fitMeasures(cfa_antagonism)
+fit_emotional_stability <- fitMeasures(cfa_emotional_stability)
+fit_disinhibition <- fitMeasures(cfa_disinhibition)
+fit_narcissism <- fitMeasures(cfa_narcissism)
+fit_all_vars <- fitMeasures(cfa_all_vars)
+fit_subscale_vars <- fitMeasures(cfa_subscale_vars)
 
 
 
 
 
+# data wrangling ----------------------------------------------------------
 
 
 dat_long  <- dat |>
