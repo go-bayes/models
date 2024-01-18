@@ -448,12 +448,14 @@ n_dt_all_vars <- n_factors(dt_all_vars)
 n_dt_subscale_vars <- n_factors(dt_subscale_vars)
 n_dt_all_vars
 
+n_dt_antagonism
+
 # Plot results
 p_factors_antagonism <- plot(n_dt_antagonism) + theme_classic()
 p_factors_emotional_stability <- plot(n_dt_emotional_stability) + theme_classic()
 p_factors_disinhibition <- plot(n_dt_disinhibition) + theme_classic()
 p_factors_narcissism <- plot(n_dt_narcissism) + theme_classic()
-# p_factors_antagonism + p_factors_emotional_stability + p_factors_disinhibition + p_factors_narcissism
+p_factors_antagonism + p_factors_emotional_stability + p_factors_disinhibition + p_factors_narcissism
 
 # Split data for training and testing (for CFA)
 part_dt_antagonism <- data_partition(dt_antagonism, training_proportion = .7, seed = 1234)
