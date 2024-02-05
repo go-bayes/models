@@ -2139,160 +2139,164 @@ null_t2_hours_charity_z
 # contrast volunteering
 
 # calculate contrast volunteering z
-contrast_hours_full_z <- lmtp_contrast(t2_hours_charity_z,ref = null_t2_hours_charity_z, type = "additive")
-contrast_hours_full_z
+contrast_church_volunteer_z <- lmtp_contrast(t2_hours_charity_z,ref = null_t2_hours_charity_z, type = "additive")
+contrast_church_volunteer_z
 
-tab_contrast_hours_z  <- margot_tab_lmtp(contrast_hours_full_z, scale = "RD", new_name = "Volunteering: weekly church >= 1")
-tab_contrast_hours_z
-output_tab_contrast_hours_z<- lmtp_evalue_tab(tab_contrast_hours_z,  delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_hours_z
+
+tab_contrast_church_volunteer_z  <- margot_tab_lmtp(contrast_church_volunteer_z, scale = "RD", new_name = "Volunteering: weekly church >= 1")
+tab_contrast_church_volunteer_z
+output_tab_contrast_church_volunteer_z<- lmtp_evalue_tab(tab_contrast_church_volunteer_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_church_volunteer_z
 
 
 # contrast volunteering raw
-contrast_hours_full <- lmtp_contrast(m_hours_charity,ref = m_hours_charity_null, type = "additive")
-contrast_hours_full
+contrast_church_volunteer_raw <- lmtp_contrast(m_hours_charity,ref = m_hours_charity_null, type = "additive")
+contrast_church_volunteer_raw
 
-tab_contrast_hours_full <- margot_tab_lmtp(contrast_hours_full, scale = "RD", new_name = "Volunteering: weekly church >= 1")
-output_tab_contrast_hours_full <- lmtp_evalue_tab(tab_contrast_hours_full,  delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_hours_full
-tab_contrast_hours_full
+tab_contrast_church_volunteer_raw <- margot_tab_lmtp(contrast_church_volunteer_raw, scale = "RD", new_name = "Volunteering: weekly church >= 1")
+output_tab_contrast_church_volunteer_raw <- lmtp_evalue_tab(tab_contrast_church_volunteer_raw,  delta = 1, sd = sd_volunteer, scale = c("RD"))
+output_tab_contrast_church_volunteer_raw
 
 
 # contrast loss volunteering z
-contrast_t2_hours_charity_z_loss <- lmtp_contrast(m_hours_charity_z_1,ref = null_t2_hours_charity_z, type = "additive")
-contrast_t2_hours_charity_z_loss
+contrast_church_volunteer_loss_z <- lmtp_contrast(m_hours_charity_z_1,ref = null_t2_hours_charity_z, type = "additive")
+contrast_church_volunteer_loss_z
 
-tab_contrast_t2_hours_charity_z_loss<- margot_tab_lmtp(contrast_t2_hours_charity_z_loss, scale = "RD", new_name = "Volunteering: any church lost")
-output_tab_contrast_t2_hours_charity_z_loss <- lmtp_evalue_tab(tab_contrast_t2_hours_charity_z_loss,  delta = 1, sd = sd_volunteer, scale = c("RD"))
-output_tab_contrast_t2_hours_charity_z_loss
+tab_contrast_church_volunteer_loss_z<- margot_tab_lmtp(contrast_church_volunteer_loss_z, scale = "RD", new_name = "Volunteering: any church lost")
+output_tab_contrast_church_volunteer_loss_z <- lmtp_evalue_tab(tab_contrast_church_volunteer_loss_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_church_volunteer_loss_z
 
 sd_donations
 
 
 # contrast loss volunteering raw
-contrast_t2_hours_charity_loss <- lmtp_contrast(m_hours_charity_1,ref = m_hours_charity_null, type = "additive")
-contrast_t2_hours_charity_loss
+contrast_church_volunteer_loss_raw <- lmtp_contrast(m_hours_charity_1,ref = m_hours_charity_null, type = "additive")
+contrast_church_volunteer_loss_raw
 
-tab_contrast_t2_hours_charity_loss<- margot_tab_lmtp(contrast_t2_hours_charity_loss, scale = "RD", new_name = "Volunteering: any church lost")
-output_tab_contrast_t2_hours_charity_loss <- lmtp_evalue_tab(tab_contrast_t2_hours_charity_loss,  delta = 1, sd = sd_volunteer, scale = c("RD"))
-output_tab_contrast_t2_hours_charity_loss
+tab_contrast_church_volunteer_loss_raw<- margot_tab_lmtp(contrast_church_volunteer_loss_raw, scale = "RD", new_name = "Volunteering: any church lost")
+output_tab_contrast_church_volunteer_loss_raw <- lmtp_evalue_tab(tab_contrast_church_volunteer_loss_raw,  delta = 1, sd = sd_volunteer, scale = c("RD"))
+output_tab_contrast_church_volunteer_loss_raw
 
 
-here_save(tab_contrast_t2_hours_charity_loss, 'tab_contrast_t2_hours_charity_loss')
+here_save(output_tab_contrast_church_volunteer_loss_raw, 'output_tab_contrast_church_volunteer_loss_raw')
 
 
 
 # calculate contrast donate z
 
 
-contrast_donate_full_z<- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
-contrast_donate_full_z
+contrast_church_gives_money_z <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
+contrast_church_gives_money_z
 
-tab_contrast_donate_full_z <- margot_tab_lmtp(contrast_donate_full_z, scale = "RD", new_name = "Donations: weekly church >= 1")
-output_tab_contrast_donate_full_z<- lmtp_evalue_tab(tab_contrast_donate_full_z,  delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_donate_full_z
-
-
-
+tab_contrast_church_gives_money_z <- margot_tab_lmtp(contrast_church_gives_money_z, scale = "RD", new_name = "Donations: weekly church >= 1")
+output_tab_contrast_church_gives_money_z<- lmtp_evalue_tab(tab_contrast_church_gives_money_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_church_gives_money_z
 
 # calculate contrast donate raw
 t2_charity_donate <- here_read("t2_charity_donate")
 
-contrast_donate_full<- lmtp_contrast(t2_charity_donate,ref = null_t2_charity_donate, type = "additive")
-contrast_donate_full
+contrast_church_gives_money_raw <- lmtp_contrast(t2_charity_donate,ref = null_t2_charity_donate, type = "additive")
+contrast_church_gives_money_raw
 
-tab_contrast_donate_full <- margot_tab_lmtp(contrast_donate_full, scale = "RD", new_name = "Donations: weekly church >= 1")
-output_tab_contrast_donate_full <- lmtp_evalue_tab(tab_contrast_donate_full,  delta = 1, sd = sd_donations, scale = c("RD"))
-output_tab_contrast_donate_full
+tab_contrast_church_gives_money_raw <- margot_tab_lmtp(contrast_church_gives_money_raw, scale = "RD", new_name = "Donations: weekly church >= 1")
+output_tab_contrast_church_gives_money_raw <- lmtp_evalue_tab(tab_contrast_church_gives_money_raw,  delta = 1, sd = sd_donations, scale = c("RD"))
+output_tab_contrast_church_gives_money_raw
 
 sd_donations
 sd_volunteer
 
 
 # compare:
-
-output_tab_contrast_donate_full_z
-output_tab_contrast_donate_full
+output_tab_contrast_church_gives_money_z
+output_tab_contrast_church_gives_money_raw
 
 0.1397 * sd_donations
 
 ## contrast loss donations z
-contrast_donate_full_z_loss <- lmtp_contrast(t2_charity_donate_z_1,ref = null_t2_charity_donate_z, type = "additive")
-contrast_donate_full_z_loss
+contrast_church_gives_money_loss_z <- lmtp_contrast(t2_charity_donate_z_1,ref = null_t2_charity_donate_z, type = "additive")
+contrast_church_gives_money_loss_z
 
-tab_contrast_donate_full_z_loss <- margot_tab_lmtp(contrast_donate_full_z_loss, scale = "RD", new_name = "Donations: any church lost")
-output_tab_contrast_donate_full_z_loss <- lmtp_evalue_tab(tab_contrast_donate_full_z_loss,  delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_donate_full_z_loss
-output_tab_contrast_donate_full_z_loss
+tab_contrast_church_gives_money_loss_z <- margot_tab_lmtp(contrast_church_gives_money_loss_z, scale = "RD", new_name = "Donations: any church lost")
+output_tab_contrast_church_gives_money_loss_z <- lmtp_evalue_tab(tab_contrast_church_gives_money_loss_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_church_gives_money_loss_z
+output_tab_contrast_church_gives_money_loss_z
 
 ## contrast loss donations raw
-contrast_donate_full_loss <- lmtp_contrast(t2_charity_donate_1,ref = null_t2_charity_donate, type = "additive")
-contrast_donate_full_loss
+contrast_church_gives_money_loss_raw <- lmtp_contrast(t2_charity_donate_1,ref = null_t2_charity_donate, type = "additive")
+contrast_church_gives_money_loss_raw
 
-tab_contrast_donate_full_loss <- margot_tab_lmtp(contrast_donate_full_loss, scale = "RD", new_name = "Donations: any church lost")
-output_tab_contrast_donate_full_loss<- lmtp_evalue_tab(tab_contrast_donate_full_loss,  delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_donate_full_loss
-output_tab_contrast_donate_full_loss
-
-contrast_donate_full_loss
-
-
+tab_contrast_church_gives_money_loss_raw <- margot_tab_lmtp(contrast_church_gives_money_loss_raw, scale = "RD", new_name = "Donations: any church lost")
+output_tab_contrast_church_gives_money_loss_raw <- lmtp_evalue_tab(tab_contrast_church_gives_money_loss_raw,  delta = 1, sd = sd_donations, scale = c("RD"))
+output_tab_contrast_church_gives_money_loss_raw
+output_tab_contrast_church_gives_money_loss_z
 
 
 # TABLES TO SAVE FOR PUB --------------------------------------------------
-tab_contrast_donate_full_z
-# Z score donations
-here_save(tab_contrast_donate_full_z, "tab_contrast_donate_full_z")
-here_save(output_tab_contrast_donate_full_z, "output_tab_contrast_donate_full_z")
 
-# raw score
-here_save(tab_contrast_donate_full, "tab_contrast_donate_full")
-here_save(output_tab_contrast_donate_full, "output_tab_contrast_donate_full")
-tab_contrast_donate_full
+## TABLES 
+output_tab_contrast_church_gives_money_z
+output_tab_contrast_church_volunteer_z
 
-# loss is different
-output_tab_contrast_donate_full_z_loss
-here_save(output_tab_contrast_donate_full_z_loss, "output_tab_contrast_donate_full_z_loss")
-output_tab_contrast_donate_full_z_loss
+output_tab_contrast_church_volunteer_raw
+output_tab_contrast_church_gives_money_raw
 
-### HOURS VOLUNTEERING 
+output_tab_contrast_church_volunteer_loss_z
+output_tab_contrast_church_gives_money_loss_z
 
+output_tab_contrast_church_volunteer_loss_raw
+output_tab_contrast_church_gives_money_loss_raw
 
-# Z score
-output_tab_contrast_hours_z
-tab_contrast_hours_z
+tab_compare_church_prosocial_behaviour_z  <- rbind(output_tab_contrast_church_gives_money_z, output_tab_contrast_church_volunteer_z)
+tab_compare_church_prosocial_behaviour_raw  <- rbind(output_tab_contrast_church_gives_money_raw, output_tab_contrast_church_volunteer_raw)
 
-here_save(output_tab_contrast_hours_z, "output_tab_contrast_hours_z")
-here_save(tab_contrast_hours_z, "tab_contrast_hours_z")
+here_save(tab_compare_church_prosocial_behaviour_z, "tab_compare_church_prosocial_behaviour_z")
+tab_compare_church_prosocial_behaviour_z<- here_read("tab_compare_church_prosocial_behaviour_z")
 
-# raw score
-here_save(output_tab_contrast_hours_full, "output_tab_contrast_hours_full")
-here_save(tab_contrast_hours_full, "tab_contrast_hours_full")
+here_save(tab_compare_church_prosocial_behaviour_raw, "tab_compare_church_prosocial_behaviour_raw")
+tab_compare_church_prosocial_behaviour_raw<- here_read("tab_compare_church_prosocial_behaviour_raw")
 
 
-# loss is different
-here_save(output_tab_contrast_t2_hours_charity_loss, 'output_tab_contrast_t2_hours_charity_loss')
 
-tab_compare_behaviour_loss_raw <- rbind(output_tab_contrast_donate_full_z_loss, output_tab_contrast_donate_full_z_loss)
-here_save(tab_compare_behaviour_loss_raw, 'tab_compare_behaviour_loss_raw')
-tab_compare_behaviour_loss_raw
+output_tab_contrast_church_gives_money_loss_raw
 
+tab_compare_church_LOSS_prosocial_behaviour_z <- rbind(output_tab_contrast_church_gives_money_loss_z, output_tab_contrast_church_volunteer_loss_z)
+tab_compare_church_LOSS_prosocial_behaviour_z
 
-## TABLES FOR LOSS
-tab_compare_behaviour_loss_raw <- rbind(output_tab_contrast_donate_full_loss, output_tab_contrast_t2_hours_charity_loss)
-tab_compare_behaviour_loss_raw
-here_save(tab_compare_behaviour_loss_raw, "tab_compare_behaviour_loss_raw")
+here_save(tab_compare_church_LOSS_prosocial_behaviour_z, "tab_compare_church_LOSS_prosocial_behaviour_z")
+tab_compare_church_LOSS_prosocial_behaviour_z<- here_read("tab_compare_church_LOSS_prosocial_behaviour_z")
 
-
-tab_compare_behaviour_z_loss <- rbind(output_tab_contrast_donate_full_z_loss, output_tab_contrast_t2_hours_charity_z_loss)
-tab_compare_behaviour_z_loss
-
-here_save(tab_compare_behaviour_z_loss, "tab_compare_behaviour_z_loss")
+tab_compare_church_LOSS_prosocial_behaviour_raw <- rbind(output_tab_contrast_church_gives_money_loss_raw, output_tab_contrast_church_volunteer_loss_raw)
+tab_compare_church_LOSS_prosocial_behaviour_raw
 
 
-group_tab_compare_behaviour_z_loss <- group_tab(tab_compare_behaviour_z_loss, type = "RD")
-group_tab_compare_behaviour_z_loss
-here_save(group_tab_compare_behaviour_z_loss, "group_tab_compare_behaviour_z_loss")
+here_save(tab_compare_church_LOSS_prosocial_behaviour_raw, "tab_compare_church_LOSS_prosocial_behaviour_raw")
+tab_compare_church_LOSS_prosocial_behaviour_raw<- here_read("tab_compare_church_LOSS_prosocial_behaviour_raw")
+
+
+group_tab_compare_church_prosocial_behaviour_raw <- group_tab(tab_compare_church_prosocial_behaviour_raw, type = "RD")
+here_save(group_tab_compare_church_prosocial_behaviour_raw, "group_tab_compare_church_prosocial_behaviour_raw")
+group_tab_compare_church_prosocial_behaviour_raw<- here_read("group_tab_compare_church_prosocial_behaviour_raw")
+group_tab_compare_church_prosocial_behaviour_raw
+
+
+group_tab_compare_church_prosocial_behaviour_z <- group_tab(tab_compare_church_prosocial_behaviour_z, type = "RD")
+here_save(group_tab_compare_church_prosocial_behaviour_z, "group_tab_compare_church_prosocial_behaviour_z")
+group_tab_compare_church_prosocial_behaviour_z<- here_read("group_tab_compare_church_prosocial_behaviour_z")
+group_tab_compare_church_prosocial_behaviour_z
+
+
+group_tab_compare_church_LOSS_prosocial_behaviour_z <- group_tab(tab_compare_church_LOSS_prosocial_behaviour_z, type = "RD")
+here_save(group_tab_compare_church_LOSS_prosocial_behaviour_z, "group_tab_compare_church_LOSS_prosocial_behaviour_z")
+group_tab_compare_church_LOSS_prosocial_behaviour_z<- here_read("group_tab_compare_church_LOSS_prosocial_behaviour_z")
+group_tab_compare_church_LOSS_prosocial_behaviour_z
+
+group_tab_compare_church_LOSS_prosocial_behaviour_raw <- group_tab(tab_compare_church_LOSS_prosocial_behaviour_raw, type = "RD")
+here_save(group_tab_compare_church_LOSS_prosocial_behaviour_raw, "group_tab_compare_church_LOSS_prosocial_behaviour_raw")
+group_tab_compare_church_LOSS_prosocial_behaviour_raw<- here_read("group_tab_compare_church_LOSS_prosocial_behaviour_raw")
+group_tab_compare_church_LOSS_prosocial_behaviour_raw
+
+
+output_tab_contrast_church_volunteer_loss_raw
 
 ###
 
@@ -3523,84 +3527,90 @@ m_time_family<- here_read("m_time_family")
 m_time_family_null<- here_read("m_time_family_null")
 
 # community 
-contrast_time_community_church <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
-contrast_time_community_church
+contrast_church_help_received_community_rr <- lmtp_contrast(m_time_community,ref = m_time_community_null, type = "rr")
+contrast_church_help_received_community_rr
 
 
 
-tab_contrast_time_community_church  <- margot_tab_lmtp(contrast_time_community_church, scale = "RR", 
-                                                                    new_name = "Time from Community: weekly church >= 1")
+tab_contrast_church_help_received_community_rr <- margot_tab_lmtp(contrast_church_help_received_community_rr, scale = "RR", 
+                                                                    new_name = "Help from Community: weekly church >= 1")
 
 
-output_tab_contrast_time_community_church <-
+output_tab_contrast_church_help_received_community_rr <-
   lmtp_evalue_tab(
-    tab_contrast_time_community_church,
+    tab_contrast_church_help_received_community_rr,
     delta = 1,
     sd = 1,
     scale = c("RR")
   )
 
 
-output_tab_contrast_time_community_church
+### USE 
+output_tab_contrast_church_help_received_community_rr
 
 
 # friends
-contrast_time_friends_church <- lmtp_contrast(m_time_friends,ref = m_time_friends_null, type = "rr")
-contrast_time_friends_church
+contrast_church_help_received_friends_rr <- lmtp_contrast(m_time_friends,ref = m_time_friends_null, type = "rr")
+contrast_church_help_received_friends_rr
 
 
-tab_contrast_time_friends_church <- margot_tab_lmtp(contrast_time_friends_church, scale = "RR", new_name = "Time from Friends: weekly church >= 1")
-output_tab_contrast_time_friends_church <-
+tab_contrast_church_help_received_friends_rr <- margot_tab_lmtp(contrast_church_help_received_friends_rr, scale = "RR", 
+                                                                new_name = "Help from Friends: weekly church >= 1")
+output_tab_contrast_church_help_received_friends_rr <-
   lmtp_evalue_tab(
-    tab_contrast_time_friends_church,
+    tab_contrast_church_help_received_friends_rr,
     delta = 1,
     sd = 1,
     scale = c("RR")
   )
 
-output_tab_contrast_time_friends_church
+
+## HERE 
+output_tab_contrast_church_help_received_friends_rr
 
 
 
 # family
-contrast_time_family_church <- lmtp_contrast(m_time_family,ref = m_time_family_null, type = "rr")
-contrast_time_family_church
+contrast_church_help_received_family_rr <- lmtp_contrast(m_time_family,ref = m_time_family_null, type = "rr")
+contrast_church_help_received_family_rr
 
 
-tab_contrast_time_family_church <- margot_tab_lmtp(contrast_time_family_church, scale = "RR", new_name = "Time from Family: weekly church >= 1")
-output_tab_contrast_time_family_church <-
+tab_contrast_church_help_received_family_rr <- margot_tab_lmtp(contrast_church_help_received_family_rr, scale = "RR", new_name = "Help from Family: weekly church >= 1")
+output_tab_contrast_church_help_received_family_rr <-
   lmtp_evalue_tab(
-    tab_contrast_time_friends_church,
+    tab_contrast_church_help_received_family_rr,
     delta = 1,
     sd = 1,
     scale = c("RR")
   )
 
+## Here
+output_tab_contrast_church_help_received_family_rr
 
 
 
 # ALERT CHURCH HELP RECEIVED TABLE ----------------------------------------
 
 
-tab_time_church <- rbind(output_tab_contrast_time_family_church,output_tab_contrast_time_friends_church, 
-                         output_tab_contrast_time_community_church)
-tab_time_church
-here_save(tab_time_church, "tab_time_church")
+tab_church_help_received <- rbind(output_tab_contrast_church_help_received_family_rr,output_tab_contrast_church_help_received_friends_rr, 
+                         output_tab_contrast_church_help_received_community_rr)
+tab_church_help_received
+here_save(tab_church_help_received, "tab_church_help_received")
+tab_church_help_received <- here_read('tab_church_help_received')
 
 
 
+group_tab_church_help_received <- group_tab(tab_church_help_received, type = "RR")
 
-group_tab_time_church <- group_tab(tab_time_church, type = "RR")
-
-saveRDS(group_tab_time_church, here::here(push_mods, "group_tab_time_church"))
+saveRDS(group_tab_church_help_received, here::here(push_mods, "group_tab_church_help_received"))
 
 
-group_tab_time_church <- here_read("group_tab_time_church")
+group_tab_church_help_received <- here_read("group_tab_church_help_received")
 
 # graph
 
 plot_group_tab_time_church <- margot_plot(
-  group_tab_time_church,
+  group_tab_church_help_received,
   type = "RR",
   title = "Religious service effect on help received",
   subtitle = ">= 1 x weekly service attendance",
@@ -3634,10 +3644,6 @@ ggsave(
   dpi = 600
 )
 
-#| label: church prejudice model results
-#| echo: false
-#| include: false
-#| eval: false
 
 
 # SOCIALISING COMPARATIVE STUDY -------------------------------------------
@@ -3944,8 +3950,6 @@ here_save(m_charity_donate_null_time, "m_charity_donate_null_time")
 m_charity_donate_null_time <- here_read("m_charity_donate_null_time")
 
 
-
-
 m_charity_donate_time_z <- lmtp_tmle(
   data = df,
   trt = A_2,
@@ -4137,39 +4141,39 @@ m_time_community_null_church <- here_read( "m_time_community_null_time")
 
 
 # SEE BELOW FOR GENUINE CONSTRUCTION SOCIALISING TIME RECEIVED GRAPHS ----------------------------------
-
-## SKIP THIS, REPEATED BELOW
-
-contrast_time_community_full_church <- lmtp_contrast(m_time_community_church,ref = m_time_family_null_church, type = "rr")
-contrast_time_community_full_church
-
-contrast_time_friends_full_church <- lmtp_contrast(m_time_friends_church,ref = m_time_friends_null_church, type = "rr")
-contrast_time_friends_full_church
-
-contrast_time_family_full_church <- lmtp_contrast(m_time_family_church,ref = m_time_family_null_church, type = "rr")
-contrast_time_family_full_church
-
-
-tab_contrast_time_community_full_church <- margot_tab_lmtp(contrast_time_community_full_church, scale = "RR", new_name = "Help from community: hours socialising >= 1.4 hours pw")
-
-tab_contrast_time_community_full_church
-
-
-tab_hours_only_donate_charity_z <- margot_tab_lmtp(contrast_hours_only_donate_full_time_z, 
-                                                   scale = "RD", 
-                                                   new_name = "Donations LMTP: hours socialising >=2 hours pw")
-tab_hours_only_donate_charity_z
-
-output_charity_time <- lmtp_evalue_tab(tab_hours_only_donate_charity_z,  
-                                       delta = 1, sd = 1, scale = c("RD"))
-output_charity_time
-
-tab_charity_time <- rbind(output_volunteering_time,output_charity_time)
-group_tab_charity_time <- group_tab(tab_charity_time, type = "RD")
-group_tab_charity_time
-here_save(group_tab_charity_time,"group_tab_charity_time")
-
-grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full_time,  scale = "RD") 
+# 
+# ## SKIP THIS, REPEATED BELOW
+# 
+# contrast_time_community_full_church <- lmtp_contrast(m_time_community_church,ref = m_time_family_null_church, type = "rr")
+# contrast_time_community_full_church
+# 
+# contrast_time_friends_full_church <- lmtp_contrast(m_time_friends_church,ref = m_time_friends_null_church, type = "rr")
+# contrast_time_friends_full_church
+# 
+# contrast_time_family_full_church <- lmtp_contrast(m_time_family_church,ref = m_time_family_null_church, type = "rr")
+# contrast_time_family_full_church
+# 
+# 
+# tab_contrast_time_community_full_church <- margot_tab_lmtp(contrast_time_community_full_church, scale = "RR", new_name = "Help from community: hours socialising >= 1.4 hours pw")
+# 
+# tab_contrast_time_community_full_church
+# 
+# 
+# tab_hours_only_donate_charity_z <- margot_tab_lmtp(contrast_hours_only_donate_full_time_z, 
+#                                                    scale = "RD", 
+#                                                    new_name = "Donations LMTP: hours socialising >=2 hours pw")
+# tab_hours_only_donate_charity_z
+# 
+# output_charity_time <- lmtp_evalue_tab(tab_hours_only_donate_charity_z,  
+#                                        delta = 1, sd = 1, scale = c("RD"))
+# output_charity_time
+# 
+# tab_charity_time <- rbind(output_volunteering_time,output_charity_time)
+# group_tab_charity_time <- group_tab(tab_charity_time, type = "RD")
+# group_tab_charity_time
+# here_save(group_tab_charity_time,"group_tab_charity_time")
+# 
+# grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full_time,  scale = "RD") 
 
 #  USE THESE CALCULATIONS
 # #sd(df_wide_censored_donate$t2_charity_donate, na.rm=TRUE) * .0175
@@ -4839,261 +4843,18 @@ tab_hours_only_donate_charity
 
 
 
+m_hours_charity_time_raw <- here_read("m_hours_charity_time")
+m_hours_charity_null_time_raw <- here_read( "m_hours_charity_null_time")
 
 m_hours_charity_time_z <- here_read("m_hours_charity_time_z")
 m_hours_charity_null_time_z <- here_read( "m_hours_charity_null_time_z")
 
 
 
-# ALERT: CHARITY SOCIALISING  -------------------------------------------
-
-
-
-# contrast volunteering
-# calculate contrast 
-contrast_volunteer_socialising  <- lmtp_contrast(m_hours_charity_time,
-                                            ref = m_hours_charity_null_time, type = "additive")
-contrast_volunteer_socialising
-
-tab_contrast_volunteer_socialising <- margot_tab_lmtp(contrast_volunteer_socialising, scale = "RD", new_name = "Volunteering LMTP: hours socialising >= 1.4 hours pw")
-
-tab_contrast_volunteer_socialising
-
-output_tab_contrast_volunteer_socialising <- lmtp_evalue_tab(tab_contrast_volunteer_socialising,  
-                                              delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_volunteer_socialising
-
-
-# z scores 
-contrast_hours_full_time_z <- lmtp_contrast(m_hours_charity_time_z,
-                                            ref = m_hours_charity_null_time_z, type = "additive")
-contrast_hours_full_time_z
-
-tab_hours_only_charity_time_z <- margot_tab_lmtp(contrast_hours_full_time_z, scale = "RD", new_name = "Volunteering LMTP: hours socialising >= 1.4 hours pw")
-tab_hours_only_charity_time_z
-
-output_volunteering_time_z <- lmtp_evalue_tab(tab_hours_only_charity_time_z,  
-                                            delta = 1, sd = 1, scale = c("RD"))
-output_volunteering_time_z
-
-
-# charity
-# raw scores 
-m_charity_donate_time <- here_read("m_charity_donate_time")
-m_charity_donate_null_time <- here_read("m_charity_donate_null_time")
-
-contrast_behaviour_charity_giving_from_socialising_raw <- lmtp_contrast(m_charity_donate_time,ref = m_charity_donate_null_time, type = "additive")
-contrast_behaviour_charity_giving_from_socialising_raw
-
-tab_contrast_behaviour_charity_giving_from_socialising_raw <- margot_tab_lmtp(contrast_behaviour_charity_giving_from_socialising_raw, 
-                                                   scale = "RD", 
-                                                   new_name = "Donations LMTP: hours socialising >= 1.4 hours pw")
-
-tab_contrast_behaviour_charity_giving_from_socialising_raw
-
-output_tab_contrast_behaviour_charity_giving_from_socialising_raw <- lmtp_evalue_tab(tab_contrast_behaviour_charity_giving_from_socialising_raw,  
-                                       delta = 1, sd = 1, scale = c("RD"))
-
-
-
-tab_behaviour_charity_socialising_raw <- rbind(output_tab_contrast_behaviour_charity_giving_from_socialising_raw ,output_tab_contrast_volunteer_socialising)
-
-tab_behaviour_charity_socialising_raw
-here_save(tab_behaviour_charity_socialising_raw, "tab_behaviour_charity_socialising_raw")
-
-
-m_charity_donate_time_z <- here_read("m_charity_donate_time_z")
-m_charity_donate_null_time_z <- here_read("m_charity_donate_null_time_z")
-
-contrast_hours_only_donate_full_time_z <- lmtp_contrast(m_charity_donate_time_z,ref = m_charity_donate_null_time_z, type = "additive")
-contrast_hours_only_donate_full_time_z
-
-tab_hours_only_donate_charity_z <- margot_tab_lmtp(contrast_hours_only_donate_full_time_z, 
-                                                   scale = "RD", 
-                                                   new_name = "Donations LMTP: hours socialising >= 1.4 hours pw")
-tab_hours_only_donate_charity_z
-
-output_charity_time <- lmtp_evalue_tab(tab_hours_only_donate_charity_z,  
-                                       delta = 1, sd = 1, scale = c("RD"))
-output_charity_time
-
-tab_charity_time <- rbind(output_volunteering_time,output_charity_time)
-
-here_save(tab_charity_time, "tab_charity_time")
-
-tab_behaviour_socialising_z  <- tab_charity_time
-tab_behaviour_socialising_z
-here_save(tab_behaviour_socialising_z, "tab_behaviour_socialising_z")
-
-
-
-group_tab_charity_time <- group_tab(tab_charity_time, type = "RD")
-group_tab_charity_time
-here_save(group_tab_charity_time,"group_tab_charity_time")
-
-group_tab_behaviour_socialising <- group_tab_charity_time
-here_save(group_tab_behaviour_socialising,"group_tab_behaviour_socialising")
-
-
-group_tab_behaviour_socialising <- here_read("group_tab_behaviour_socialising")
-
-plot_behaviour_socialising<- margot_plot(
-  group_tab_charity_time,
-  type = "RD",
-  title = "Socialising effect on charity",
-  subtitle = ">= 1.4  x weekly hours socialising",
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
-  point_size = .5,
-  title_size = 12,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = -1,
-  x_lim_lo = -1,
-  x_lim_hi =  .5
-)
-
-plot_behaviour_socialising
-
-
-ggsave(
-  plot_behaviour_socialising,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
-  units = "in",
-  filename = "plot_charity_time.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-
-
-# ALERT TABLES TIME RECEIVED SOCIALISING ----------------------------------
-
-
-
-# time given by community 
-m_time_community_time <- here_read("m_time_community_time")
-m_time_community_null_time <- here_read("m_time_community_null_time")
-
-hours_only_contrast_time_commmunity_full <- lmtp_contrast(m_time_community_time,ref = m_time_community_null_time, type = "rr")
-hours_only_contrast_time_commmunity_full
-
-
-tab_hours_only_time_community  <- margot_tab_lmtp(hours_only_contrast_time_commmunity_full, scale = "RR", new_name = "Community time LMTP: hours socialising >= 1.4 hours pw")
-
-tab_hours_only_time_community
-
-
-output_hours_only_time_community <-
-  lmtp_evalue_tab(
-    tab_hours_only_time_community,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-output_hours_only_time_community
-
-
-# time given by friends 
-m_time_friends_time <- here_read("m_time_friends_time")
-m_time_friends_null_time <- here_read("m_time_friends_null_time")
-
-contrast_hours_only_friends_full <- lmtp_contrast(m_time_friends_time,ref = m_time_friends_null_time, type = "rr")
-contrast_hours_only_friends_full
-
-tab_hours_only_time_friends  <- margot_tab_lmtp(contrast_hours_only_friends_full, scale = "RR", 
-                                                new_name = "Friends LMTP: hours socialising >= 1.4 hours pw")
-
-tab_hours_only_time_friends
-
-output_hours_only_time_friends <-
-  lmtp_evalue_tab(
-    tab_hours_only_time_friends,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-output_hours_only_time_friends
-
-
-m_time_family_time <- here_read("m_time_family_time")
-m_time_family_null_time <- here_read("m_time_family_null_time")
-
-contrast_hours_only_time_family_full <- lmtp_contrast(m_time_family_time,ref = m_time_family_null_time, type = "rr")
-contrast_hours_only_time_family_full
-
-tab_contrast_hours_only_time_family_full  <- margot_tab_lmtp(contrast_hours_only_time_family_full, scale = "RR", new_name = "Family time LMTP: hours socialising >= 1.4 hours pw")
-
-tab_contrast_hours_only_time_family_full
-output_hours_only_time_family <-
-  lmtp_evalue_tab(
-    tab_contrast_hours_only_time_family_full,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-output_hours_only_time_family
-output_hours_only_time_community
-
-tab_hours_only_help_received <- rbind( output_hours_only_time_community, output_hours_only_time_friends, output_hours_only_time_family ) 
-tab_hours_only_help_received
-here_save(tab_hours_only_help_received, "tab_hours_only_help_received")
-
-
-group_tab_help_time <- group_tab(tab_hours_only_help_received, type = "RR")
-
-saveRDS(group_tab_help_time, here::here(push_mods, "group_tab_help_time"))
-
-
-group_tab_help_time <- here_read("group_tab_help_time")
-
-plot_help_time <- margot_plot(
-  group_tab_help_time,
-  type = "RR",
-  title = "Socialising effect on help recieved",
-  subtitle = ">= 1.4  x weekly hours socialising",
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
-  point_size = .5,
-  title_size = 12,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = 0,
-  x_lim_lo = 0,
-  x_lim_hi =  2
-)
-
-plot_help_time
-ggsave(
-  plot_help_time,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
-  units = "in",
-  filename = "plot_help_time.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
 
 # Results -----------------------------------------------------------------
 
 #sqrt(2)
-
-
 # asians
 m_church_t2_warm_asians_z_time<- here_read("m_church_t2_warm_asians_z_time")
 null_m_church_t2_warm_asians_z_time<- here_read("null_m_church_t2_warm_asians_z_time")
@@ -5471,6 +5232,275 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
+
+
+# ALERT: CHARITY SOCIALISING  -------------------------------------------
+
+
+
+# contrasts socialising time  ---------------------------------------------
+socializing_volunteer_raw  <- here_read("m_hours_charity_time")
+socializing_volunteer_null_raw  <- here_read( "m_hours_charity_null_time")
+
+socializing_volunteer_z<- here_read("m_hours_charity_time_z")
+socializing_volunteer_null_z <-here_read('m_hours_charity_null_time_z')
+
+socializing_donations_raw
+
+socializing_donations_raw <- here_read("m_charity_donate_time")
+socializing_donations_null_raw <- here_read("m_charity_donate_null_time")
+socializing_donations_z <- here_read("m_charity_donate_time_z")
+socializing_donations_null_z <- here_read("m_charity_donate_null_time_z")
+
+
+
+
+# donations
+contrast_socializing_donations_raw <- lmtp_contrast(socializing_donations_raw,
+                                            ref = socializing_donations_null_raw, type = "additive")
+contrast_socializing_donations_raw
+
+tab_contrast_socializing_donations_raw <- margot_tab_lmtp(contrast_socializing_donations_raw, scale = "RD", new_name = "Donations: socialising >= 1.4 hours pw")
+
+tab_contrast_socializing_donations_raw
+
+output_tab_contrast_socializing_donations_raw <- lmtp_evalue_tab(tab_contrast_socializing_donations_raw,  
+                                              delta = 1, sd = sd_donations, scale = c("RD"))
+
+# HERE
+output_tab_contrast_socializing_donations_raw
+
+
+# donations
+contrast_socializing_donations_z <- lmtp_contrast(socializing_donations_z,
+                                                    ref = socializing_donations_null_z, type = "additive")
+contrast_socializing_donations_z
+
+tab_contrast_socializing_donations_z <- margot_tab_lmtp(contrast_socializing_donations_z, scale = "RD", new_name = "Donations: socialising >= 1.4 hours pw")
+
+tab_contrast_socializing_donations_z
+
+output_tab_contrast_socializing_donations_z <- lmtp_evalue_tab(tab_contrast_socializing_donations_z,  
+                                                                 delta = 1, sd = 1, scale = c("RD"))
+
+# HERE
+output_tab_contrast_socializing_donations_z
+output_tab_contrast_socializing_donations_raw
+
+
+# z scores 
+contrast_socializing_volunteer_z <- lmtp_contrast(socializing_volunteer_z,
+                                            ref = socializing_volunteer_null_z, type = "additive")
+contrast_socializing_volunteer_z
+
+tab_contrast_socializing_volunteer_z<- margot_tab_lmtp(contrast_socializing_volunteer_z, scale = "RD", new_name = "Volunteering: socialising >= 1.4 hours pw")
+tab_contrast_socializing_volunteer_z
+
+output_tab_contrast_socializing_volunteer_z <- lmtp_evalue_tab(tab_contrast_socializing_volunteer_z,  
+                                            delta = 1, sd = 1, scale = c("RD"))
+
+
+#HERE 
+output_tab_contrast_socializing_volunteer_z
+
+
+
+# raw
+contrast_socializing_volunteer_raw <- lmtp_contrast(socializing_volunteer_raw,
+                                                  ref = m_hours_charity_null_time_raw, type = "additive")
+contrast_socializing_volunteer_raw
+
+tab_contrast_socializing_volunteer_raw<- margot_tab_lmtp(contrast_socializing_volunteer_raw, scale = "RD", new_name = "Volunteering: socialising >= 1.4 hours pw")
+tab_contrast_socializing_volunteer_raw
+
+output_tab_contrast_socializing_volunteer_raw <- lmtp_evalue_tab(tab_contrast_socializing_volunteer_raw,  
+                                                               delta = 1, sd = sd_volunteer, scale = c("RD"))
+
+
+### HERE
+output_tab_contrast_socializing_volunteer_z
+output_tab_contrast_socializing_volunteer_raw
+
+
+
+
+tab_socializing_prosocial_behaviour_raw <- rbind(output_tab_contrast_socializing_donations_raw ,output_tab_contrast_socializing_volunteer_raw)
+here_save(tab_socializing_prosocial_behaviour_raw, "tab_socializing_prosocial_behaviour_raw")
+tab_socializing_prosocial_behaviour_raw<- here_read("tab_socializing_prosocial_behaviour_raw")
+
+
+tab_socializing_prosocial_behaviour_z <- rbind(output_tab_contrast_socializing_donations_z,output_tab_contrast_socializing_volunteer_z)
+here_save(tab_socializing_prosocial_behaviour_z, "tab_socializing_prosocial_behaviour_z")
+tab_socializing_prosocial_behaviour_z<- here_read("tab_socializing_prosocial_behaviour_z")
+
+
+
+group_tab_socializing_prosocial_behaviour_raw <- group_tab(tab_socializing_prosocial_behaviour_raw, type = "RD")
+here_save(group_tab_socializing_prosocial_behaviour_raw, "group_tab_socializing_prosocial_behaviour_raw")
+group_tab_socializing_prosocial_behaviour_raw<- here_read("group_tab_socializing_prosocial_behaviour_raw")
+
+
+group_tab_socializing_prosocial_behaviour_z <- group_tab(tab_socializing_prosocial_behaviour_z, type = "RD")
+here_save(group_tab_socializing_prosocial_behaviour_z, "group_tab_socializing_prosocial_behaviour_z")
+group_tab_socializing_prosocial_behaviour_z<- here_read("group_tab_socializing_prosocial_behaviour_z")
+
+
+
+plot_behaviour_socialising<- margot_plot(
+  group_tab_charity_time,
+  type = "RD",
+  title = "Socialising effect on charity",
+  subtitle = ">= 1.4  x weekly hours socialising",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+
+plot_behaviour_socialising
+
+
+ggsave(
+  plot_behaviour_socialising,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_charity_time.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+
+# ALERT SOCiALISING HELP FROM OTHERS ----------------------------------
+
+socializing_help_from_family_rr  <- here_read( "m_time_family_time")
+socializing_help_from_family_null_rr <- here_read( "m_time_family_null_time")
+socializing_help_from_friends_rr<- here_read( "m_time_friends_time")
+socializing_help_from_friends_null_rr <- here_read( "m_time_friends_null_time")
+socializing_help_from_community_rr<- here_read( "m_time_community_time")
+socializing_help_from_community_null_rr <- here_read( "m_time_community_null_time")
+
+
+
+contrast_socializing_help_from_family_rr <- lmtp_contrast(socializing_help_from_family_rr,ref = socializing_help_from_family_null_rr, type = "rr")
+contrast_socializing_help_from_family_rr
+
+
+tab_contrast_socializing_help_from_family_rr <- margot_tab_lmtp(contrast_socializing_help_from_family_rr, scale = "RR", 
+                                                                      new_name = "Help from Family: socialising >= 1.4 hours pw")
+
+tab_contrast_socializing_help_from_family_rr
+
+
+output_tab_contrast_socializing_help_from_family_rr <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_family_rr,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+
+# HERE
+output_tab_contrast_socializing_help_from_family_rr
+
+### FRIENDS
+
+contrast_socializing_help_from_friends_rr <- lmtp_contrast(socializing_help_from_friends_rr,ref = socializing_help_from_friends_null_rr, type = "rr")
+contrast_socializing_help_from_friends_rr
+
+tab_contrast_socializing_help_from_friends_rr  <- margot_tab_lmtp(contrast_socializing_help_from_friends_rr, scale = "RR", 
+                                                                  new_name = "Help from Friends: socialising >= 1.4 hours pw")
+
+tab_contrast_socializing_help_from_friends_rr
+
+output_tab_contrast_socializing_help_from_friends_rr <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_friends_rr,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_friends_rr
+
+
+
+## COMMUNITY
+
+contrast_socializing_help_from_community_rr <- lmtp_contrast(socializing_help_from_community_rr,ref = socializing_help_from_community_null_rr, type = "rr")
+contrast_socializing_help_from_community_rr
+
+tab_contrast_socializing_help_from_community_rr  <- margot_tab_lmtp(contrast_socializing_help_from_community_rr, scale = "RR", 
+                                                             new_name = "Help from Community: socialising >= 1.4 hours pw")
+
+tab_contrast_socializing_help_from_community_rr
+output_tab_contrast_socializing_help_from_community_rr <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_community_rr,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_community_rr
+output_tab_contrast_socializing_help_from_community_rr
+
+tab_hours_only_help_received <- rbind( output_hours_only_time_community, output_hours_only_time_friends, output_hours_only_time_family ) 
+tab_hours_only_help_received
+here_save(tab_hours_only_help_received, "tab_hours_only_help_received")
+
+
+group_tab_help_time <- group_tab(tab_hours_only_help_received, type = "RR")
+
+saveRDS(group_tab_help_time, here::here(push_mods, "group_tab_help_time"))
+
+
+group_tab_help_time <- here_read("group_tab_help_time")
+
+plot_help_time <- margot_plot(
+  group_tab_help_time,
+  type = "RR",
+  title = "Socialising effect on help recieved",
+  subtitle = ">= 1.4  x weekly hours socialising",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  2
+)
+
+plot_help_time
+ggsave(
+  plot_help_time,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_help_time.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
 
 
 # omni-plot ---------------------------------------------------------------
