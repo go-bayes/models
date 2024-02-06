@@ -3910,7 +3910,7 @@ m_hours_charity_null_time <- here_read( "m_hours_charity_null_time")
 m_hours_charity_null_time
 
 
-m_socialising_on_donate_loss_raw <- lmtp_tmle(
+m_socialising_on_volunteer_loss_raw <- lmtp_tmle(
   data = df,
   trt = A_2,
   baseline = names_base,
@@ -3926,11 +3926,10 @@ m_socialising_on_donate_loss_raw <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores 
 )
-here_save(m_socialising_on_donate_loss_raw,"m_socialising_on_donate_loss_raw")
-m_socialising_on_donate_loss_raw <-here_read("m_socialising_on_donate_loss_raw")
+here_save(m_socialising_on_volunteer_loss_raw,"m_socialising_on_volunteer_loss_raw")
+m_socialising_on_volunteer_loss_raw
 
-
-m_socialising_on_donate_loss_z <- lmtp_tmle(
+m_socialising_on_volunteer_loss_z <- lmtp_tmle(
   data = df,
   trt = A_2,
   baseline = names_base,
@@ -3946,8 +3945,8 @@ m_socialising_on_donate_loss_z <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores 
 )
-here_save(m_socialising_on_donate_loss_z,"m_socialising_on_donate_loss_z")
-m_socialising_on_donate_loss_z <-here_read("m_socialising_on_donate_loss_z")
+here_save(m_socialising_on_volunteer_loss_z,"m_socialising_on_volunteer_loss_z")
+m_socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_loss_z")
 
 
 # caluclate contrast 
@@ -3979,47 +3978,6 @@ m_hours_charity_time_z <- lmtp_tmle(
 m_hours_charity_time_z
 here_save(m_hours_charity_time_z, "m_hours_charity_time_z")
 m_hours_charity_time_z <- here_read("m_hours_charity_time_z")
-
-m_socialising_on_volunteer_loss_z <- lmtp_tmle(
-  data = df,
-  trt = A_2,
-  baseline = names_base,
-  outcome = "t2_hours_charity_z",
-  cens = C,
-  shift = f_s_loss,
-  mtp = TRUE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  outcome_type = "continuous",
-  weights = df$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
-)
-m_socialising_on_volunteer_loss_z
-here_save(m_socialising_on_volunteer_loss_z, "m_socialising_on_volunteer_loss_z")
-m_socialising_on_volunteer_loss_z <- here_read("m_socialising_on_volunteer_loss_z")
-
-
-m_socialising_on_volunteer_loss_raw <- lmtp_tmle(
-  data = df,
-  trt = A_2,
-  baseline = names_base,
-  outcome = "t2_hours_charity",
-  cens = C,
-  shift = f_s_loss,
-  mtp = TRUE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  outcome_type = "continuous",
-  weights = df$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores 
-)
-m_socialising_on_volunteer_loss_raw
-here_save(m_socialising_on_volunteer_loss_raw, "m_socialising_on_volunteer_loss_raw")
-m_socialising_on_volunteer_loss_raw <- here_read("m_socialising_on_volunteer_loss_raw")
 
 
 
@@ -4098,6 +4056,27 @@ m_charity_donate_null_time <- lmtp_tmle(
 
 here_save(m_charity_donate_null_time, "m_charity_donate_null_time")
 m_charity_donate_null_time <- here_read("m_charity_donate_null_time")
+
+
+m_socialising_on_donate_loss_raw <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_charity_donate",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores  
+)
+here_save(m_socialising_on_donate_loss_raw, "m_socialising_on_donate_loss_raw")
+m_socialising_on_donate_loss_raw <- here_read("m_socialising_on_donate_loss_raw")
+m_socialising_on_donate_loss_raw
+
 
 
 m_charity_donate_time_z <- lmtp_tmle(
@@ -5391,16 +5370,20 @@ ggsave(
 # contrasts socialising time  ---------------------------------------------
 socializing_volunteer_raw  <- here_read("m_hours_charity_time")
 socializing_volunteer_null_raw  <- here_read( "m_hours_charity_null_time")
+socialising_on_volunteer_loss_raw <-here_read("m_socialising_on_volunteer_loss_raw")
+socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_loss_z") # NOT RUN because no effect
+socialising_on_volunteer_loss_raw
 
 socializing_volunteer_z<- here_read("m_hours_charity_time_z")
 socializing_volunteer_null_z <-here_read('m_hours_charity_null_time_z')
 
-socializing_donations_raw
-
 socializing_donations_raw <- here_read("m_charity_donate_time")
 socializing_donations_null_raw <- here_read("m_charity_donate_null_time")
 socializing_donations_z <- here_read("m_charity_donate_time_z")
-socializing_donations_null_z <- here_read("m_charity_donate_null_time_z")
+socializing_donations_null_z <- here_read("m_charity_donate_null_time_z"). # NOT RUN because no effect
+
+socialising_on_donate_loss_raw <-here_read("m_socialising_on_donate_loss_raw")
+socialising_on_donate_loss_z <-here_read("socialising_on_donate_loss_z")
 
 
 
@@ -5419,6 +5402,28 @@ output_tab_contrast_socializing_donations_raw <- lmtp_evalue_tab(tab_contrast_so
 
 # HERE
 output_tab_contrast_socializing_donations_raw
+
+
+# loss on donation
+
+contrast_socializing_donations_LOSS_raw <- lmtp_contrast(socialising_on_donate_loss_raw,
+                                                    ref = socializing_donations_null_raw, type = "additive")
+contrast_socializing_donations_LOSS_raw
+
+tab_contrast_socializing_donations_LOSS_raw <- margot_tab_lmtp(contrast_socializing_donations_LOSS_raw, scale = "RD", new_name = "Donations: lost all socialising")
+
+tab_contrast_socializing_donations_LOSS_raw
+
+output_tab_contrast_socializing_donations_LOSS_raw<- lmtp_evalue_tab(tab_contrast_socializing_donations_LOSS_raw,  
+                                                                 delta = 1, sd = sd_donations, scale = c("RD"))
+tab_contrast_socializing_donations_LOSS_raw
+output_tab_contrast_socializing_donations_LOSS_raw
+
+here_save(output_tab_contrast_socializing_donations_LOSS_raw, "output_tab_contrast_socializing_donations_LOSS_raw")
+
+# HERE
+output_tab_contrast_socializing_donations_LOSS_raw
+
 
 
 # donations
@@ -5466,6 +5471,22 @@ tab_contrast_socializing_volunteer_raw
 output_tab_contrast_socializing_volunteer_raw <- lmtp_evalue_tab(tab_contrast_socializing_volunteer_raw,  
                                                                delta = 1, sd = sd_volunteer, scale = c("RD"))
 
+# LOSS RAW
+
+
+contrast_socializing_volunteer_LOSS_raw <- lmtp_contrast(socialising_on_volunteer_loss_raw,
+                                                    ref = socializing_volunteer_null_raw, type = "additive")
+contrast_socializing_volunteer_LOSS_raw
+
+
+tab_contrast_socializing_volunteer_LOSS_raw<- margot_tab_lmtp(contrast_socializing_volunteer_LOSS_raw, scale = "RD", new_name = "Volunteering: lost all socialising")
+tab_contrast_socializing_volunteer_LOSS_raw
+
+output_tab_contrast_socializing_volunteer_LOSS_raw <- lmtp_evalue_tab(tab_contrast_socializing_volunteer_LOSS_raw,  
+                                                                 delta = 1, sd = sd_volunteer, scale = c("RD"))
+
+## HERE
+output_tab_contrast_socializing_volunteer_LOSS_raw
 
 ### HERE
 output_tab_contrast_socializing_volunteer_z

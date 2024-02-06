@@ -644,12 +644,12 @@ mutate(
 
 
 # check sample 
-N_participants <-n_unique(dat_long$id) #34764 
-N_participants
+n_participants <-n_unique(dat_long$id) #34764 
+n_participants
 
 
 # save for paper
-here_save(N_participants, "N_participants")
+here_save(n_participants, "n_participants")
 
 # factors 
 #
@@ -2921,24 +2921,24 @@ names_base_t2_gratitude_z
 
 
 ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-t2_gratitude_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_gratitude_z,
-  outcome = "t2_gratitude_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_gratitude_z
-here_save(t2_gratitude_z, "t2_gratitude_z")
+# t2_gratitude_z <- lmtp_tmle(
+#   data = df_clean,
+#   trt = A,
+#   baseline = names_base_t2_gratitude_z,
+#   outcome = "t2_gratitude_z",
+#   cens = C,
+#   shift = f,
+#   mtp = TRUE,
+#   folds = 5,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib,
+#   parallel = n_cores
+# )
+# 
+# t2_gratitude_z
+# here_save(t2_gratitude_z, "t2_gratitude_z")
 
 
 # ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
