@@ -505,35 +505,46 @@ dat_long$wave
 
 dt_positivity_full <- dat_long|>
   filter(wave == 2018 | wave == 2019) |> 
-  select(wave, id, religion_church_round, sample_weights) 
-
-
-
+  select(wave, id, religion_church_round, sample_weights) |> 
+  mutate(religion_church_shift = ifelse(religion_church_round >=4, 1, 0))
 
 
 
 # create transition matrix
 out <- msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
 
-out
+out_church_2 <- msm::statetable.msm(religion_church_shift, id, data = dt_positivity_full)
 
-#t_tab_cats_labels <- c("No Cats", "Cats")
+out
+out_church_2
+
+t_tab_2_labels <- c("< weekly", ">= weekly")
 # transition table
 
-transition_table  <- transition_table(out
+transition_table  <- transition_table_2(out
                                       #state_names = t_tab_cats_labels
                                       )
 transition_table
-
 # for import later 
 here_save(transition_table, "transition_table")
 
+transition_table_out_church_2 <- transition_table_2(out_church_2,
+                                        state_names = t_tab_2_labels
+)
+
+transition_table_out_church_2
+
+# for import later 
+here_save(transition_table_out_church_2, "transition_table_out_church_2")
+transition_table_out_church_2 <- here_read("transition_table_out_church_2")
 
 # Transition hours
 dt_positivity_full_socialising <- dat_long|>
   filter(wave == 2018 | wave == 2019) |> 
   select(wave, id, hours_community_sqrt_round, sample_weights) |> 
-  mutate(hours_community_sqrt_round = round(hours_community_sqrt_round,digits = 0))
+  mutate(hours_community_sqrt_round = round(hours_community_sqrt_round,digits = 0)) |> 
+  mutate(hours_community_sqrt_round_shift = ifelse(hours_community_sqrt_round >=2, 1, 0))
+
 
 # create transition matrix
 out_social <- msm::statetable.msm(hours_community_sqrt_round, id, data = dt_positivity_full_socialising)
@@ -542,9 +553,23 @@ out_social
 
 #t_tab_cats_labels <- c("No Cats", "Cats")
 # transition table
-transition_table_socialising  <- transition_table(out_social)
+transition_table_socialising  <- transition_table_2(out_social)
 transition_table_socialising
 here_save(transition_table_socialising, "transition_table_socialising")
+
+out_shift_social <- msm::statetable.msm(hours_community_sqrt_round_shift, id, data = dt_positivity_full_socialising)
+
+out_shift_social
+
+t_tab_2_social_labels <- c("< 1.4 weekly hours", ">= 1.4 weekly hours")
+# transition table
+
+transition_table_socialising_shift  <- transition_table_2(out_shift_social,
+                                        state_names = t_tab_2_social_labels
+)
+
+transition_table_socialising_shift
+here_save(transition_table_socialising_shift, "transition_table_socialising_shift")
 
 
 # double check path
@@ -559,7 +584,7 @@ colnames(dat)
 dt_outcome <- dat_long|>
   filter(wave == 2020) 
 
-
+dt_outcome$religion_church_round
 mean_donations <- mean(dt_outcome$charity_donate, na.rm = TRUE)
 mean_volunteer <- mean(dt_outcome$hours_charity, na.rm = TRUE)
 
@@ -575,59 +600,32 @@ sd_donations
 sd_volunteer
 
 
-
-# check association only 
-summary( lm( charity_donate ~ religion_church_round, data = dat_long) )
-summary( lm( hours_charity ~ religion_church_round, data = dat_long) )
-
-
 #
 baseline_vars = c(
   "male",
   "age",
   "education_level_coarsen",
-  # factors
   "eth_cat",
-  #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-  # "employed", # Are you currently employed? (this includes self-employment or casual work)
-  # "gen_cohort", #age
-  # "bigger_doms", religious denomination
   "sample_origin",
   "nz_dep2018",
   "nzsei13",
   "total_siblings_factor",
   "born_nz",
-  # added
   "hlth_disability",
-  # added
-  "hlth_bmi", # bmi
-  # "pwi", # pwi
+  "hlth_bmi", 
   "kessler6_sum",
-  # "support", #soc support
-  #  "belong", # social belonging
-  # "smoker", # smoker
-  "sfhealth", #
-  # "alcohol_frequency", measured with error
-  # "alcohol_intensity",
+  "sfhealth", 
   "hours_family_sqrt_round",
   "hours_friends_sqrt_round",
   "hours_community_sqrt_round",
-  # "lifemeaning",
   "household_inc_log",
-  # added: measured with error but OK for imputations
   "partner",
-  # "parent",  # newly changed - have information in child number
   "political_conservative",
-  #Please rate how politically liberal versus conservative you see yourself as being.
-  # Sample origin names combined
   "urban",
   "children_num",
   "hours_children_log",
-  # new
   "hours_work_log",
-  # new
   "hours_housework_log",
-  #new
   "hours_exercise_log",
   "agreeableness",
   "conscientiousness",
@@ -636,20 +634,7 @@ baseline_vars = c(
   "openness",
   "neuroticism",
   "modesty",
-  # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
-  # "religion_religious", # Do you identify with a religion and/or spiritual group?
-  # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
   "religion_church_round",
-  #  for prediction
-  # "religion_religious", # perfectly colinear
-  # "religion_spiritual_identification",
-  #  "religion_identification_level",
-  #  "religion_religious",
-  #  "religion_church_binary",
-  #  "religion_prayer_binary",
-  #  "religion_scripture_binary",
-  #  "religion_believe_god",
-  # "religion_believe_spirit",
   "sample_weights",
   "alert_level_combined_lead"
 )
@@ -697,6 +682,83 @@ outcome_vars = c(
   # "support_rnoguidance"
   # #There is no one I can turn to for guidance in times of stress.
 )
+
+
+# check associations only -------------------------------------------------
+
+
+
+dt_18 <- dat_long|>
+  filter(wave == 2018) 
+
+# check association only 
+summary( lm( charity_donate ~ religion_church_round, data = dt_18) )
+summary( lm( hours_charity ~ religion_church_round, data = dt_18) )
+
+
+summary( lm( charity_donate ~ hours_community_sqrt_round, data = dt_18) )
+summary( lm( hours_charity ~ hours_community_sqrt_round, data = dt_18) )
+
+
+# Ensure you have a character vector of baseline variable names. For example:
+baseline_vars_2 <- c(
+  "male", "age", "education_level_coarsen", "eth_cat", "sample_origin", "nz_dep2018", "nzsei13",
+  "total_siblings_factor", "born_nz", "hlth_disability", "hlth_bmi", "kessler6_sum", "sfhealth",
+  "hours_family_sqrt_round", "hours_friends_sqrt_round", "hours_community_sqrt_round", "household_inc_log",
+  "partner", "political_conservative", "urban", "children_num", "hours_children_log", "hours_work_log",
+  "hours_housework_log", "hours_exercise_log", "agreeableness", "conscientiousness", "extraversion",
+  "honesty_humility", "openness", "neuroticism", "sample_weights"
+  # outcome or exposure.
+)
+
+# baseline_vars_2 <- c(
+#   "male", "age", "education_level_coarsen", "eth_cat", "sample_origin", "nz_dep2018", "nzsei13",
+#   "total_siblings_factor", "born_nz", "hlth_disability", "hlth_bmi", "kessler6_sum", "sfhealth", "household_inc_log",
+#   "partner", "political_conservative", "urban", "children_num", "hours_children_log", "hours_work_log",
+#   "hours_housework_log", "hours_exercise_log", "agreeableness", "conscientiousness", "extraversion",
+#   "honesty_humility", "openness", "neuroticism"
+#   # outcome or exposure.
+# )
+
+
+# Then, call the function without quotes around `baseline_vars`:
+fit_church_on_donate <- regress_with_covariates(dt_18, outcome = "charity_donate", 
+                                                exposure = "religion_church_round", 
+                                                baseline_vars=baseline_vars_2)
+parameters::model_parameters( fit_church_on_donate)[2,]
+
+fit_church_on_volunteer <- regress_with_covariates(dt_18, outcome = "hours_charity", 
+                                                exposure = "religion_church_round", 
+                                                baseline_vars= baseline_vars_2)
+parameters::model_parameters( fit_church_on_volunteer)[2,]
+
+
+# Then, call the function without quotes around `baseline_vars`:
+fit_socialising_on_donate <- regress_with_covariates(dt_18, outcome = "charity_donate", 
+                                                exposure = "hours_community_sqrt_round", 
+                                                baseline_vars=baseline_vars_2)
+
+parameters::model_parameters( fit_socialising_on_donate)[2,]
+
+
+fit_socialising_on_volunteer <- regress_with_covariates(dt_18, outcome = "hours_charity", 
+                                                   exposure = "hours_community_sqrt_round", 
+                                                   baseline_vars= baseline_vars_2)[2,]
+parameters::model_parameters( fit_church_on_volunteer)[2,]
+
+
+here_save(fit_church_on_donate, "fit_church_on_donate")
+fit_church_on_donate <-here_read("fit_church_on_donate")
+
+here_save(fit_church_on_volunteer, "fit_church_on_volunteer")
+fit_church_on_volunteer <-here_read("fit_church_on_volunteer")
+
+
+here_save(fit_socialising_on_donate, "fit_socialising_on_donate")
+fit_socialising_on_donate<-here_read("fit_socialising_on_donate")
+
+here_save(fit_socialising_on_volunteer, "fit_socialising_on_volunteer")
+fit_socialising_on_volunteer <-here_read("fit_socialising_on_volunteer")
 
 
 
@@ -3772,6 +3834,11 @@ f_s <- function(data, trt){
   ifelse( data[[trt]] <=2, 2,  data[[trt]] )
 }
 
+# simple shift,2 hours per week. 
+f_s_loss <- function(data, trt){
+  ifelse( data[[trt]] >0, 0,  data[[trt]] )
+}
+
 # f_1 <- function (data, trt) data[[trt]] + 1
 
 # Create a vector indicating what algorithms should be R. # used in the SuperLearner 
@@ -3794,7 +3861,7 @@ progressr::handlers(global = TRUE)
 
 # recomend tmle for single time point
 # recommend sdr for multiple time points
-f
+f_s_loss
 A
 C
 
@@ -3841,6 +3908,48 @@ m_hours_charity_null_time
 here_save(m_hours_charity_null_time, "m_hours_charity_null_time")
 m_hours_charity_null_time <- here_read( "m_hours_charity_null_time")
 m_hours_charity_null_time
+
+
+m_socialising_on_donate_loss_raw <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_hours_charity",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "continuous",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+here_save(m_socialising_on_donate_loss_raw,"m_socialising_on_donate_loss_raw")
+m_socialising_on_donate_loss_raw <-here_read("m_socialising_on_donate_loss_raw")
+
+
+m_socialising_on_donate_loss_z <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_hours_charity_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "continuous",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+here_save(m_socialising_on_donate_loss_z,"m_socialising_on_donate_loss_z")
+m_socialising_on_donate_loss_z <-here_read("m_socialising_on_donate_loss_z")
+
+
 # caluclate contrast 
 contrast_hours_full_time <- lmtp_contrast(m_hours_charity_time,ref = m_hours_charity_null_time, type = "additive")
 str(contrast_hours_full_time)
@@ -3870,6 +3979,47 @@ m_hours_charity_time_z <- lmtp_tmle(
 m_hours_charity_time_z
 here_save(m_hours_charity_time_z, "m_hours_charity_time_z")
 m_hours_charity_time_z <- here_read("m_hours_charity_time_z")
+
+m_socialising_on_volunteer_loss_z <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_hours_charity_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "continuous",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+m_socialising_on_volunteer_loss_z
+here_save(m_socialising_on_volunteer_loss_z, "m_socialising_on_volunteer_loss_z")
+m_socialising_on_volunteer_loss_z <- here_read("m_socialising_on_volunteer_loss_z")
+
+
+m_socialising_on_volunteer_loss_raw <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_hours_charity",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "continuous",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+m_socialising_on_volunteer_loss_raw
+here_save(m_socialising_on_volunteer_loss_raw, "m_socialising_on_volunteer_loss_raw")
+m_socialising_on_volunteer_loss_raw <- here_read("m_socialising_on_volunteer_loss_raw")
 
 
 
@@ -5346,8 +5496,8 @@ group_tab_socializing_prosocial_behaviour_z<- here_read("group_tab_socializing_p
 
 
 
-plot_behaviour_socialising<- margot_plot(
-  group_tab_charity_time,
+plot_socializing_prosocial<- margot_plot(
+  group_tab_socializing_prosocial_behaviour_z,
   type = "RD",
   title = "Socialising effect on charity",
   subtitle = ">= 1.4  x weekly hours socialising",
@@ -5366,7 +5516,7 @@ plot_behaviour_socialising<- margot_plot(
   x_lim_hi =  .5
 )
 
-plot_behaviour_socialising
+plot_socializing_prosocial
 
 
 ggsave(
@@ -5456,20 +5606,23 @@ output_tab_contrast_socializing_help_from_community_rr <-
 output_tab_contrast_socializing_help_from_community_rr
 output_tab_contrast_socializing_help_from_community_rr
 
-tab_hours_only_help_received <- rbind( output_hours_only_time_community, output_hours_only_time_friends, output_hours_only_time_family ) 
-tab_hours_only_help_received
-here_save(tab_hours_only_help_received, "tab_hours_only_help_received")
+tab_socialising_help_received<- rbind( output_tab_contrast_socializing_help_from_family_rr, output_tab_contrast_socializing_help_from_friends_rr, output_tab_contrast_socializing_help_from_community_rr ) 
 
 
-group_tab_help_time <- group_tab(tab_hours_only_help_received, type = "RR")
+tab_socialising_help_received
+here_save(tab_socialising_help_received, "tab_socialising_help_received")
+tab_socialising_help_received<- here_read("tab_socialising_help_received")
 
-saveRDS(group_tab_help_time, here::here(push_mods, "group_tab_help_time"))
+
+group_tab_socialising_help_received <- group_tab(tab_socialising_help_received, type = "RR")
+
+saveRDS(group_tab_socialising_help_received, here::here(push_mods, "group_tab_socialising_help_received"))
 
 
-group_tab_help_time <- here_read("group_tab_help_time")
+group_tab_socialising_help_received <- here_read("group_tab_socialising_help_received")
 
 plot_help_time <- margot_plot(
-  group_tab_help_time,
+  group_tab_socialising_help_received,
   type = "RR",
   title = "Socialising effect on help recieved",
   subtitle = ">= 1.4  x weekly hours socialising",
