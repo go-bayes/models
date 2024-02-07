@@ -246,9 +246,9 @@ dat_long  <- dat |>
     # # There is no one I can turn to for guidance in times of stress.
     # "support_rnoguidance",
     #There is no one I can turn to for guidance in times of stress.
-    "family_time",
-    "friends_time",
-    "community_time",
+    "family_time", #Hours spent … socialising with family
+    "friends_time", #Hours spent … socialising with friends
+    "community_time", #Hours spent … socialising with community groups
     "family_money",
     "friends_money",
     "community_money",
@@ -1428,6 +1428,10 @@ f_1 <- function(data, trt){
   ifelse( data[[trt]] > 0, 0,  data[[trt]] )
 }
 
+# same just easier to remember
+f_loss <- function(data, trt){
+  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
+}
 
 
 # simple function # add 1 to all
@@ -1464,9 +1468,6 @@ progressr::handlers(global = TRUE)
 library(future)
 plan(multisession)
 n_cores <- parallel::detectCores()
-
-
-colnames(g_X)
 
 
 
@@ -2177,7 +2178,8 @@ null_t2_charity_donate_z
 m_hours_charity <- here_read( "m_hours_charity")
 m_hours_charity_1 <- here_read( "m_hours_charity_1")
 m_hours_charity_null <- here_read( "m_hours_charity_null")
-
+m_hours_charity
+m_hours_charity_null
 
 # z score hours
 t2_hours_charity_z <- here_read("t2_hours_charity_z")
@@ -2188,6 +2190,9 @@ null_t2_hours_charity_z <- here_read( "null_t2_hours_charity_z")
 # raw donations
 
 t2_charity_donate<- here_read( "t2_charity_donate")
+t2_charity_donate
+null_t2_charity_donate
+
 t2_charity_donate_1 <- here_read( "t2_charity_donate_1")
 null_t2_charity_donate <- here_read( "null_t2_charity_donate")
 
@@ -2435,8 +2440,29 @@ m_church_t2_warm_asians_z <- lmtp_tmle(
   parallel = n_cores 
 )
 
-m_church_t2_warm_asians_z
-here_save(m_church_t2_warm_asians_z, "m_church_t2_warm_asians_z")
+
+m_church_t2_warm_asians_z_loss<- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_asians_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+
+m_church_t2_warm_asians_z_loss
+here_save(m_church_t2_warm_asians_z_loss, "m_church_t2_warm_asians_z_loss")
 
 m_church_t2_warm_asians_z_null <- lmtp_tmle(
   data = df_clean,
@@ -2486,6 +2512,31 @@ m_church_t2_warm_chinese_z <- lmtp_tmle(
 m_church_t2_warm_chinese_z
 here_save(m_church_t2_warm_chinese_z, "m_church_t2_warm_chinese_z")
 
+
+
+m_church_t2_warm_chinese_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_chinese_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_church_t2_warm_chinese_z_loss
+here_save(m_church_t2_warm_chinese_z_loss, "m_church_t2_warm_chinese_z_loss")
+
+
 null_m_church_t2_warm_chinese_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2533,6 +2584,31 @@ m_c_t2_warm_immigrants_z <- lmtp_tmle(
 m_c_t2_warm_immigrants_z
 here_save(m_c_t2_warm_immigrants_z, "m_c_t2_warm_immigrants_z")
 
+
+
+m_c_t2_warm_immigrants_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_immigrants_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_immigrants_z_loss
+here_save(m_c_t2_warm_immigrants_z_loss, "m_c_t2_warm_immigrants_z_loss")
+
+
 null_m_c_t2_warm_immigrants_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2577,6 +2653,31 @@ m_c_t2_warm_indians_z <- lmtp_tmle(
 
 m_c_t2_warm_indians_z
 here_save(m_c_t2_warm_indians_z, "m_c_t2_warm_indians_z")
+
+
+
+m_c_t2_warm_indians_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_indians_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_indians_z_loss
+here_save(m_c_t2_warm_indians_z_loss, "m_c_t2_warm_indians_z_loss")
+
 
 m_c_t2_warm_indians_z_null <- lmtp_tmle(
   data = df_clean,
@@ -2624,6 +2725,30 @@ m_c_t2_warm_elderly_z <- lmtp_tmle(
 m_c_t2_warm_elderly_z
 here_save(m_c_t2_warm_elderly_z, "m_c_t2_warm_elderly_z")
 
+
+m_c_t2_warm_elderly_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_elderly_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_elderly_z_loss
+here_save(m_c_t2_warm_elderly_z_loss, "m_c_t2_warm_elderly_z_loss")
+
+
 null_m_c_t2_warm_elderly_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2668,6 +2793,31 @@ m_c_t2_warm_maori_z <- lmtp_tmle(
 
 m_c_t2_warm_maori_z
 here_save(m_c_t2_warm_maori_z, "m_c_t2_warm_maori_z")
+
+
+
+m_c_t2_warm_maori_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_maori_z",
+  cens = C,
+  shift = f_loss ,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_maori_z_loss 
+here_save(m_c_t2_warm_maori_z_loss , "m_c_t2_warm_maori_z_loss ")
+
 
 null_m_c_t2_warm_maori_z <- lmtp_tmle(
   data = df_clean,
@@ -2714,6 +2864,29 @@ m_c_t2_warm_mental_illness_z <- lmtp_tmle(
 m_c_t2_warm_mental_illness_z
 here_save(m_c_t2_warm_mental_illness_z, "m_c_t2_warm_mental_illness_z")
 
+
+m_c_t2_warm_mental_illness_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_mental_illness_z",
+  cens = C,
+  shift = f_loss ,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_mental_illness_z_loss
+here_save(m_c_t2_warm_mental_illness_z_loss, "m_c_t2_warm_mental_illness_z_loss")
+
 null_m_c_t2_warm_mental_illness_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2759,6 +2932,30 @@ m_c_t2_warm_muslims_z <- lmtp_tmle(
 m_c_t2_warm_muslims_z
 here_save(m_c_t2_warm_muslims_z, "m_c_t2_warm_muslims_z")
 
+
+
+m_c_t2_warm_muslims_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_muslims_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_muslims_z_loss
+here_save(m_c_t2_warm_muslims_z_loss, "m_c_t2_warm_muslims_z_loss")
+
 null_m_c_t2_warm_muslims_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2803,6 +3000,28 @@ m_c_t2_warm_nz_euro_z <- lmtp_tmle(
 
 m_c_t2_warm_nz_euro_z
 here_save(m_c_t2_warm_nz_euro_z, "m_c_t2_warm_nz_euro_z")
+
+m_c_t2_warm_nz_euro_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_nz_euro_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_nz_euro_z_loss
+here_save(m_c_t2_warm_nz_euro_z_loss, "m_c_t2_warm_nz_euro_z_loss")
 
 null_m_c_t2_warm_nz_euro_z <- lmtp_tmle(
   data = df_clean,
@@ -2850,6 +3069,30 @@ m_c_t2_warm_overweight_z <- lmtp_tmle(
 m_c_t2_warm_overweight_z
 here_save(m_c_t2_warm_overweight_z, "m_c_t2_warm_overweight_z")
 
+
+
+m_c_t2_warm_overweight_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_overweight_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_overweight_z_loss
+here_save(m_c_t2_warm_overweight_z_loss, "m_c_t2_warm_overweight_z_loss")
+
 null_m_c_t2_warm_overweight_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2873,8 +3116,6 @@ here_save(null_m_c_t2_warm_overweight_z, "null_m_c_t2_warm_overweight_z")
 null_m_c_t2_warm_overweight_z
 
 
-
-
 m_c_t2_warm_pacific_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2896,6 +3137,29 @@ m_c_t2_warm_pacific_z <- lmtp_tmle(
 
 m_c_t2_warm_pacific_z
 here_save(m_c_t2_warm_pacific_z, "m_c_t2_warm_pacific_z")
+
+
+m_c_t2_warm_pacific_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_pacific_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_pacific_z_loss
+here_save(m_c_t2_warm_pacific_z_loss, "m_c_t2_warm_pacific_z_loss")
 
 null_m_c_t2_warm_pacific_z<- lmtp_tmle(
   data = df_clean,
@@ -2942,6 +3206,28 @@ m_c_t2_warm_refugees_z <- lmtp_tmle(
 m_c_t2_warm_pacific_z
 here_save(m_c_t2_warm_refugees_z, "m_c_t2_warm_refugees_z")
 
+m_c_t2_warm_refugees_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_warm_refugees_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_pacific_z_loss
+here_save(m_c_t2_warm_refugees_z_loss, "m_c_t2_warm_refugees_z_loss")
+
 null_m_c_t2_warm_refugees_z<- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2964,8 +3250,6 @@ null_m_c_t2_warm_refugees_z<- lmtp_tmle(
 here_save(null_m_c_t2_warm_refugees_z, "null_m_c_t2_warm_refugees_z")
 null_m_c_t2_warm_refugees_z
 
-
-
 church_religion_perceive_religious_discrim_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -2987,6 +3271,30 @@ church_religion_perceive_religious_discrim_z <- lmtp_tmle(
 
 church_religion_perceive_religious_discrim_z
 here_save(church_religion_perceive_religious_discrim_z, "church_religion_perceive_religious_discrim_z")
+
+
+church_religion_perceive_religious_discrim_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_religion_perceive_religious_discrim_z",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+church_religion_perceive_religious_discrim_z_loss
+here_save(church_religion_perceive_religious_discrim_z_loss, "church_religion_perceive_religious_discrim_z_loss")
+
 
 null_church_religion_perceive_religious_discrim_z<- lmtp_tmle(
   data = df_clean,
@@ -3463,6 +3771,28 @@ m_time_community <- lmtp_tmle(
 m_time_community
 here_save(m_time_community, "m_time_community")
 
+
+m_time_community_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_community_time_binary",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+m_time_community_loss
+here_save(m_time_community_loss, "m_time_community_loss")
+
 m_time_community_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -3510,6 +3840,29 @@ m_time_friends <- lmtp_tmle(
 m_time_friends
 here_save(m_time_friends, "m_time_friends")
 
+
+m_time_friends_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_friends_time_binary",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_time_friends_loss
+here_save(m_time_friends_loss, "m_time_friends_loss")
+
 m_time_friends_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -3533,7 +3886,6 @@ here_save(m_time_friends_null, "m_time_friends_null")
 m_time_friends_null
 
 
-
 m_time_family <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -3555,6 +3907,31 @@ m_time_family <- lmtp_tmle(
 
 m_time_family
 here_save(m_time_family, "m_time_family")
+
+
+
+m_time_family_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_family_time_binary",
+  cens = C,
+  shift = f_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "binomial",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_time_family_loss
+here_save(m_time_family_loss, "m_time_family_loss")
+
 
 m_time_family_null <- lmtp_tmle(
   data = df_clean,
@@ -4142,6 +4519,28 @@ here_save(m_time_community_time, "m_time_community_time")
 m_time_community_time <- here_read("m_time_community_time")
 m_time_community_time
 
+
+m_time_community_time_loss <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_community_time_binary",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "binomial",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores  
+)
+m_time_community_time_loss
+here_save(m_time_community_time_loss, "m_time_community_time_loss")
+m_time_community_time_loss <- here_read("m_time_community_time_loss")
+m_time_community_time_loss
+
 m_time_community_null_time <- lmtp_tmle(
   data = df,
   trt = A_2,
@@ -4160,8 +4559,6 @@ m_time_community_null_time <- lmtp_tmle(
 
 here_save(m_time_community_null_time, "m_time_community_null_time")
 m_time_community_null_time <- here_read( "m_time_community_null_time")
-
-
 
 
 m_time_friends_time <- lmtp_tmle(
@@ -4183,6 +4580,28 @@ m_time_friends_time <- lmtp_tmle(
 m_time_friends_time
 here_save(m_time_friends_time, "m_time_friends_time")
 m_time_friends_time <- here_read("m_time_friends_time")
+
+
+m_time_friends_time_loss <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_friends_time_binary",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "binomial",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores  
+)
+
+m_time_friends_time_loss
+here_save(m_time_friends_time_loss, "m_time_friends_time_loss")
+m_time_friends_time_loss <- here_read("m_time_friends_time_loss")
+
 
 m_time_friends_null_time <- lmtp_tmle(
   data = df,
@@ -4226,6 +4645,28 @@ m_time_family_time <- lmtp_tmle(
 m_time_family_time
 here_save(m_time_family_time, "m_time_family_time")
 
+
+m_time_family_time_loss <- lmtp_tmle(
+  data = df,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_family_time_binary",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  outcome_type = "binomial",
+  weights = df$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores  
+)
+
+m_time_family_time_loss
+here_save(m_time_family_time_loss, "m_time_family_time_loss")
+
+
 m_time_family_null_time <- lmtp_tmle(
   data = df,
   trt = A_2,
@@ -4244,7 +4685,6 @@ m_time_family_null_time <- lmtp_tmle(
 
 here_save(m_time_family_null_time, "m_time_family_null_time")
 m_time_family_null_time
-
 
 
 # contrasts socialising time  ---------------------------------------------
@@ -4366,7 +4806,31 @@ m_church_t2_warm_asians_z_time <- lmtp_tmle(
 m_church_t2_warm_asians_z_time
 here_save(m_church_t2_warm_asians_z_time, "m_church_t2_warm_asians_z_time")
 m_church_t2_warm_asians_z_time <- here_read( "m_church_t2_warm_asians_z_time")
-<- here_read("")
+
+m_church_t2_warm_asians_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_asians_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_church_t2_warm_asians_z_time_loss
+here_save(m_church_t2_warm_asians_z_time_loss, "m_church_t2_warm_asians_z_time_loss")
+m_church_t2_warm_asians_z_time_loss <- here_read( "m_church_t2_warm_asians_z_time_loss")
+
+
 
 null_m_church_t2_warm_asians_z_time  <- lmtp_tmle(
   data = df_clean,
@@ -4413,6 +4877,33 @@ m_church_t2_warm_chinese_z_time  <- lmtp_tmle(
 m_church_t2_warm_chinese_z_time 
 here_save(m_church_t2_warm_chinese_z_time , "m_church_t2_warm_chinese_z_time")
 m_church_t2_warm_chinese_z_time<- here_read("m_church_t2_warm_chinese_z_time")
+
+
+
+
+m_church_t2_warm_chinese_z_time_loss  <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_chinese_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_church_t2_warm_chinese_z_time_loss
+here_save(m_church_t2_warm_chinese_z_time_loss, "m_church_t2_warm_chinese_z_time_loss")
+m_church_t2_warm_chinese_z_time_loss<- here_read("m_church_t2_warm_chinese_z_time_loss")
+
 
 null_m_church_t2_warm_chinese_z_time  <- lmtp_tmle(
   data = df_clean,
@@ -4463,6 +4954,30 @@ m_c_t2_warm_immigrants_z_time
 here_save(m_c_t2_warm_immigrants_z_time , "m_c_t2_warm_immigrants_z_time")
 m_c_t2_warm_immigrants_z_time <- here_read("m_c_t2_warm_immigrants_z_time")
 
+
+m_c_t2_warm_immigrants_z_time_loss  <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_immigrants_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_immigrants_z_time_loss
+here_save(m_c_t2_warm_immigrants_z_time_loss, "m_c_t2_warm_immigrants_z_time_loss")
+m_c_t2_warm_immigrants_z_time_loss <- here_read("m_c_t2_warm_immigrants_z_time_loss")
+
 null_m_c_t2_warm_immigrants_z_time  <- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4509,6 +5024,30 @@ m_c_t2_warm_indians_z_time
 here_save(m_c_t2_warm_indians_z_time , "m_c_t2_warm_indians_z_time ")
 m_c_t2_warm_indians_z_time<- here_read("m_c_t2_warm_indians_z_time")
 
+m_c_t2_warm_indians_z_time_loss  <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_indians_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_indians_z_time_loss 
+here_save(m_c_t2_warm_indians_z_time_loss, "m_c_t2_warm_indians_z_time_loss")
+m_c_t2_warm_indians_z_time_loss<- here_read("m_c_t2_warm_indians_z_time_loss")
+
+
 
 m_c_t2_warm_indians_z_null_time <- lmtp_tmle(
   data = df_clean,
@@ -4534,8 +5073,6 @@ here_save(m_c_t2_warm_indians_z_null_time, "m_c_t2_warm_indians_z_null_time")
 m_c_t2_warm_indians_z_null_time<- here_read("m_c_t2_warm_indians_z_null_time")
 
 
-
-
 m_c_t2_warm_elderly_z_time <- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4558,6 +5095,31 @@ m_c_t2_warm_elderly_z_time <- lmtp_tmle(
 m_c_t2_warm_elderly_z_time
 here_save(m_c_t2_warm_elderly_z_time, "m_c_t2_warm_elderly_z_time")
 m_c_t2_warm_elderly_z_time<- here_read("m_c_t2_warm_elderly_z_time")
+
+
+m_c_t2_warm_elderly_z_time_loss<- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_elderly_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_elderly_z_time_loss
+here_save(m_c_t2_warm_elderly_z_time_loss, "m_c_t2_warm_elderly_z_time_loss")
+m_c_t2_warm_elderly_z_time_loss<- here_read("m_c_t2_warm_elderly_z_time_loss")
+
 
 null_m_c_t2_warm_elderly_z_time <- lmtp_tmle(
   data = df_clean,
@@ -4607,6 +5169,30 @@ m_c_t2_warm_maori_z_time
 here_save(m_c_t2_warm_maori_z_time, "m_c_t2_warm_maori_z_time")
 m_c_t2_warm_maori_z_time<- here_read("m_c_t2_warm_maori_z_time")
 
+m_c_t2_warm_maori_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_maori_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_maori_z_time_loss
+here_save(m_c_t2_warm_maori_z_time_loss, "m_c_t2_warm_maori_z_time_loss")
+m_c_t2_warm_maori_z_time_loss<- here_read("m_c_t2_warm_maori_z_time_loss")
+
+
 null_m_c_t2_warm_maori_z_time <- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4655,6 +5241,31 @@ m_c_t2_warm_mental_illness_z_time
 here_save(m_c_t2_warm_mental_illness_z_time, "m_c_t2_warm_mental_illness_z_time")
 m_c_t2_warm_mental_illness_z_time <- here_read("m_c_t2_warm_mental_illness_z_time")
 
+
+m_c_t2_warm_mental_illness_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_mental_illness_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_mental_illness_z_time_loss
+here_save(m_c_t2_warm_mental_illness_z_time_loss, "m_c_t2_warm_mental_illness_z_time_loss")
+m_c_t2_warm_mental_illness_z_time_loss <- here_read("m_c_t2_warm_mental_illness_z_time_loss")
+
+
 null_m_c_t2_warm_mental_illness_z_time <- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4702,6 +5313,29 @@ m_c_t2_warm_muslims_z_time
 here_save(m_c_t2_warm_muslims_z_time, "m_c_t2_warm_muslims_z_time")
 m_c_t2_warm_muslims_z_time<- here_read("m_c_t2_warm_muslims_z_time")
 
+m_c_t2_warm_muslims_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_muslims_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_muslims_z_time_loss
+here_save(m_c_t2_warm_muslims_z_time_loss, "m_c_t2_warm_muslims_z_time_loss")
+m_c_t2_warm_muslims_z_time_loss<- here_read("m_c_t2_warm_muslims_z_time_loss")
+
 null_m_c_t2_warm_muslims_z_time <- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4724,8 +5358,6 @@ null_m_c_t2_warm_muslims_z_time <- lmtp_tmle(
 null_m_c_t2_warm_muslims_z_time
 here_save(null_m_c_t2_warm_muslims_z_time, "null_m_c_t2_warm_muslims_z_time")
 null_m_c_t2_warm_muslims_z_time<- here_read("null_m_c_t2_warm_muslims_z_time")
-
-
 
 m_c_t2_warm_nz_euro_z_time <- lmtp_tmle(
   data = df_clean,
@@ -4750,6 +5382,31 @@ m_c_t2_warm_nz_euro_z_time
 here_save(m_c_t2_warm_nz_euro_z_time, "m_c_t2_warm_nz_euro_z_time")
 m_c_t2_warm_nz_euro_z_time<- here_read("m_c_t2_warm_nz_euro_z_time")
 
+
+m_c_t2_warm_nz_euro_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_nz_euro_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_nz_euro_z_time_loss
+here_save(m_c_t2_warm_nz_euro_z_time_loss, "m_c_t2_warm_nz_euro_z_time_loss")
+m_c_t2_warm_nz_euro_z_time_loss<- here_read("m_c_t2_warm_nz_euro_z_time_loss")
+
+
 null_m_c_t2_warm_nz_euro_z_time <- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4771,8 +5428,6 @@ null_m_c_t2_warm_nz_euro_z_time <- lmtp_tmle(
 null_m_c_t2_warm_nz_euro_z_time
 here_save(null_m_c_t2_warm_nz_euro_z_time, "null_m_c_t2_warm_nz_euro_z_time")
 null_m_c_t2_warm_nz_euro_z_time<- here_read("null_m_c_t2_warm_nz_euro_z_time")
-
-
 
 
 m_c_t2_warm_overweight_z_time <- lmtp_tmle(
@@ -4797,6 +5452,31 @@ m_c_t2_warm_overweight_z_time <- lmtp_tmle(
 m_c_t2_warm_overweight_z_time
 here_save(m_c_t2_warm_overweight_z_time, "m_c_t2_warm_overweight_z_time")
 m_c_t2_warm_overweight_z_time<- here_read("m_c_t2_warm_overweight_z_time")
+
+
+m_c_t2_warm_overweight_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_overweight_z",
+  cens = C,
+  shift = f_s_loss ,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_overweight_z_time_loss 
+here_save(m_c_t2_warm_overweight_z_time_loss , "m_c_t2_warm_overweight_z_time_loss ")
+m_c_t2_warm_overweight_z_time_loss <- here_read("m_c_t2_warm_overweight_z_time_loss ")
+
 
 null_m_c_t2_warm_overweight_z_time <- lmtp_tmle(
   data = df_clean,
@@ -4845,6 +5525,30 @@ m_c_t2_warm_pacific_z_time
 here_save(m_c_t2_warm_pacific_z_time, "m_c_t2_warm_pacific_z_time")
 m_c_t2_warm_pacific_z_time<- here_read("m_c_t2_warm_pacific_z_time")
 
+
+m_c_t2_warm_pacific_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_pacific_z",
+  cens = C,
+  shift = f_s,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_pacific_z_time_loss
+here_save(m_c_t2_warm_pacific_z_time_loss, "m_c_t2_warm_pacific_z_time_loss")
+m_c_t2_warm_pacific_z_time_loss<- here_read("m_c_t2_warm_pacific_z_time_loss")
+
 null_m_c_t2_warm_pacific_z_time<- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4892,6 +5596,31 @@ m_c_t2_warm_refugees_z_time
 here_save(m_c_t2_warm_refugees_z_time, "m_c_t2_warm_refugees_z_time")
 m_c_t2_warm_refugees_z_time<- here_read("m_c_t2_warm_refugees_z_time")
 
+
+m_c_t2_warm_refugees_z_time_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_warm_refugees_z",
+  cens = C,
+  shift = f_s_loss ,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+m_c_t2_warm_refugees_z_time_loss 
+here_save(m_c_t2_warm_refugees_z_time_loss , "m_c_t2_warm_refugees_z_time_loss ")
+m_c_t2_warm_refugees_z_time_loss <- here_read("m_c_t2_warm_refugees_z_time_loss ")
+
+
 null_m_c_t2_warm_refugees_z_time<- lmtp_tmle(
   data = df_clean,
   trt = A_2,
@@ -4937,6 +5666,31 @@ hours_only_religion_perceive_religious_discrim_z <- lmtp_tmle(
 hours_only_religion_perceive_religious_discrim_z
 here_save(hours_only_religion_perceive_religious_discrim_z, "hours_only_religion_perceive_religious_discrim_z")
 hours_only_religion_perceive_religious_discrim_z<- here_read("hours_only_religion_perceive_religious_discrim_z")
+
+
+hours_only_religion_perceive_religious_discrim_z_loss <- lmtp_tmle(
+  data = df_clean,
+  trt = A_2,
+  baseline = names_base,
+  outcome = "t2_religion_perceive_religious_discrim_z",
+  cens = C,
+  shift = f_s_loss,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  #  id = "id",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores 
+)
+
+hours_only_religion_perceive_religious_discrim_z_loss
+here_save(hours_only_religion_perceive_religious_discrim_z_loss, "hours_only_religion_perceive_religious_discrim_z_loss")
+hours_only_religion_perceive_religious_discrim_z_loss<- here_read("hours_only_religion_perceive_religious_discrim_z_loss")
+
 
 null_hours_only_religion_perceive_religious_discrim_z<- lmtp_tmle(
   data = df_clean,
@@ -5365,11 +6119,16 @@ ggsave(
 
 # ALERT: CHARITY SOCIALISING  -------------------------------------------
 
+.1 * 6
 
+.5 * 60
 
 # contrasts socialising time  ---------------------------------------------
 socializing_volunteer_raw  <- here_read("m_hours_charity_time")
-socializing_volunteer_null_raw  <- here_read( "m_hours_charity_null_time")
+socializing_volunteer_raw
+
+socializing_volunteer_null_raw  <- here_read( "m_hours_charity_null_time")0
+socializing_volunteer_null_raw
 socialising_on_volunteer_loss_raw <-here_read("m_socialising_on_volunteer_loss_raw")
 socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_loss_z") # NOT RUN because no effect
 socialising_on_volunteer_loss_raw
@@ -5378,6 +6137,10 @@ socializing_volunteer_z<- here_read("m_hours_charity_time_z")
 socializing_volunteer_null_z <-here_read('m_hours_charity_null_time_z')
 
 socializing_donations_raw <- here_read("m_charity_donate_time")
+
+socializing_donations_raw <- here_read("m_charity_donate_time")
+socializing_donations_raw
+
 socializing_donations_null_raw <- here_read("m_charity_donate_null_time")
 socializing_donations_z <- here_read("m_charity_donate_time_z")
 socializing_donations_null_z <- here_read("m_charity_donate_null_time_z"). # NOT RUN because no effect
@@ -5410,7 +6173,7 @@ contrast_socializing_donations_LOSS_raw <- lmtp_contrast(socialising_on_donate_l
                                                     ref = socializing_donations_null_raw, type = "additive")
 contrast_socializing_donations_LOSS_raw
 
-tab_contrast_socializing_donations_LOSS_raw <- margot_tab_lmtp(contrast_socializing_donations_LOSS_raw, scale = "RD", new_name = "Donations: lost all socialising")
+tab_contrast_socializing_donations_LOSS_raw <- margot_tab_lmtp(contrast_socializing_donations_LOSS_raw, scale = "RD", new_name = "Donations:lost all community socialising")
 
 tab_contrast_socializing_donations_LOSS_raw
 
@@ -5479,7 +6242,7 @@ contrast_socializing_volunteer_LOSS_raw <- lmtp_contrast(socialising_on_voluntee
 contrast_socializing_volunteer_LOSS_raw
 
 
-tab_contrast_socializing_volunteer_LOSS_raw<- margot_tab_lmtp(contrast_socializing_volunteer_LOSS_raw, scale = "RD", new_name = "Volunteering: lost all socialising")
+tab_contrast_socializing_volunteer_LOSS_raw<- margot_tab_lmtp(contrast_socializing_volunteer_LOSS_raw, scale = "RD", new_name = "Volunteering: lost all community socialising")
 tab_contrast_socializing_volunteer_LOSS_raw
 
 output_tab_contrast_socializing_volunteer_LOSS_raw <- lmtp_evalue_tab(tab_contrast_socializing_volunteer_LOSS_raw,  
@@ -5489,8 +6252,7 @@ output_tab_contrast_socializing_volunteer_LOSS_raw <- lmtp_evalue_tab(tab_contra
 output_tab_contrast_socializing_volunteer_LOSS_raw
 
 ### HERE
-output_tab_contrast_socializing_volunteer_z
-output_tab_contrast_socializing_volunteer_raw
+output_tab_contrast_socializing_volunteer_LOSS_raw
 
 
 
@@ -5505,11 +6267,20 @@ here_save(tab_socializing_prosocial_behaviour_z, "tab_socializing_prosocial_beha
 tab_socializing_prosocial_behaviour_z<- here_read("tab_socializing_prosocial_behaviour_z")
 
 
+tab_socializing_prosocial_behaviour_LOSS_raw <- rbind(output_tab_contrast_socializing_donations_LOSS_raw ,output_tab_contrast_socializing_volunteer_LOSS_raw)
+here_save(tab_socializing_prosocial_behaviour_LOSS_raw, "tab_socializing_prosocial_behaviour_LOSS_raw")
 
-group_tab_socializing_prosocial_behaviour_raw <- group_tab(tab_socializing_prosocial_behaviour_raw, type = "RD")
-here_save(group_tab_socializing_prosocial_behaviour_raw, "group_tab_socializing_prosocial_behaviour_raw")
-group_tab_socializing_prosocial_behaviour_raw<- here_read("group_tab_socializing_prosocial_behaviour_raw")
+group_tab_socializing_prosocial_behaviour_LOSS_raw <- group_tab(tab_socializing_prosocial_behaviour_LOSS_raw, type = "RD")
+here_save(group_tab_socializing_prosocial_behaviour_LOSS_raw, "group_tab_socializing_prosocial_behaviour_LOSS_raw")
 
+tab_socializing_prosocial_behaviour_LOSS_raw<- here_read("tab_socializing_prosocial_behaviour_LOSS_raw")
+group_tab_socializing_prosocial_behaviour_LOSS_raw<- here_read("group_tab_socializing_prosocial_behaviour_LOSS_raw")
+tab_socializing_prosocial_behaviour_LOSS_raw
+group_tab_socializing_prosocial_behaviour_LOSS_raw
+
+
+tab_socializing_prosocial_behaviour_LOSS_raw
+here_save(group_tab_socializing_prosocial_behaviour_LOSS_raw, "group_tab_socializing_prosocial_behaviour_LOSS_raw")
 
 group_tab_socializing_prosocial_behaviour_z <- group_tab(tab_socializing_prosocial_behaviour_z, type = "RD")
 here_save(group_tab_socializing_prosocial_behaviour_z, "group_tab_socializing_prosocial_behaviour_z")

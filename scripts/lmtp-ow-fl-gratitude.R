@@ -6077,7 +6077,7 @@ dev.off()
 
 plot_compare_ego <- plot_group_tab_ego + plot_group_tab_ego_1+ plot_annotation(title = 
                                                                                  "Comparison of shift interventions", tag_level = "A")
-
+dev.off()
 
 plot_compare_ego
 ggsave(
