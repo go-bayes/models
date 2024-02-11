@@ -2234,7 +2234,7 @@ output_tab_contrast_church_volunteer_raw
 
 
 # contrast loss volunteering z
-contrast_church_volunteer_z_loss <- lmtp_contrast(m_hours_charity_z_1,ref = null_t2_hours_charity_z, type = "additive")
+contrast_church_volunteer_z_loss <- lmtp_contrast(m_hours_charity_z_loss,ref = null_t2_hours_charity_z, type = "additive")
 contrast_church_volunteer_z_loss
 
 tab_contrast_church_volunteer_z_loss<- margot_tab_lmtp(contrast_church_volunteer_z_loss, scale = "RD", new_name = "Volunteering: lose any religious service")
@@ -2258,7 +2258,6 @@ here_save(output_tab_contrast_church_volunteer_loss_raw, 'output_tab_contrast_ch
 
 
 # calculate contrast donate z
-
 
 contrast_church_gives_money_z <- lmtp_contrast(t2_charity_donate_z,ref = null_t2_charity_donate_z, type = "additive")
 contrast_church_gives_money_z
@@ -2305,8 +2304,94 @@ output_tab_contrast_church_gives_money_loss_raw <- lmtp_evalue_tab(tab_contrast_
 output_tab_contrast_church_gives_money_loss_raw
 
 
+#### STRONG DONATOINS
+## strong donations z
+
+## RAW FOR INTEREST
+contrast_gain_church_gives_money_strong_raw <- lmtp_contrast(t2_charity_donate,ref = t2_charity_donate_loss, type = "additive")
+contrast_gain_church_gives_money_strong_raw
 
 
+# STRONG GAIN CHURCH DONATIONS RAW 
+contrast_gain_church_gives_money_strong_z <- lmtp_contrast(t2_charity_donate_z,ref = t2_charity_donate_z_loss, type = "additive")
+contrast_gain_church_gives_money_strong_z
+
+
+
+
+tab_contrast_gain_church_gives_money_strong_z <- margot_tab_lmtp(contrast_gain_church_gives_money_strong_z, scale = "RD", new_name = "Donations: religious service")
+output_tab_contrast_gain_church_gives_money_strong_z <- lmtp_evalue_tab(tab_contrast_gain_church_gives_money_strong_z,  delta = 1, sd = 1, scale = c("RD"))
+tab_contrast_gain_church_gives_money_strong_z
+
+output_tab_contrast_gain_church_gives_money_strong_z
+
+### STRONG GAIN CHURCH VOLUNTEERING RAW
+
+#raw
+
+contrast_gain_church_volunteers_strong_raw <- lmtp_contrast(m_hours_charity,ref = m_hours_charity_loss, type = "additive")
+contrast_gain_church_volunteers_strong_raw
+
+
+# z
+contrast_gain_church_volunteers_strong_z <- lmtp_contrast(t2_hours_charity_z,ref = m_hours_charity_z_loss, type = "additive")
+
+tab_contrast_gain_church_volunteers_strong_z <- margot_tab_lmtp(contrast_gain_church_volunteers_strong_z, scale = "RD", new_name = "Volunteers: religious service")
+output_tab_contrast_gain_church_volunteers_strong_z <- lmtp_evalue_tab(tab_contrast_gain_church_volunteers_strong_z,  delta = 1, sd = 1, scale = c("RD"))
+
+
+output_tab_contrast_gain_church_gives_money_strong_z
+output_tab_contrast_gain_church_volunteers_strong_z
+
+tab_strong_church_gain_prosocial<- rbind(output_tab_contrast_gain_church_gives_money_strong_z, output_tab_contrast_gain_church_volunteers_strong_z)
+
+group_tab_strong_church_gain_prosocial <- group_tab(tab_strong_church_gain_prosocial, type = "RD")
+group_tab_strong_church_gain_prosocial
+
+
+##### STRONG INTERVENTION CHURCH GAIN ON PROSOCIALITY
+
+here_save(tab_strong_church_gain_prosocial, "tab_strong_church_gain_prosocial")
+here_save(group_tab_strong_church_gain_prosocial, "group_tab_strong_church_gain_prosocial")
+
+
+tab_strong_church_gain_prosocial<- here_read("tab_strong_church_gain_prosocial")
+group_tab_strong_church_gain_prosocial<- here_read("group_tab_strong_church_gain_prosocial")
+
+plot_gain_church_prosocial_strong <- margot_plot(
+  group_tab_strong_church_gain_prosocial,
+  type = "RD",
+  title = "Religious service effect on reported donations and volunteering",
+  subtitle = "Contrast: weekly vs. none ",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+
+plot_gain_church_prosocial_strong
+
+# 
+ggsave(
+  plot_gain_church_prosocial_strong,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_gain_church_prosocial_strong.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 
 
 # TABLES TO SAVE FOR PUB --------------------------------------------------
@@ -2350,9 +2435,6 @@ group_tab_compare_church_prosocial_behaviour_z_loss <- group_tab(tab_compare_chu
 here_save(group_tab_compare_church_prosocial_behaviour_z_loss, "group_tab_compare_church_prosocial_behaviour_z_loss")
 group_tab_compare_church_prosocial_behaviour_z_loss<- here_read("group_tab_compare_church_prosocial_behaviour_z_loss")
 group_tab_compare_church_prosocial_behaviour_z_loss
-
-
-
 
 
 tab_compare_church_LOSS_prosocial_behaviour_raw <- rbind(output_tab_contrast_church_gives_money_loss_raw, output_tab_contrast_church_volunteer_loss_raw)
@@ -2485,7 +2567,6 @@ ggsave(
 
 
 # warmth models ---------------------------------------------------------
-
 
 
 m_church_t2_warm_asians_z <- lmtp_tmle(
@@ -3430,6 +3511,25 @@ output_asians_church_loss <- lmtp_evalue_tab(tab_contrast_church_asians_loss,  d
 output_asians_church_loss
 
 
+
+### STRONG 
+
+contrast_church_asians_strong <-
+  lmtp_contrast(m_church_t2_warm_asians_z, ref = m_church_t2_warm_asians_z_loss, type = "additive")
+contrast_church_asians_loss
+
+tab_contrast_church_asians_strong  <-
+  margot_tab_lmtp(contrast_church_asians_strong,
+                  scale = "RD",
+                  new_name = "Warm Asians: religious service")
+
+tab_contrast_church_asians_strong
+
+output_asians_church_strong <- lmtp_evalue_tab(tab_contrast_church_asians_strong,  delta = 1, sd = 1, scale = c("RD"))
+output_asians_church_strong
+
+
+
 # chinese
 m_church_t2_warm_chinese_z  <-
   here_read("m_church_t2_warm_chinese_z")
@@ -3472,11 +3572,30 @@ output_tab_contrast_m_church_t2_warm_chinese_z_loss
 output_chinese_church_loss <- output_tab_contrast_m_church_t2_warm_chinese_z_loss
 output_chinese_church_loss
 
+## CHINESE STRONG
+contrast_m_church_t2_warm_chinese_z_strong <- lmtp_contrast(m_church_t2_warm_chinese_z,
+                                                          ref = m_church_t2_warm_chinese_z_loss,
+                                                          type = "additive")
+contrast_m_church_t2_warm_chinese_z_strong
+
+tab_contrast_m_church_t2_warm_chinese_z_strong <-
+  margot_tab_lmtp(contrast_m_church_t2_warm_chinese_z_strong,
+                  scale = "RD",
+                  new_name = "Warm Chinese:  religious service")
+tab_contrast_m_church_t2_warm_chinese_z_strong
+
+output_tab_contrast_m_church_t2_warm_chinese_z_strong <- lmtp_evalue_tab(tab_contrast_m_church_t2_warm_chinese_z_strong,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_m_church_t2_warm_chinese_z_strong
+
+output_chinese_church_strong <- output_tab_contrast_m_church_t2_warm_chinese_z_strong
+output_chinese_church_strong
+
+
+
 
 # immigrants
 m_c_t2_warm_immigrants_z  <- here_read("m_c_t2_warm_immigrants_z")
 m_c_t2_warm_immigrants_z_loss  <- here_read("m_c_t2_warm_immigrants_z_loss")
-
 null_m_c_t2_warm_immigrants_z  <- here_read("null_m_c_t2_warm_immigrants_z")
 
 
@@ -3510,6 +3629,18 @@ output_tab_contrast_church_immigrants_loss
 
 output_immigrants_church_loss <-  output_tab_contrast_church_immigrants_loss
 
+# strong
+contrast_church_immigrants_strong <- lmtp_contrast(m_c_t2_warm_immigrants_z,
+                                            ref = m_c_t2_warm_immigrants_z_loss,
+                                            type = "additive")
+contrast_church_immigrants_strong
+tab_contrast_church_immigrants_strong <- margot_tab_lmtp(contrast_church_immigrants_strong, scale = "RD", 
+                                                  new_name = "Warm Immigrants: religious service")
+tab_contrast_church_immigrants_strong
+output_immigrants_church_strong <- lmtp_evalue_tab(tab_contrast_church_immigrants_strong,  delta = 1, sd = 1, scale = c("RD"))
+output_immigrants_church_strong
+
+
 
 #indians
 m_c_t2_warm_indians_z  <- here_read("m_c_t2_warm_indians_z")
@@ -3520,7 +3651,6 @@ m_c_t2_warm_indians_z_null  <-
 contrast_church_indians <- lmtp_contrast(m_c_t2_warm_indians_z,
                                          ref = m_c_t2_warm_indians_z_null,
                                          type = "additive")
-
 
 tab_contrast_church_indians <-
   margot_tab_lmtp(contrast_church_indians,
@@ -3548,8 +3678,21 @@ tab_contrast_church_indians_loss <-
 output_indians_church_loss <- lmtp_evalue_tab(tab_contrast_church_indians_loss,  delta = 1, sd = 1, scale = c("RD"))
 output_indians_church_loss
 
+# strong
+
+contrast_church_indians_strong <- lmtp_contrast(m_c_t2_warm_indians_z,
+                                         ref = m_c_t2_warm_indians_z_loss,
+                                         type = "additive")
+
+tab_contrast_church_indians_strong <-
+  margot_tab_lmtp(contrast_church_indians_strong,
+                  scale = "RD",
+                  new_name = "Warm Indians: religious service")
 
 
+
+output_indians_church_strong <- lmtp_evalue_tab(tab_contrast_church_indians_strong,  delta = 1, sd = 1, scale = c("RD"))
+output_indians_church_strong
 
 
 # elderly
@@ -3566,7 +3709,6 @@ contrast_church_elderly <- lmtp_contrast(m_c_t2_warm_elderly_z,
 
 tab_contrast_church_elderly<- margot_tab_lmtp(contrast_church_elderly, scale = "RD", 
                                               new_name = "Warm Elderly: religious service >= 1")
-
 tab_contrast_church_elderly
 
 output_elderly_church <-
@@ -3598,8 +3740,24 @@ output_elderly_church_loss <-
   )
 output_elderly_church_loss
 
+# strong
 
+contrast_church_elderly_strong <- lmtp_contrast(m_c_t2_warm_elderly_z,
+                                         ref = m_c_t2_warm_elderly_z_loss,
+                                         type = "additive")
 
+tab_contrast_church_elderly_strong<- margot_tab_lmtp(contrast_church_elderly_strong, scale = "RD", 
+                                              new_name = "Warm Elderly: religious service")
+tab_contrast_church_elderly_strong
+
+output_tab_contrast_church_elderly_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_elderly_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_tab_contrast_church_elderly_strong
 
 # maori
 m_c_t2_warm_maori_z  <- here_read("m_c_t2_warm_maori_z")
@@ -3647,6 +3805,27 @@ output_maori_church_loss <-
   )
 output_maori_church_loss
 
+# strong
+contrast_church_maori_strong <- lmtp_contrast(m_c_t2_warm_maori_z,
+                                       ref = m_c_t2_warm_maori_z_loss,
+                                       type = "additive")
+
+
+tab_contrast_church_maori_strong <-
+  margot_tab_lmtp(contrast_church_maori_strong, scale = "RD",
+                  new_name = "Warm Maori: religious service")
+
+tab_contrast_church_maori_strong
+
+output_maori_church_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_maori_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_maori_church_strong
+
 
 # mental illness
 m_c_t2_warm_mental_illness_z  <-
@@ -3681,7 +3860,7 @@ output_mental_illness_church
 
 
 
- #loss
+#loss
 contrast_church_mental_illness_loss <-
   lmtp_contrast(m_c_t2_warm_mental_illness_z_loss,
                 ref = null_m_c_t2_warm_mental_illness_z,
@@ -3704,11 +3883,33 @@ output_mental_illness_church_loss <-
   )
 output_mental_illness_church_loss
 
+# strong
+contrast_church_mental_illness_strong <-
+  lmtp_contrast(m_c_t2_warm_mental_illness_z,
+                ref = m_c_t2_warm_mental_illness_z_loss,
+                type = "additive")
+
+
+tab_contrast_church_mental_illness_strong <-
+  margot_tab_lmtp(contrast_church_mental_illness_strong,
+                  scale = "RD",
+                  new_name = "Warm Mental Illness: religious service")
+
+tab_contrast_church_mental_illness_strong
+
+output_mental_illness_church_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_mental_illness_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_mental_illness_church_strong
+
 
 #  muslims
 m_c_t2_warm_muslims_z <- here_read("m_c_t2_warm_muslims_z")
 m_c_t2_warm_muslims_z_loss <- here_read("m_c_t2_warm_muslims_z_loss")
-
 null_m_c_t2_warm_muslims_z <-
   here_read("null_m_c_t2_warm_muslims_z")
 
@@ -3735,7 +3936,6 @@ output_muslims_church
 
 
 #loss
-
 contrast_church_muslims_loss <- lmtp_contrast(m_c_t2_warm_muslims_z_loss,
                                          ref = null_m_c_t2_warm_muslims_z,
                                          type = "additive")
@@ -3755,7 +3955,27 @@ output_muslims_church_loss <-
   )
 output_muslims_church_loss
 
+# strong
+contrast_church_muslims_strong <- lmtp_contrast(m_c_t2_warm_muslims_z,
+                                         ref = m_c_t2_warm_muslims_z_loss,
+                                         type = "additive")
 
+
+tab_contrast_church_muslims_strong <-
+  margot_tab_lmtp(contrast_church_muslims_strong,
+                  scale = "RD",
+                  new_name = "Warm Muslims: religious service")
+
+tab_contrast_church_muslims_strong
+
+output_muslims_church_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_muslims_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_muslims_church_strong
 
 
 # nz euro
@@ -3785,7 +4005,6 @@ output_euro_church <-
 output_euro_church
 
 #loss
-
 contrast_church_euro_loss <- lmtp_contrast(m_c_t2_warm_nz_euro_z_loss,
                                       ref = null_m_c_t2_warm_nz_euro_z,
                                       type = "additive")
@@ -3805,6 +4024,26 @@ output_euro_church_loss <-
     scale = c("RD")
   )
 output_euro_church_loss
+
+# strong
+contrast_church_euro_strong <- lmtp_contrast(m_c_t2_warm_nz_euro_z,
+                                      ref = m_c_t2_warm_nz_euro_z_loss,
+                                      type = "additive")
+
+
+tab_contrast_church_euro_strong <-
+  margot_tab_lmtp(contrast_church_euro_strong, scale = "RD",
+                  new_name = "Warm NZEuro: religious service")
+
+
+output_euro_church_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_euro_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_euro_church_strong
 
 
 # overweight
@@ -3862,6 +4101,29 @@ output_overweight_church_loss <-
 output_overweight_church_loss
 
 
+# strong
+contrast_church_overweight_strong <-
+  lmtp_contrast(m_c_t2_warm_overweight_z,
+                ref = m_c_t2_warm_overweight_z_loss,
+                type = "additive")
+contrast_church_overweight_strong
+
+tab_contrast_church_overweight_strong <-
+  margot_tab_lmtp(contrast_church_overweight_strong,
+                  scale = "RD",
+                  new_name = "Warm Overweight: religious service")
+
+tab_contrast_church_overweight_strong
+
+
+output_overweight_church_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_overweight_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+
 
 # warm pacific
 m_c_t2_warm_pacific_z  <- here_read("m_c_t2_warm_pacific_z")
@@ -3916,11 +4178,33 @@ output_pacific_church_loss <-
   )
 output_pacific_church_loss
 
+# strong
+contrast_church_pacific_strong <- lmtp_contrast(m_c_t2_warm_pacific_z,
+                                         ref = m_c_t2_warm_pacific_z_loss,
+                                         type = "additive")
+
+
+tab_contrast_church_pacific_strong <-
+  margot_tab_lmtp(contrast_church_pacific_strong,
+                  scale = "RD",
+                  new_name = "Warm Pacific: religious service")
+
+tab_contrast_church_pacific_strong
+
+
+output_pacific_church_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_pacific_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_pacific_church_strong
+
 
 #warm refugees
 m_c_t2_warm_refugees_z <- here_read("m_c_t2_warm_refugees_z")
 m_c_t2_warm_refugees_z_loss <- here_read("m_c_t2_warm_refugees_z_loss")
-
 null_m_c_t2_warm_refugees_z <-
   here_read("null_m_c_t2_warm_refugees_z")
 
@@ -3974,11 +4258,41 @@ output_refugees_church_loss <-
 output_refugees_church_loss
 
 
+## strong
+
+contrast_church_refugees_strong <- lmtp_contrast(m_c_t2_warm_refugees_z,
+                                          ref = m_c_t2_warm_refugees_z_loss,
+                                          type = "additive")
+
+
+tab_contrast_church_refugees_strong  <-
+  margot_tab_lmtp(contrast_church_refugees_strong,
+                  scale = "RD",
+                  new_name = "Warm Refugees: religious service")
+
+
+tab_contrast_church_refugees_strong 
+
+
+output_tab_contrast_church_refugees_strong  <-
+  lmtp_evalue_tab(
+    tab_contrast_church_refugees_strong ,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+
+output_refugees_church_strong <- output_tab_contrast_church_refugees_strong
+
+
+
+
+## perc discrimination
 
 church_religion_perceive_religious_discrim_z <- here_read("church_religion_perceive_religious_discrim_z")
 church_religion_perceive_religious_discrim_z_loss <- here_read("church_religion_perceive_religious_discrim_z_loss")
-
 null_church_religion_perceive_religious_discrim_z <- here_read("null_church_religion_perceive_religious_discrim_z")
+
 
 contrast_church_perceive_religious_discrim_z <- lmtp_contrast(church_religion_perceive_religious_discrim_z,
                                                               ref = null_church_religion_perceive_religious_discrim_z,
@@ -3996,13 +4310,19 @@ output_perceive_rel_discrimination_church <-
   )
 output_perceive_rel_discrimination_church
 
-# loss 
-contrast_church_perceive_religious_discrim_z_loss <- lmtp_contrast(church_religion_perceive_religious_discrim_z_loss,
-                                                              ref = null_church_religion_perceive_religious_discrim_z,
-                                                              type = "additive")
 
-tab_contrast_hours_perceive_religious_discrim_z_loss <- margot_tab_lmtp(contrast_church_perceive_religious_discrim_z_loss, scale = "RD", 
-                                                                    new_name = "Perc. Religious Discrim: lose any religious service")
+# loss
+contrast_church_perceive_religious_discrim_z_loss <-
+  lmtp_contrast(
+    church_religion_perceive_religious_discrim_z_loss,
+    ref = null_church_religion_perceive_religious_discrim_z,
+    type = "additive"
+  )
+
+tab_contrast_hours_perceive_religious_discrim_z_loss <-
+  margot_tab_lmtp(contrast_church_perceive_religious_discrim_z_loss,
+                  scale = "RD",
+                  new_name = "Perc. Religious Discrim: lose any religious service")
 
 output_tab_contrast_hours_perceive_religious_discrim_z_loss<-
   lmtp_evalue_tab(
@@ -4014,6 +4334,30 @@ output_tab_contrast_hours_perceive_religious_discrim_z_loss<-
 output_tab_contrast_hours_perceive_religious_discrim_z_loss
 
 output_perceive_rel_discrimination_church_loss <- output_tab_contrast_hours_perceive_religious_discrim_z_loss
+
+
+#strong
+contrast_church_perceive_religious_discrim_z_strong <-
+  lmtp_contrast(church_religion_perceive_religious_discrim_z,
+                ref = church_religion_perceive_religious_discrim_z_loss,
+                type = "additive")
+
+tab_contrast_hours_perceive_religious_discrim_z_strong  <-
+  margot_tab_lmtp(
+    contrast_church_perceive_religious_discrim_z_strong,
+    scale = "RD",
+    new_name = "Perc. Religious Discrim: religious service"
+  )
+
+output_perceive_rel_discrimination_church_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_hours_perceive_religious_discrim_z_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_perceive_rel_discrimination_church_strong
+
 
 # ALERT TABLES WARMTH CHRUCH ----------------------------------------------
 
@@ -4057,6 +4401,32 @@ tab_warm_church_loss <- rbind(
 tab_warm_church_loss
 here_save(tab_warm_church_loss, "tab_warm_church_loss")
 
+
+# strong
+tab_warm_church_strong <- rbind(
+  output_asians_church_strong,
+  output_chinese_church_strong,
+  output_immigrants_church_strong,
+  output_indians_church_strong,
+  output_tab_contrast_church_elderly_strong,
+  output_maori_church_strong,
+  output_mental_illness_church_strong,
+  output_muslims_church_strong,
+  output_euro_church_strong,
+  output_overweight_church_strong,
+  output_pacific_church_strong,
+  output_refugees_church_strong,
+  output_perceive_rel_discrimination_church_strong
+)
+
+tab_warm_church_strong
+here_save(tab_warm_church_strong, "tab_warm_church_strong")
+group_tab_warm_church_strong <- group_tab(tab_warm_church_strong, type = "RD")
+here_save(group_tab_warm_church_strong, "group_tab_warm_church_strong")
+
+tab_warm_church_strong<- here_read("tab_warm_church_strong")
+group_tab_warm_church_strong <- here_read("group_tab_warm_church_strong")
+tab_warm_church_strong
 # 
 # str(church_four_hours_donate)
 # church_four_hours_donate
@@ -4184,6 +4554,53 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
+
+##############################################
+### STRONG CONTRASTS  CHURCH ################
+################################################
+
+
+
+
+## WARM 
+tab_warm_church_strong<- here_read("tab_warm_church_strong")
+group_tab_warm_church_strong <- here_read("group_tab_warm_church_strong")
+
+
+plot_prejudice_church_strong <- margot_plot(
+  group_tab_warm_church_strong,
+  type = "RD",
+  title = "Religious service effect on prejudice/acceptance",
+  subtitle = "Weekly vs. No Religious Service",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+
+plot_prejudice_church_strong
+
+ggsave(
+  plot_prejudice_church_strong,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename ="plot_prejudice_church_strong.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
 
 
 # help received models ----------------------------------------------------
@@ -4445,13 +4862,46 @@ output_tab_contrast_church_help_received_community_rr_loss <-
 output_tab_contrast_church_help_received_community_rr_loss
 
 
+## STRONG 
+
+
+# community
+contrast_church_help_received_community_rr_strong <-
+  lmtp_contrast(m_time_community, ref = m_time_community_loss, type = "rr")
+contrast_church_help_received_community_rr
+
+tab_contrast_church_help_received_community_rr_strong <-
+  margot_tab_lmtp(
+    contrast_church_help_received_community_rr_strong,
+    scale = "RR",
+    new_name = "Help from Community: religious service"
+  )
+
+
+output_tab_contrast_church_help_received_community_rr_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_help_received_community_rr_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+
+
+### USE
+output_tab_contrast_church_help_received_community_rr_strong
+
+
+
 # friends
-contrast_church_help_received_friends_rr<- lmtp_contrast(m_time_friends,ref = m_time_friends_null, type = "rr")
+contrast_church_help_received_friends_rr <-
+  lmtp_contrast(m_time_friends, ref = m_time_friends_null, type = "rr")
 contrast_church_help_received_friends_rr
 
 
-tab_contrast_church_help_received_friends_rr<- margot_tab_lmtp(contrast_church_help_received_friends_rr, scale = "RR", 
-                                                                new_name = "Help from Friends: religious service >= 1")
+tab_contrast_church_help_received_friends_rr <-
+  margot_tab_lmtp(contrast_church_help_received_friends_rr,
+                  scale = "RR",
+                  new_name = "Help from Friends: religious service >= 1")
 output_tab_contrast_church_help_received_friends_rr <-
   lmtp_evalue_tab(
     tab_contrast_church_help_received_friends_rr,
@@ -4461,16 +4911,21 @@ output_tab_contrast_church_help_received_friends_rr <-
   )
 
 
-## HERE 
+## HERE
 output_tab_contrast_church_help_received_friends_rr
 
 # loss
-contrast_church_help_received_friends_rr_loss <- lmtp_contrast(m_time_friends_loss,ref = m_time_friends_null, type = "rr")
+contrast_church_help_received_friends_rr_loss <-
+  lmtp_contrast(m_time_friends_loss, ref = m_time_friends_null, type = "rr")
 contrast_church_help_received_friends_rr_loss
 
 
-tab_contrast_church_help_received_friends_rr_loss <- margot_tab_lmtp(contrast_church_help_received_friends_rr_loss, scale = "RR", 
-                                                                new_name = "Help from Friends: lose any religious service")
+tab_contrast_church_help_received_friends_rr_loss <-
+  margot_tab_lmtp(
+    contrast_church_help_received_friends_rr_loss,
+    scale = "RR",
+    new_name = "Help from Friends: lose any religious service"
+  )
 output_tab_contrast_church_help_received_friends_rr_loss <-
   lmtp_evalue_tab(
     tab_contrast_church_help_received_friends_rr_loss,
@@ -4480,12 +4935,39 @@ output_tab_contrast_church_help_received_friends_rr_loss <-
   )
 output_tab_contrast_church_help_received_friends_rr_loss
 
+
+### Strong
+contrast_church_help_received_friends_rr_strong <-
+  lmtp_contrast(m_time_friends, ref = m_time_friends_loss, type = "rr")
+contrast_church_help_received_friends_rr
+
+
+tab_contrast_church_help_received_friends_rr_strong <-
+  margot_tab_lmtp(contrast_church_help_received_friends_rr_strong,
+                  scale = "RR",
+                  new_name = "Help from Friends: religious service")
+output_tab_contrast_church_help_received_friends_rr_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_help_received_friends_rr_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+
+
+## HERE
+output_tab_contrast_church_help_received_friends_rr_strong
+
 # family
-contrast_church_help_received_family_rr <- lmtp_contrast(m_time_family,ref = m_time_family_null, type = "rr")
+contrast_church_help_received_family_rr <-
+  lmtp_contrast(m_time_family, ref = m_time_family_null, type = "rr")
 contrast_church_help_received_family_rr
 
 
-tab_contrast_church_help_received_family_rr <- margot_tab_lmtp(contrast_church_help_received_family_rr, scale = "RR", new_name = "Help from Family: religious service >= 1")
+tab_contrast_church_help_received_family_rr <-
+  margot_tab_lmtp(contrast_church_help_received_family_rr,
+                  scale = "RR",
+                  new_name = "Help from Family: religious service >= 1")
 output_tab_contrast_church_help_received_family_rr <-
   lmtp_evalue_tab(
     tab_contrast_church_help_received_family_rr,
@@ -4499,9 +4981,9 @@ tab_contrast_church_help_received_family_rr
 output_tab_contrast_church_help_received_family_rr
 
 # loss
-contrast_church_help_received_family_rr_loss <- lmtp_contrast(m_time_family_loss,ref = m_time_family_null, type = "rr")
+contrast_church_help_received_family_rr_loss <-
+  lmtp_contrast(m_time_family_loss, ref = m_time_family_null, type = "rr")
 contrast_church_help_received_family_rr_loss
-
 
 tab_contrast_church_help_received_family_rr_loss <- margot_tab_lmtp(contrast_church_help_received_family_rr_loss, scale = "RR", new_name = "Help from Family: lose any religious service")
 output_tab_contrast_church_help_received_family_rr_loss <-
@@ -4513,6 +4995,81 @@ output_tab_contrast_church_help_received_family_rr_loss <-
   )
 
 output_tab_contrast_church_help_received_family_rr_loss
+
+# Strong
+contrast_church_help_received_family_rr_strong <-
+  lmtp_contrast(m_time_family, ref = m_time_family_loss, type = "rr")
+contrast_church_help_received_family_rr_strong
+
+
+tab_contrast_church_help_received_family_rr_strong <-
+  margot_tab_lmtp(contrast_church_help_received_family_rr_strong,
+                  scale = "RR",
+                  new_name = "Help from Family: religious service")
+output_tab_contrast_church_help_received_family_rr_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_help_received_family_rr_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+tab_contrast_church_help_received_family_rr_strong
+
+## Here
+output_tab_contrast_church_help_received_family_rr_strong
+
+tab_church_help_received_strong <-
+  rbind(
+    output_tab_contrast_church_help_received_family_rr_strong,
+    output_tab_contrast_church_help_received_friends_rr_strong,
+    output_tab_contrast_church_help_received_community_rr_strong
+  )
+
+tab_church_help_received_strong
+group_tab_church_help_received_strong <- group_tab(tab_church_help_received_strong, type = "RR")
+
+here_save(tab_church_help_received_strong, "tab_church_help_received_strong")
+here_save(group_tab_church_help_received_strong, "group_tab_church_help_received_strong")
+
+# graph strong church help received
+tab_church_help_received_strong <- here_read('tab_church_help_received_strong')
+group_tab_church_help_received_strong <- here_read("group_tab_church_help_received_strong")
+
+
+plot_group_tab_time_church_strong <- margot_plot(
+  group_tab_church_help_received_strong,
+  type = "RR",
+  title = "Religious service effect on help received_strong",
+  subtitle = "Weekly vs. No Religious Service",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  2
+)
+
+plot_group_tab_time_church_strong
+
+
+ggsave(
+  plot_group_tab_time_church_strong,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_group_tab_time_church_strong.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 
 
 # ALERT CHURCH HELP RECEIVED TABLE ----------------------------------------
@@ -4530,6 +5087,7 @@ saveRDS(group_tab_church_help_received, here::here(push_mods, "group_tab_church_
 
 tab_church_help_received <- here_read('tab_church_help_received')
 group_tab_church_help_received <- here_read("group_tab_church_help_received")
+
 
 # graph
 
@@ -5067,22 +5625,31 @@ here_save(m_charity_donate_null_time_z, "m_charity_donate_null_time_z")
 m_charity_donate_null_time_z <- here_read("m_charity_donate_null_time_z")
 
 
+#### SOCIALISING 
 
-
-# ALERT: CHARITY SOCIALISING  -------------------------------------------
+# ALERT: SOCIALISING PROSOCIAL -------------------------------------------
 
 .1 * 6
 
 .5 * 60
 
 # contrasts socialising prosocial  ---------------------------------------------
+socializing_donations_raw <- here_read("m_charity_donate_time")
+socializing_donations_raw
+
+socializing_donations_null_raw <- here_read("m_charity_donate_null_time")
+socializing_donations_null_raw
+socialising_on_donate_loss_raw <-here_read("m_socialising_on_donate_loss_raw")
+
+
+socializing_donations_z
+socializing_donations_z <- here_read("m_charity_donate_time_z")
+socializing_donations_null_z <- here_read("m_charity_donate_null_time_z")# NOT RUN because no effect
+socialising_on_donate_loss_z <- here_read("m_socialising_on_donate_z_loss")
 
 
 socializing_volunteer_raw  <- here_read("m_hours_charity_time")
 socializing_volunteer_raw
-
-socializing_volunteer_null_z  <- here_read( "m_hours_charity_null_time_z")
-socializing_volunteer_null_z
 
 socializing_volunteer_null_raw  <- here_read( "m_hours_charity_null_time")
 socializing_volunteer_null_raw
@@ -5091,43 +5658,73 @@ socialising_on_volunteer_loss_raw <-here_read("m_socialising_on_volunteer_loss_r
 socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_z_loss") # NOT RUN because no effect
 socialising_on_volunteer_loss_raw
 
-socialising_on_volunteer_loss_raw
 
-socializing_donations_raw <- here_read("m_charity_donate_time")
-socializing_donations_raw
 
-socializing_donations_null_raw <- here_read("m_charity_donate_null_time")
-socializing_donations_null_raw
-socializing_donations_z
-socializing_donations_z <- here_read("m_charity_donate_time_z")
-socializing_donations_null_z <- here_read("m_charity_donate_null_time_z")# NOT RUN because no effect
+socializing_volunteer_z  <- here_read( "m_hours_charity_time_z")
+socializing_volunteer_z
+
+socializing_volunteer_null_z  <- here_read( "m_hours_charity_null_time_z")
+socializing_volunteer_null_z
+
+socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_z_loss")
+socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_z_loss")
+
 
 
 ## SOCIALISING LOSS: PROSOCIAL BEHAVIOUR  CONTRASTS
-socialising_on_donate_loss_raw <-here_read("m_socialising_on_donate_loss_raw")
-socialising_on_donate_loss_z <- here_read("m_socialising_on_donate_z_loss")
 m_socialising_on_volunteer_loss_raw
 
-socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_z_loss")
-socialising_on_volunteer_loss_z <-here_read("m_socialising_on_volunteer_z_loss")
 
-
-# donations
-socializing_donations_null_raw
-socializing_donations_raw
-contrast_socializing_donations_raw <- lmtp_contrast(socializing_donations_raw,
-                                                    ref = socializing_donations_null_raw, type = "additive")
+# donations. RAW
+contrast_socializing_donations_raw <-
+  lmtp_contrast(socializing_donations_raw,
+                ref = socializing_donations_null_raw, type = "additive")
 contrast_socializing_donations_raw
 
-tab_contrast_socializing_donations_raw <- margot_tab_lmtp(contrast_socializing_donations_raw, scale = "RD", new_name = "Donations: socialising >= 1.4 hours pw")
+tab_contrast_socializing_donations_raw <-
+  margot_tab_lmtp(contrast_socializing_donations_raw,
+                  scale = "RD",
+                  new_name = "Donations: socialising >= 1.4 hours pw")
 
 tab_contrast_socializing_donations_raw
 
-output_tab_contrast_socializing_donations_raw <- lmtp_evalue_tab(tab_contrast_socializing_donations_raw,  
-                                                                 delta = 1, sd = sd_donations, scale = c("RD"))
+output_tab_contrast_socializing_donations_raw <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_donations_raw,
+    delta = 1,
+    sd = sd_donations,
+    scale = c("RD")
+  )
 
 # HERE
 output_tab_contrast_socializing_donations_raw
+
+
+
+
+#STRONG
+contrast_socializing_donations_raw_strong <-
+  lmtp_contrast(socializing_donations_raw,
+                ref = socialising_on_donate_loss_raw, type = "additive")
+contrast_socializing_donations_raw_strong
+
+tab_contrast_socializing_donations_raw_strong <-
+  margot_tab_lmtp(contrast_socializing_donations_raw_strong,
+                  scale = "RD",
+                  new_name = "Donations: socialising")
+
+tab_contrast_socializing_donations_raw_strong
+
+output_tab_contrast_socializing_donations_raw_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_donations_raw_strong,
+    delta = 1,
+    sd = sd_donations,
+    scale = c("RD")
+  )
+
+# HERE
+output_tab_contrast_socializing_donations_raw_strong
 
 
 # loss on donation raw
@@ -5135,127 +5732,268 @@ socialising_on_donate_loss_raw
 
 socialising_on_donate_loss_raw
 socializing_donations_null_raw
-contrast_socialising_on_donate_loss_raw <- lmtp_contrast(socialising_on_donate_loss_raw,
-                                                         ref = socializing_donations_null_raw, type = "additive")
+contrast_socialising_on_donate_loss_raw <-
+  lmtp_contrast(socialising_on_donate_loss_raw,
+                ref = socializing_donations_null_raw,
+                type = "additive")
 contrast_socialising_on_donate_loss_raw
 
-tab_contrast_socialising_on_donate_loss_raw <- margot_tab_lmtp(contrast_socialising_on_donate_loss_raw, scale = "RD", new_name = "Donations: any community socialising lost")
+tab_contrast_socialising_on_donate_loss_raw <-
+  margot_tab_lmtp(contrast_socialising_on_donate_loss_raw,
+                  scale = "RD",
+                  new_name = "Donations: any community socialising lost")
 
 tab_contrast_socialising_on_donate_loss_raw
 
-output_tab_contrast_socialising_on_donate_loss_raw<- lmtp_evalue_tab(tab_contrast_socialising_on_donate_loss_raw,  
-                                                                    delta = 1, sd = sd_donations, scale = c("RD"))
+output_tab_contrast_socialising_on_donate_loss_raw <-
+  lmtp_evalue_tab(
+    tab_contrast_socialising_on_donate_loss_raw,
+    delta = 1,
+    sd = sd_donations,
+    scale = c("RD")
+  )
 output_tab_contrast_socialising_on_donate_loss_raw
 output_tab_contrast_socialising_on_donate_loss_raw
 
-here_save(output_tab_contrast_socialising_on_donate_loss_raw, "output_tab_contrast_socialising_on_donate_loss_raw")
+here_save(
+  output_tab_contrast_socialising_on_donate_loss_raw,
+  "output_tab_contrast_socialising_on_donate_loss_raw"
+)
 
 # HERE
 output_tab_contrast_socialising_on_donate_loss_raw
-here_save(output_tab_contrast_socialising_on_donate_loss_raw, "output_tab_contrast_socialising_on_donate_loss_raw")
-
-# HERE
-output_tab_contrast_socialising_on_donate_loss_raw
+here_save(
+  output_tab_contrast_socialising_on_donate_loss_raw,
+  "output_tab_contrast_socialising_on_donate_loss_raw"
+)
 
 
 # loss on donation z
 socialising_on_donate_loss_z
 socializing_donations_null_z
-contrast_socialising_on_donate_loss_z <- lmtp_contrast(socialising_on_donate_loss_z,
-                                                       ref = socializing_donations_null_z, type = "additive")
+contrast_socialising_on_donate_loss_z <-
+  lmtp_contrast(socialising_on_donate_loss_z,
+                ref = socializing_donations_null_z,
+                type = "additive")
 contrast_socialising_on_donate_loss_z
 
-tab_contrast_socialising_on_donate_loss_z <- margot_tab_lmtp(contrast_socialising_on_donate_loss_z, scale = "RD", new_name = "Donations: any community socialising lost")
+tab_contrast_socialising_on_donate_loss_z <-
+  margot_tab_lmtp(contrast_socialising_on_donate_loss_z,
+                  scale = "RD",
+                  new_name = "Donations: any community socialising lost")
 
 tab_contrast_socialising_on_donate_loss_z
 
-output_tab_contrast_socialising_on_donate_loss_z<- lmtp_evalue_tab(tab_contrast_socialising_on_donate_loss_z,  
-                                                                   delta = 1, sd = sd_donations, scale = c("RD"))
+output_tab_contrast_socialising_on_donate_loss_z <-
+  lmtp_evalue_tab(
+    tab_contrast_socialising_on_donate_loss_z,
+    delta = 1,
+    sd = sd_donations,
+    scale = c("RD")
+  )
 output_tab_contrast_socialising_on_donate_loss_z
 output_tab_contrast_socialising_on_donate_loss_z
 
-here_save(output_tab_contrast_socialising_on_donate_loss_z, "output_tab_contrast_socialising_on_donate_loss_z")
+here_save(
+  output_tab_contrast_socialising_on_donate_loss_z,
+  "output_tab_contrast_socialising_on_donate_loss_z"
+)
 
 # HERE
 output_tab_contrast_socialising_on_donate_loss_z
 
 
 
-# donations
-contrast_socializing_donations_z <- lmtp_contrast(socializing_donations_z,
-                                                  ref = socializing_volunteer_null_z, type = "additive")
+# donations z
+contrast_socializing_donations_z <-
+  lmtp_contrast(socializing_donations_z,
+                ref = socializing_volunteer_null_z, type = "additive")
 contrast_socializing_donations_z
 
-tab_contrast_socializing_donations_z <- margot_tab_lmtp(contrast_socializing_donations_z, scale = "RD", new_name = "Donations: socialising >= 1.4 hours pw")
+tab_contrast_socializing_donations_z <-
+  margot_tab_lmtp(contrast_socializing_donations_z,
+                  scale = "RD",
+                  new_name = "Donations: socialising >= 1.4 hours pw")
 
 tab_contrast_socializing_donations_z
 
-output_tab_contrast_socializing_donations_z <- lmtp_evalue_tab(tab_contrast_socializing_donations_z,  
-                                                               delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_socializing_donations_z <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_donations_z,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 
-# HERE
-output_tab_contrast_socializing_donations_z
-output_tab_contrast_socializing_donations_raw
 
 
-# z scores 
-contrast_socializing_volunteer_z <- lmtp_contrast(socializing_volunteer_z,
-                                                  ref = socializing_volunteer_null_z, type = "additive")
+# donations z strong
+contrast_socializing_donations_z_strong <-
+  lmtp_contrast(socializing_donations_z,
+                ref = socialising_on_donate_loss_z, type = "additive")
+contrast_socializing_donations_z_strong
+
+tab_contrast_socializing_donations_z_strong  <-
+  margot_tab_lmtp(contrast_socializing_donations_z_strong,
+                  scale = "RD",
+                  new_name = "Donations: socialising")
+
+tab_contrast_socializing_donations_z_strong
+
+output_tab_contrast_socializing_donations_z_strong  <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_donations_z_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+
+# here
+output_tab_contrast_socializing_donations_z_strong
+
+# VOLUNTEER Z SCORE
+contrast_socializing_volunteer_z <-
+  lmtp_contrast(socializing_volunteer_z,
+                ref = socializing_volunteer_null_z, type = "additive")
 contrast_socializing_volunteer_z
 
-tab_contrast_socializing_volunteer_z<- margot_tab_lmtp(contrast_socializing_volunteer_z, scale = "RD", new_name = "Volunteering: socialising >= 1.4 hours pw")
+tab_contrast_socializing_volunteer_z <-
+  margot_tab_lmtp(contrast_socializing_volunteer_z,
+                  scale = "RD",
+                  new_name = "Volunteering: socialising >= 1.4 hours pw")
 tab_contrast_socializing_volunteer_z
 
-output_tab_contrast_socializing_volunteer_z <- lmtp_evalue_tab(tab_contrast_socializing_volunteer_z,  
-                                                               delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_socializing_volunteer_z <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_volunteer_z,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 
 
-#HERE 
+#HERE
 output_tab_contrast_socializing_volunteer_z
 
 
+# STRONG. Z VOLUNTEER
+contrast_socializing_volunteer_z_strong <-
+  lmtp_contrast(socializing_volunteer_z,
+                ref = socialising_on_volunteer_loss_z, type = "additive")
+contrast_socializing_volunteer_z_strong
 
-# raw
-contrast_socializing_volunteer_raw <- lmtp_contrast(socializing_volunteer_raw,
-                                                    ref = socializing_volunteer_null_raw, type = "additive")
+tab_contrast_socializing_volunteer_z_strong <-
+  margot_tab_lmtp(contrast_socializing_volunteer_z_strong,
+                  scale = "RD",
+                  new_name = "Volunteering: socialising >= 1.4 hours pw")
+tab_contrast_socializing_volunteer_z
+
+output_tab_contrast_socializing_volunteer_z_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_volunteer_z_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_tab_contrast_socializing_volunteer_z_strong
+
+#HERE
+output_tab_contrast_socializing_volunteer_z
+
+
+# VOLUNTEER RAW
+contrast_socializing_volunteer_raw <-
+  lmtp_contrast(socializing_volunteer_raw,
+                ref = socializing_volunteer_null_raw, type = "additive")
 contrast_socializing_volunteer_raw
 
-tab_contrast_socializing_volunteer_raw<- margot_tab_lmtp(contrast_socializing_volunteer_raw, scale = "RD", new_name = "Volunteering: socialising >= 1.4 hours pw")
+tab_contrast_socializing_volunteer_raw <-
+  margot_tab_lmtp(contrast_socializing_volunteer_raw,
+                  scale = "RD",
+                  new_name = "Volunteering: socialising >= 1.4 hours pw")
 tab_contrast_socializing_volunteer_raw
 
-output_tab_contrast_socializing_volunteer_raw <- lmtp_evalue_tab(tab_contrast_socializing_volunteer_raw,  
-                                                                 delta = 1, sd = sd_volunteer, scale = c("RD"))
+output_tab_contrast_socializing_volunteer_raw <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_volunteer_raw,
+    delta = 1,
+    sd = sd_volunteer,
+    scale = c("RD")
+  )
 
-# 
+
+# STRONG VOLUNTEER RAW
+contrast_socializing_volunteer_raw_strong  <-
+  lmtp_contrast(socializing_volunteer_raw,
+                ref = socialising_on_volunteer_loss_raw, type = "additive")
+contrast_socializing_volunteer_raw_strong
+
+tab_contrast_socializing_volunteer_raw_strong <-
+  margot_tab_lmtp(contrast_socializing_volunteer_raw_strong,
+                  scale = "RD",
+                  new_name = "Volunteering: socialising")
+tab_contrast_socializing_volunteer_raw_strong
+
+output_tab_contrast_socializing_volunteer_raw_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_volunteer_raw_strong,
+    delta = 1,
+    sd = sd_volunteer,
+    scale = c("RD")
+  )
+
+#
 # # LOSS RAW
-socialising_on_volunteer_loss_raw
+output_tab_contrast_socializing_volunteer_raw_strong
 
-tab_contrast_socializing_volunteer_loss_raw <- lmtp_contrast(socialising_on_volunteer_loss_raw,
-                                                    ref = socializing_volunteer_null_raw, type = "additive")
+tab_contrast_socializing_volunteer_loss_raw <-
+  lmtp_contrast(socialising_on_volunteer_loss_raw,
+                ref = socializing_volunteer_null_raw,
+                type = "additive")
 tab_contrast_socializing_volunteer_loss_raw
 
 
-contrast_tab_contrast_socializing_volunteer_loss_raw<- margot_tab_lmtp(tab_contrast_socializing_volunteer_loss_raw, scale = "RD", new_name = "Volunteering: any community socialising lost")
+contrast_tab_contrast_socializing_volunteer_loss_raw <-
+  margot_tab_lmtp(
+    tab_contrast_socializing_volunteer_loss_raw,
+    scale = "RD",
+    new_name = "Volunteering: any community socialising lost"
+  )
 contrast_tab_contrast_socializing_volunteer_loss_raw
 
-output_contrast_tab_contrast_socializing_volunteer_loss_raw <- lmtp_evalue_tab(contrast_tab_contrast_socializing_volunteer_loss_raw,
-                                                                 delta = 1, sd = sd_volunteer, scale = c("RD"))
+output_contrast_tab_contrast_socializing_volunteer_loss_raw <-
+  lmtp_evalue_tab(
+    contrast_tab_contrast_socializing_volunteer_loss_raw,
+    delta = 1,
+    sd = sd_volunteer,
+    scale = c("RD")
+  )
 
 output_contrast_tab_contrast_socializing_volunteer_loss_raw
 
 
 
 ### LOSS Z
-
-tab_contrast_socializing_volunteer_loss_z <- lmtp_contrast(socialising_on_volunteer_loss_z,
-                                                             ref = socializing_volunteer_null_z, type = "additive")
+tab_contrast_socializing_volunteer_loss_z <-
+  lmtp_contrast(socialising_on_volunteer_loss_z,
+                ref = socializing_volunteer_null_z,
+                type = "additive")
 tab_contrast_socializing_volunteer_loss_z
 
 
-contrast_tab_contrast_socializing_volunteer_loss_z<- margot_tab_lmtp(tab_contrast_socializing_volunteer_loss_z, scale = "RD", new_name = "Volunteering: any community socialising lost")
+contrast_tab_contrast_socializing_volunteer_loss_z <-
+  margot_tab_lmtp(tab_contrast_socializing_volunteer_loss_z,
+                  scale = "RD",
+                  new_name = "Volunteering: any community socialising lost")
 contrast_tab_contrast_socializing_volunteer_loss_z
 
-output_contrast_tab_contrast_socializing_volunteer_loss_z <- lmtp_evalue_tab(contrast_tab_contrast_socializing_volunteer_loss_z,delta = 1, sd = 1, scale = c("RD"))
+output_contrast_tab_contrast_socializing_volunteer_loss_z <-
+  lmtp_evalue_tab(
+    contrast_tab_contrast_socializing_volunteer_loss_z,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 output_contrast_tab_contrast_socializing_volunteer_loss_z
 
 ## HERE
@@ -5265,36 +6003,66 @@ output_contrast_tab_contrast_socializing_volunteer_loss_raw
 output_contrast_tab_contrast_socializing_volunteer_loss_raw
 
 output_contrast_tab_contrast_socializing_volunteer_loss_z
-### FOR PUB
--0.0467 * sd_volunteer
+### FOR PUB-0.0467 * sd_volunteer
 
 # RAW CHURCH PROSOCIAL
-tab_socializing_prosocial_behaviour_raw <- rbind(output_tab_contrast_socializing_donations_raw ,output_tab_contrast_socializing_volunteer_raw)
-here_save(tab_socializing_prosocial_behaviour_raw, "tab_socializing_prosocial_behaviour_raw")
+tab_socializing_prosocial_behaviour_raw <-
+  rbind(
+    output_tab_contrast_socializing_donations_raw ,
+    output_tab_contrast_socializing_volunteer_raw
+  )
+here_save(
+  tab_socializing_prosocial_behaviour_raw,
+  "tab_socializing_prosocial_behaviour_raw"
+)
 
 # for group tab
-tab_socializing_prosocial_behaviour_raw<- here_read("tab_socializing_prosocial_behaviour_raw")
+tab_socializing_prosocial_behaviour_raw <-
+  here_read("tab_socializing_prosocial_behaviour_raw")
 
 
 ### Z ChURCH PROSOCIAL
-tab_socializing_prosocial_behaviour_z <- rbind(output_tab_contrast_socializing_donations_z,output_tab_contrast_socializing_volunteer_z)
-here_save(tab_socializing_prosocial_behaviour_z, "tab_socializing_prosocial_behaviour_z")
-tab_socializing_prosocial_behaviour_z<- here_read("tab_socializing_prosocial_behaviour_z")
+tab_socializing_prosocial_behaviour_z <-
+  rbind(
+    output_tab_contrast_socializing_donations_z,
+    output_tab_contrast_socializing_volunteer_z
+  )
+here_save(tab_socializing_prosocial_behaviour_z,
+          "tab_socializing_prosocial_behaviour_z")
+tab_socializing_prosocial_behaviour_z <-
+  here_read("tab_socializing_prosocial_behaviour_z")
 
 tab_socializing_prosocial_behaviour_z
 
 ### LOSS PROSOCAL RAW
-tab_socializing_prosocial_behaviour_loss_raw <- rbind(output_tab_contrast_socialising_on_donate_loss_raw,output_contrast_tab_contrast_socializing_volunteer_loss_raw)
-here_save(tab_socializing_prosocial_behaviour_loss_raw, "tab_socializing_prosocial_behaviour_loss_raw")
+tab_socializing_prosocial_behaviour_loss_raw <-
+  rbind(
+    output_tab_contrast_socialising_on_donate_loss_raw,
+    output_contrast_tab_contrast_socializing_volunteer_loss_raw
+  )
+here_save(
+  tab_socializing_prosocial_behaviour_loss_raw,
+  "tab_socializing_prosocial_behaviour_loss_raw"
+)
 tab_socializing_prosocial_behaviour_loss_raw
 
 ## LOSS PROSOCIAL Z
-tab_socializing_prosocial_behaviour_loss_z <- rbind(output_tab_contrast_socialising_on_donate_loss_z,output_contrast_tab_contrast_socializing_volunteer_loss_z)
-here_save(tab_socializing_prosocial_behaviour_loss_z, "tab_socializing_prosocial_behaviour_loss_z")
+tab_socializing_prosocial_behaviour_loss_z <-
+  rbind(
+    output_tab_contrast_socialising_on_donate_loss_z,
+    output_contrast_tab_contrast_socializing_volunteer_loss_z
+  )
+here_save(
+  tab_socializing_prosocial_behaviour_loss_z,
+  "tab_socializing_prosocial_behaviour_loss_z"
+)
 tab_socializing_prosocial_behaviour_loss_z
-group_tab_socializing_prosocial_behaviour_loss_z <- group_tab(tab_socializing_prosocial_behaviour_loss_z, type = "RD")
-here_save(group_tab_socializing_prosocial_behaviour_loss_z, "group_tab_socializing_prosocial_behaviour_loss_z")
-
+group_tab_socializing_prosocial_behaviour_loss_z <-
+  group_tab(tab_socializing_prosocial_behaviour_loss_z, type = "RD")
+here_save(
+  group_tab_socializing_prosocial_behaviour_loss_z,
+  "group_tab_socializing_prosocial_behaviour_loss_z"
+)
 
 sd_volunteer *  -0.0337 
 
@@ -5408,37 +6176,99 @@ ggsave(
 
 
 
-# ###  SOCIALISING: ROSOCIAL BEHAVIOUR
-m_hours_charity_time <- here_read("m_hours_charity_time")
-m_hours_charity_null_time <- here_read( "m_hours_charity_null_time")
-m_hours_charity_time_z <- here_read("m_hours_charity_time_z")
-m_hours_charity_null_time_z <-here_read('m_hours_charity_null_time_z')
-m_charity_donate_time <- here_read("m_charity_donate_time")
-m_charity_donate_null_time <- here_read("m_charity_donate_null_time")
-m_charity_donate_time <- here_read("m_charity_donate_time")
-m_charity_donate_null_time_z <- here_read("m_charity_donate_null_time_z")
+## STRONG
+tab_socializing_prosocial_behaviour_loss_raw_strong<<- rbind(output_tab_contrast_socializing_donations_raw_strong,output_tab_contrast_socializing_volunteer_raw_strong)
+group_tab_socializing_prosocial_behaviour_loss_raw_strong <- group_tab(tab_socializing_prosocial_behaviour_loss_raw_strong, type = "RD")
+here_save(group_tab_socializing_prosocial_behaviour_loss_raw_strong, "group_tab_socializing_prosocial_behaviour_loss_raw_strong")
+here_save(tab_socializing_prosocial_behaviour_loss_raw_strong, "tab_socializing_prosocial_behaviour_loss_raw_strong")
 
 
-contrast_hours_only_donate_full_time_z <- lmtp_contrast(m_time_community_church,ref = m_time_family_null_church, type = "rr")
-
-tab_hours_only_donate_charity_z <- margot_tab_lmtp(contrast_hours_only_donate_full_time_z,
-                                                   scale = "RD",
-                                                   new_name = "Donations LMTP: hours socialising >=2 hours pw")
-tab_hours_only_donate_charity_z
-
-output_charity_time <- lmtp_evalue_tab(tab_hours_only_donate_charity_z,
-                                       delta = 1, sd = 1, scale = c("RD"))
-output_charity_time
-
-tab_charity_time <- rbind(output_volunteering_time,output_charity_time)
-group_tab_charity_time <- group_tab(tab_charity_time, type = "RD")
-group_tab_charity_time
-here_save(group_tab_charity_time,"group_tab_charity_time")
-
-grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full_time,  scale = "RD")
+tab_socializing_prosocial_behaviour_loss_z_strong<- rbind(output_tab_contrast_socializing_donations_z_strong,output_tab_contrast_socializing_volunteer_z_strong)
+here_save(tab_socializing_prosocial_behaviour_loss_z_strong, "tab_socializing_prosocial_behaviour_loss_z_strong")
+group_tab_socializing_prosocial_behaviour_loss_z_strong <- group_tab(tab_socializing_prosocial_behaviour_loss_z_strong, type = "RD")
+here_save(group_tab_socializing_prosocial_behaviour_loss_z_strong, "group_tab_socializing_prosocial_behaviour_loss_z_strong")
 
 
 
+# for reference
+tab_socializing_prosocial_behaviour_loss_raw_strong<- here_read("tab_socializing_prosocial_behaviour_loss_raw_strong")
+group_tab_socializing_prosocial_behaviour_loss_raw_strong<- here_read("group_tab_socializing_prosocial_behaviour_loss_raw_strong")
+
+# view
+tab_socializing_prosocial_behaviour_loss_raw_strong
+group_tab_socializing_prosocial_behaviour_loss_raw_strong
+
+tab_socializing_prosocial_behaviour_loss_z_strong<- here_read("tab_socializing_prosocial_behaviour_loss_z_strong")
+group_tab_socializing_prosocial_behaviour_loss_z_strong<- here_read("group_tab_socializing_prosocial_behaviour_loss_z_strong")
+group_tab_socializing_prosocial_behaviour_loss_z_strong
+plot_group_tab_socializing_prosocial_behaviour_loss_z_strong<- margot_plot(
+  group_tab_socializing_prosocial_behaviour_loss_z_strong,
+  type = "RD",
+  title = "Socialising effect on charity",
+  subtitle = ">= 1.4 Weekly Hours vs None",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+
+plot_group_tab_socializing_prosocial_behaviour_loss_z_strong
+
+ggsave(
+  plot_group_tab_socializing_prosocial_behaviour_loss_z_strong,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_charity_time_loss_z.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+# 
+# # ###  SOCIALISING: ROSOCIAL BEHAVIOUR
+# m_hours_charity_time <- here_read("m_hours_charity_time")
+# m_hours_charity_null_time <- here_read( "m_hours_charity_null_time")
+# m_hours_charity_time_z <- here_read("m_hours_charity_time_z")
+# m_hours_charity_null_time_z <-here_read('m_hours_charity_null_time_z')
+# m_charity_donate_time <- here_read("m_charity_donate_time")
+# m_charity_donate_null_time <- here_read("m_charity_donate_null_time")
+# m_charity_donate_time <- here_read("m_charity_donate_time")
+# m_charity_donate_null_time_z <- here_read("m_charity_donate_null_time_z")
+# 
+# 
+# contrast_hours_only_donate_full_time_z <- lmtp_contrast(m_hours_charity_time_z,
+#                                                         ref = m_hours_charity_null_time_z, type = "additive")
+# 
+# tab_hours_only_donate_charity_z <- margot_tab_lmtp(contrast_hours_only_donate_full_time_z,
+#                                                    scale = "RD",
+#                                                    new_name = "Donations LMTP: hours socialising >=2 hours pw")
+# tab_hours_only_donate_charity_z
+# 
+# output_charity_time <- lmtp_evalue_tab(tab_hours_only_donate_charity_z,
+#                                        delta = 1, sd = 1, scale = c("RD"))
+# output_charity_time
+# 
+# tab_charity_time <- rbind(output_volunteering_time,output_charity_time)
+# group_tab_charity_time <- group_tab(tab_charity_time, type = "RD")
+# group_tab_charity_time
+# here_save(group_tab_charity_time,"group_tab_charity_time")
+# 
+# grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full_time,  scale = "RD")
+
+
+# strong
 
 # 
 # contrast_time_community_full_church <- lmtp_contrast(m_time_community_church,ref = m_time_family_null_church, type = "rr")
@@ -5455,9 +6285,6 @@ grouped_outcomes <- group_tab( contrast_hours_full, contrast_hours_full_time,  s
 # 
 # tab_contrast_time_community_full_church
 # 
-
-
-
 
 # contrasts socialising time  ---------------------------------------------
 
@@ -6456,410 +7283,810 @@ m_hours_charity_null_time_z <- here_read( "m_hours_charity_null_time_z")
 
 #sqrt(2)
 # asians
-m_church_t2_warm_asians_z_time<- here_read("m_church_t2_warm_asians_z_time")
-m_church_t2_warm_asians_z_time_loss<- here_read("m_church_t2_warm_asians_z_time_loss")
-null_m_church_t2_warm_asians_z_time<- here_read("null_m_church_t2_warm_asians_z_time")
+m_church_t2_warm_asians_z_time <-
+  here_read("m_church_t2_warm_asians_z_time")
+m_church_t2_warm_asians_z_time_loss <-
+  here_read("m_church_t2_warm_asians_z_time_loss")
+null_m_church_t2_warm_asians_z_time <-
+  here_read("null_m_church_t2_warm_asians_z_time")
 
-contrast_church_asians_time <- lmtp_contrast(m_church_t2_warm_asians_z_time,ref = null_m_church_t2_warm_asians_z_time,  type = "additive")
+contrast_church_asians_time <-
+  lmtp_contrast(m_church_t2_warm_asians_z_time,
+                ref = null_m_church_t2_warm_asians_z_time,
+                type = "additive")
 contrast_church_asians_time
 
-tab_contrast_church_asians_time  <- margot_tab_lmtp(contrast_church_asians_time, scale = "RD", 
-                                                    new_name = "Warm Asians: social >= 1.4 hours pw")
-tab_contrast_church_asians_time 
+tab_contrast_church_asians_time  <-
+  margot_tab_lmtp(contrast_church_asians_time,
+                  scale = "RD",
+                  new_name = "Warm Asians: social >= 1.4 hours pw")
+tab_contrast_church_asians_time
 
 
 # loss
-contrast_church_asians_time_loss <- lmtp_contrast(m_church_t2_warm_asians_z_time_loss,ref = null_m_church_t2_warm_asians_z_time,  type = "additive")
+contrast_church_asians_time_loss <-
+  lmtp_contrast(m_church_t2_warm_asians_z_time_loss,
+                ref = null_m_church_t2_warm_asians_z_time,
+                type = "additive")
 contrast_church_asians_time_loss
 
-tab_contrast_church_asians_time_loss  <- margot_tab_lmtp(contrast_church_asians_time_loss, scale = "RD", 
-                                                    new_name = "Warm Asians: any socialising lost")
+tab_contrast_church_asians_time_loss  <-
+  margot_tab_lmtp(contrast_church_asians_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Asians: any socialising lost")
 tab_contrast_church_asians_time_loss
+
+
+
+# strong
+contrast_church_asians_time_strong <-
+  lmtp_contrast(m_church_t2_warm_chinese_z_time ,
+                ref = m_church_t2_warm_chinese_z_time_loss,
+                type = "additive")
+contrast_church_asians_time_strong
+
+tab_contrast_church_asians_time_strong   <-
+  margot_tab_lmtp(contrast_church_asians_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Asians: socialising")
+tab_contrast_church_asians_time_strong
+
+
 
 # chinese
 
-m_church_t2_warm_chinese_z_time  <- here_read("m_church_t2_warm_chinese_z_time")
-m_church_t2_warm_chinese_z_time_loss  <- here_read("m_church_t2_warm_chinese_z_time_loss")
-null_m_church_t2_warm_chinese_z_time <- here_read("null_m_church_t2_warm_chinese_z_time")
+m_church_t2_warm_chinese_z_time  <-
+  here_read("m_church_t2_warm_chinese_z_time")
+m_church_t2_warm_chinese_z_time_loss  <-
+  here_read("m_church_t2_warm_chinese_z_time_loss")
+null_m_church_t2_warm_chinese_z_time <-
+  here_read("null_m_church_t2_warm_chinese_z_time")
 
 
-contrast_church_chinese_time <- lmtp_contrast(m_church_t2_warm_chinese_z_time,
-                                              ref = null_m_church_t2_warm_chinese_z_time,
-                                              type = "additive")
+contrast_church_chinese_time <-
+  lmtp_contrast(m_church_t2_warm_chinese_z_time,
+                ref = null_m_church_t2_warm_chinese_z_time,
+                type = "additive")
 contrast_church_chinese_time
-
-tab_contrast_church_chinese_time <- margot_tab_lmtp(contrast_church_chinese_time, scale = "RD", 
-                                                    new_name = "Warm Chinese: social >= 1.4 hours pw")
+tab_contrast_church_chinese_time <-
+  margot_tab_lmtp(contrast_church_chinese_time,
+                  scale = "RD",
+                  new_name = "Warm Chinese: social >= 1.4 hours pw")
 tab_contrast_church_chinese_time
 
 # loss
-contrast_church_chinese_time_loss <- lmtp_contrast(m_church_t2_warm_chinese_z_time_loss,
-                                              ref = null_m_church_t2_warm_chinese_z_time,
-                                              type = "additive")
+contrast_church_chinese_time_loss <-
+  lmtp_contrast(m_church_t2_warm_chinese_z_time_loss,
+                ref = null_m_church_t2_warm_chinese_z_time,
+                type = "additive")
 contrast_church_chinese_time_loss
-
-tab_contrast_church_chinese_time_loss <- margot_tab_lmtp(contrast_church_chinese_time_loss, scale = "RD", 
-                                                    new_name = "Warm Chinese: any socialising lost")
+tab_contrast_church_chinese_time_loss <-
+  margot_tab_lmtp(contrast_church_chinese_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Chinese: any socialising lost")
 tab_contrast_church_chinese_time_loss
 
+# strong
+contrast_church_chinese_time_strong <-
+  lmtp_contrast(m_church_t2_warm_chinese_z_time,
+                ref = m_church_t2_warm_chinese_z_time_loss,
+                type = "additive")
+
+tab_contrast_church_chinese_time_strong <-
+  margot_tab_lmtp(contrast_church_chinese_time,
+                  scale = "RD",
+                  new_name = "Warm Chinese: socialising")
+tab_contrast_church_chinese_time_strong
+
+
+
 # immigrants
-m_c_t2_warm_immigrants_z_time  <- here_read("m_c_t2_warm_immigrants_z_time")
-m_c_t2_warm_immigrants_z_time_loss  <- here_read("m_c_t2_warm_immigrants_z_time_loss")
-null_m_c_t2_warm_immigrants_z_time  <- here_read("null_m_c_t2_warm_immigrants_z_time")
+m_c_t2_warm_immigrants_z_time  <-
+  here_read("m_c_t2_warm_immigrants_z_time")
+m_c_t2_warm_immigrants_z_time_loss  <-
+  here_read("m_c_t2_warm_immigrants_z_time_loss")
+null_m_c_t2_warm_immigrants_z_time  <-
+  here_read("null_m_c_t2_warm_immigrants_z_time")
 
 
-contrast_church_immigrants_time <- lmtp_contrast(m_c_t2_warm_immigrants_z_time,
-                                                 ref = null_m_c_t2_warm_immigrants_z_time,
-                                                 type = "additive")
+contrast_church_immigrants_time <-
+  lmtp_contrast(m_c_t2_warm_immigrants_z_time,
+                ref = null_m_c_t2_warm_immigrants_z_time,
+                type = "additive")
 contrast_church_immigrants_time
 
-tab_contrast_church_immigrants_time <- margot_tab_lmtp(contrast_church_immigrants_time, scale = "RD", 
-                                                       new_name = "Warm Immigrants: social >= 1.4 hours pw")
+tab_contrast_church_immigrants_time <-
+  margot_tab_lmtp(contrast_church_immigrants_time,
+                  scale = "RD",
+                  new_name = "Warm Immigrants: social >= 1.4 hours pw")
 tab_contrast_church_immigrants_time
 
 
 # loss
-contrast_church_immigrants_time_loss <- lmtp_contrast(m_c_t2_warm_immigrants_z_time_loss,
-                                                 ref = null_m_c_t2_warm_immigrants_z_time,
-                                                 type = "additive")
+contrast_church_immigrants_time_loss <-
+  lmtp_contrast(m_c_t2_warm_immigrants_z_time_loss,
+                ref = null_m_c_t2_warm_immigrants_z_time,
+                type = "additive")
 contrast_church_immigrants_time_loss
 
-tab_contrast_church_immigrants_time_loss <- margot_tab_lmtp(contrast_church_immigrants_time_loss, scale = "RD", 
-                                                       new_name = "Warm Immigrants: any socialising lost")
+tab_contrast_church_immigrants_time_loss <-
+  margot_tab_lmtp(contrast_church_immigrants_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Immigrants: any socialising lost")
 tab_contrast_church_immigrants_time_loss
+
+
+# strong
+contrast_church_immigrants_time_strong <-
+  lmtp_contrast(m_c_t2_warm_immigrants_z_time,
+                ref = m_c_t2_warm_immigrants_z_time_loss,
+                type = "additive")
+
+tab_contrast_church_immigrants_time_strong <-
+  margot_tab_lmtp(contrast_church_immigrants_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Immigrants: socialising")
+tab_contrast_church_immigrants_time_strong
+
+
 
 
 
 #indians
-m_c_t2_warm_indians_z_time  <- here_read("m_c_t2_warm_indians_z_time")
-m_c_t2_warm_indians_z_time_loss  <- here_read("m_c_t2_warm_indians_z_time_loss")
+m_c_t2_warm_indians_z_time  <-
+  here_read("m_c_t2_warm_indians_z_time")
+m_c_t2_warm_indians_z_time_loss  <-
+  here_read("m_c_t2_warm_indians_z_time_loss")
 
-m_c_t2_warm_indians_z_null_time  <- here_read("m_c_t2_warm_indians_z_null_time")
+m_c_t2_warm_indians_z_null_time  <-
+  here_read("m_c_t2_warm_indians_z_null_time")
 
-contrast_church_indians_time <- lmtp_contrast(m_c_t2_warm_indians_z_time,
-                                              ref = m_c_t2_warm_indians_z_null_time,
-                                              type = "additive")
+contrast_church_indians_time <-
+  lmtp_contrast(m_c_t2_warm_indians_z_time,
+                ref = m_c_t2_warm_indians_z_null_time,
+                type = "additive")
 
 
-tab_contrast_church_indians_time <- margot_tab_lmtp(contrast_church_indians_time, scale = "RD", 
-                                                    new_name = "Warm Indians LMTP: social >= 1.4 hours pw")
+tab_contrast_church_indians_time <-
+  margot_tab_lmtp(contrast_church_indians_time,
+                  scale = "RD",
+                  new_name = "Warm Indians: social >= 1.4 hours pw")
 
 tab_contrast_church_indians_time
 
 
 # loss
-contrast_church_indians_time_loss <- lmtp_contrast(m_c_t2_warm_indians_z_time_loss,
-                                              ref = m_c_t2_warm_indians_z_null_time,
-                                              type = "additive")
+contrast_church_indians_time_loss <-
+  lmtp_contrast(m_c_t2_warm_indians_z_time_loss,
+                ref = m_c_t2_warm_indians_z_null_time,
+                type = "additive")
 
 
-tab_contrast_church_indians_time_loss <- margot_tab_lmtp(contrast_church_indians_time_loss, scale = "RD", 
-                                                    new_name = "Warm Indians LMTP: any socialising lost")
+tab_contrast_church_indians_time_loss <-
+  margot_tab_lmtp(contrast_church_indians_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Indians: any socialising lost")
 
 tab_contrast_church_indians_time_loss
+
+# strong
+contrast_church_indians_time_strong <-
+  lmtp_contrast(m_c_t2_warm_indians_z_time,
+                ref = m_c_t2_warm_indians_z_time_loss,
+                type = "additive")
+
+
+tab_contrast_church_indians_time_strong <-
+  margot_tab_lmtp(contrast_church_indians_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Indians: socialising")
+
+tab_contrast_church_indians_time_strong
 
 
 
 # elderly
-m_c_t2_warm_elderly_z_time  <- here_read("m_c_t2_warm_elderly_z_time")
-m_c_t2_warm_elderly_z_time_loss  <- here_read("m_c_t2_warm_elderly_z_time_loss")
-null_m_c_t2_warm_elderly_z_time <- here_read("null_m_c_t2_warm_elderly_z_time")
+m_c_t2_warm_elderly_z_time  <-
+  here_read("m_c_t2_warm_elderly_z_time")
+m_c_t2_warm_elderly_z_time_loss  <-
+  here_read("m_c_t2_warm_elderly_z_time_loss")
+null_m_c_t2_warm_elderly_z_time <-
+  here_read("null_m_c_t2_warm_elderly_z_time")
 
-contrast_church_elderly_time <- lmtp_contrast(m_c_t2_warm_elderly_z_time,
-                                              ref = null_m_c_t2_warm_elderly_z_time,
-                                              type = "additive")
+contrast_church_elderly_time <-
+  lmtp_contrast(m_c_t2_warm_elderly_z_time,
+                ref = null_m_c_t2_warm_elderly_z_time,
+                type = "additive")
 
 contrast_church_elderly_time
 
-tab_contrast_church_elderly_time<- margot_tab_lmtp(contrast_church_elderly_time, scale = "RD", 
-                                                   new_name = "Warm Elderly LMTP: social >= 1.4 hours pw")
+tab_contrast_church_elderly_time <-
+  margot_tab_lmtp(contrast_church_elderly_time,
+                  scale = "RD",
+                  new_name = "Warm Elderly: social >= 1.4 hours pw")
 
 tab_contrast_church_elderly_time
 
 # loss
-contrast_church_elderly_time_loss <- lmtp_contrast(m_c_t2_warm_elderly_z_time_loss,
-                                              ref = null_m_c_t2_warm_elderly_z_time,
-                                              type = "additive")
+contrast_church_elderly_time_loss <-
+  lmtp_contrast(m_c_t2_warm_elderly_z_time_loss,
+                ref = null_m_c_t2_warm_elderly_z_time,
+                type = "additive")
 
 contrast_church_elderly_time_loss
 
-tab_contrast_church_elderly_time_loss<- margot_tab_lmtp(contrast_church_elderly_time_loss, scale = "RD", 
-                                                   new_name = "Warm Elderly LMTP: any socialising lost")
+tab_contrast_church_elderly_time_loss <-
+  margot_tab_lmtp(contrast_church_elderly_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Elderly: any socialising lost")
 
 tab_contrast_church_elderly_time_loss
+
+# strong
+contrast_church_elderly_time_strong <-
+  lmtp_contrast(m_c_t2_warm_elderly_z_time,
+                ref = m_c_t2_warm_elderly_z_time_loss,
+                type = "additive")
+
+contrast_church_elderly_time_strong
+
+tab_contrast_church_elderly_time_strong <-
+  margot_tab_lmtp(contrast_church_elderly_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Elderly: socialising")
+
+tab_contrast_church_elderly_time_strong
 
 
 
 # maori
 m_c_t2_warm_maori_z_time  <- here_read("m_c_t2_warm_maori_z_time")
-m_c_t2_warm_maori_z_time_loss  <- here_read("m_c_t2_warm_maori_z_time_loss")
-null_m_c_t2_warm_maori_z_time  <- here_read("null_m_c_t2_warm_maori_z_time")
+m_c_t2_warm_maori_z_time_loss  <-
+  here_read("m_c_t2_warm_maori_z_time_loss")
+null_m_c_t2_warm_maori_z_time  <-
+  here_read("null_m_c_t2_warm_maori_z_time")
 
-contrast_church_maori_time <- lmtp_contrast(m_c_t2_warm_maori_z_time,
-                                            ref = null_m_c_t2_warm_maori_z_time,
-                                            type = "additive")
+contrast_church_maori_time <-
+  lmtp_contrast(m_c_t2_warm_maori_z_time,
+                ref = null_m_c_t2_warm_maori_z_time,
+                type = "additive")
 
 contrast_church_maori_time
-tab_contrast_church_maori_time <- margot_tab_lmtp(contrast_church_maori_time, scale = "RD", 
-                                                  new_name = "Warm Maori: social >= 1.4 hours pw")
+tab_contrast_church_maori_time <-
+  margot_tab_lmtp(contrast_church_maori_time,
+                  scale = "RD",
+                  new_name = "Warm Maori: social >= 1.4 hours pw")
 
 tab_contrast_church_maori_time
 
-
-# loss 
-contrast_church_maori_time_loss <- lmtp_contrast(m_c_t2_warm_maori_z_time_loss,
-                                            ref = null_m_c_t2_warm_maori_z_time,
-                                            type = "additive")
+null_m_c_t2_warm_maori_z_time
+m_c_t2_warm_maori_z_time_loss
+m_c_t2_warm_maori_z_time
+# loss
+contrast_church_maori_time_loss <-
+  lmtp_contrast(m_c_t2_warm_maori_z_time_loss,
+                ref = null_m_c_t2_warm_maori_z_time,
+                type = "additive")
 
 contrast_church_maori_time_loss
-tab_contrast_church_maori_time_loss<- margot_tab_lmtp(contrast_church_maori_time_loss, scale = "RD", 
-                                                  new_name = "Warm Maori: any socialising lost")
+tab_contrast_church_maori_time_loss <-
+  margot_tab_lmtp(contrast_church_maori_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Maori: any socialising lost")
 
 tab_contrast_church_maori_time_loss
 
+# strong
+contrast_church_maori_time_strong <-
+  lmtp_contrast(m_c_t2_warm_maori_z_time,
+                ref = m_c_t2_warm_maori_z_time_loss,
+                type = "additive")
 
+contrast_church_maori_time_strong
+tab_contrast_church_maori_time_strong <-
+  margot_tab_lmtp(contrast_church_maori_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Maori: socialising")
+
+tab_contrast_church_maori_time_strong
 
 
 # mental illness
-m_c_t2_warm_mental_illness_z_time  <- here_read("m_c_t2_warm_mental_illness_z_time")
-m_c_t2_warm_mental_illness_z_time_loss  <- here_read("m_c_t2_warm_mental_illness_z_time_loss")
-null_m_c_t2_warm_mental_illness_z_time <- here_read("null_m_c_t2_warm_mental_illness_z_time")
+m_c_t2_warm_mental_illness_z_time  <-
+  here_read("m_c_t2_warm_mental_illness_z_time")
+m_c_t2_warm_mental_illness_z_time_loss  <-
+  here_read("m_c_t2_warm_mental_illness_z_time_loss")
+null_m_c_t2_warm_mental_illness_z_time <-
+  here_read("null_m_c_t2_warm_mental_illness_z_time")
 
 
-contrast_church_mental_illness_time <- lmtp_contrast(m_c_t2_warm_mental_illness_z_time,
-                                                     ref = null_m_c_t2_warm_mental_illness_z_time,
-                                                     type = "additive")
+contrast_church_mental_illness_time <-
+  lmtp_contrast(m_c_t2_warm_mental_illness_z_time,
+                ref = null_m_c_t2_warm_mental_illness_z_time,
+                type = "additive")
 
 
-tab_contrast_church_mental_illness_time<- margot_tab_lmtp(contrast_church_mental_illness_time, scale = "RD", new_name = "Warm Mental Illness: social >= 1.4 hours pw")
+tab_contrast_church_mental_illness_time <-
+  margot_tab_lmtp(contrast_church_mental_illness_time,
+                  scale = "RD",
+                  new_name = "Warm Mental Illness: social >= 1.4 hours pw")
 
 tab_contrast_church_mental_illness_time
 
 # loss
-contrast_church_mental_illness_time_loss <- lmtp_contrast(m_c_t2_warm_mental_illness_z_time_loss,
-                                                     ref = null_m_c_t2_warm_mental_illness_z_time,
-                                                     type = "additive")
+contrast_church_mental_illness_time_loss <-
+  lmtp_contrast(m_c_t2_warm_mental_illness_z_time_loss,
+                ref = null_m_c_t2_warm_mental_illness_z_time,
+                type = "additive")
 
 
-tab_contrast_church_mental_illness_time_loss<- margot_tab_lmtp(contrast_church_mental_illness_time_loss, scale = "RD", 
-                                                               new_name = "Warm Mental Illness: any socialising lost")
+tab_contrast_church_mental_illness_time_loss <-
+  margot_tab_lmtp(contrast_church_mental_illness_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Mental Illness: any socialising lost")
 
 tab_contrast_church_mental_illness_time_loss
 
+# strong
+contrast_church_mental_illness_time_strong <-
+  lmtp_contrast(m_c_t2_warm_mental_illness_z_time,
+                ref = m_c_t2_warm_mental_illness_z_time_loss,
+                type = "additive")
+
+
+tab_contrast_church_mental_illness_time_strong <-
+  margot_tab_lmtp(contrast_church_mental_illness_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Mental Illness: socialising")
+
+tab_contrast_church_mental_illness_time_strong
+
+# loss
 
 
 #  muslims
-m_c_t2_warm_muslims_z_time <- here_read("m_c_t2_warm_muslims_z_time")
-m_c_t2_warm_muslims_z_time_loss <- here_read("m_c_t2_warm_muslims_z_time_loss")
-null_m_c_t2_warm_muslims_z_time <- here_read("null_m_c_t2_warm_muslims_z_time")
+m_c_t2_warm_muslims_z_time <-
+  here_read("m_c_t2_warm_muslims_z_time")
+m_c_t2_warm_muslims_z_time_loss <-
+  here_read("m_c_t2_warm_muslims_z_time_loss")
+null_m_c_t2_warm_muslims_z_time <-
+  here_read("null_m_c_t2_warm_muslims_z_time")
 
 
-contrast_church_muslims_time <- lmtp_contrast(m_c_t2_warm_muslims_z_time,
-                                              ref = null_m_c_t2_warm_muslims_z_time,
-                                              type = "additive")
+contrast_church_muslims_time <-
+  lmtp_contrast(m_c_t2_warm_muslims_z_time,
+                ref = null_m_c_t2_warm_muslims_z_time,
+                type = "additive")
 
 
-tab_contrast_church_muslims_time <- margot_tab_lmtp(contrast_church_muslims_time, scale = "RD", 
-                                                    new_name = "Warm Muslim: social >= 1.4 hours pw")
+tab_contrast_church_muslims_time <-
+  margot_tab_lmtp(contrast_church_muslims_time,
+                  scale = "RD",
+                  new_name = "Warm Muslim: social >= 1.4 hours pw")
 
 tab_contrast_church_muslims_time
 
 # loss
-contrast_church_muslims_time_loss <- lmtp_contrast(m_c_t2_warm_muslims_z_time_loss,
-                                              ref = null_m_c_t2_warm_muslims_z_time,
-                                              type = "additive")
+contrast_church_muslims_time_loss <-
+  lmtp_contrast(m_c_t2_warm_muslims_z_time_loss,
+                ref = null_m_c_t2_warm_muslims_z_time,
+                type = "additive")
 
 
-tab_contrast_church_muslims_time_loss <- margot_tab_lmtp(contrast_church_muslims_time_loss, scale = "RD", 
-                                                    new_name = "Warm Muslim: any socialising lost")
+tab_contrast_church_muslims_time_loss <-
+  margot_tab_lmtp(contrast_church_muslims_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Muslim: any socialising lost")
 
 tab_contrast_church_muslims_time_loss
 
+# strong
+contrast_church_muslims_time_strong <-
+  lmtp_contrast(m_c_t2_warm_muslims_z_time,
+                ref = m_c_t2_warm_muslims_z_time_loss,
+                type = "additive")
+
+
+tab_contrast_church_muslims_time_strong <-
+  margot_tab_lmtp(contrast_church_muslims_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Muslim: socialising")
+
+tab_contrast_church_muslims_time_strong
+
 
 # nz euro
-m_c_t2_warm_nz_euro_z_time <- here_read("m_c_t2_warm_nz_euro_z_time")
-m_c_t2_warm_nz_euro_z_time_loss <- here_read("m_c_t2_warm_nz_euro_z_time_loss")
-null_m_c_t2_warm_nz_euro_z_time  <- here_read("null_m_c_t2_warm_nz_euro_z_time")
+m_c_t2_warm_nz_euro_z_time <-
+  here_read("m_c_t2_warm_nz_euro_z_time")
+m_c_t2_warm_nz_euro_z_time_loss <-
+  here_read("m_c_t2_warm_nz_euro_z_time_loss")
+null_m_c_t2_warm_nz_euro_z_time  <-
+  here_read("null_m_c_t2_warm_nz_euro_z_time")
 
-contrast_church_euro_time <- lmtp_contrast(m_c_t2_warm_nz_euro_z_time,
-                                           ref = null_m_c_t2_warm_nz_euro_z_time,
-                                           type = "additive")
+contrast_church_euro_time <-
+  lmtp_contrast(m_c_t2_warm_nz_euro_z_time,
+                ref = null_m_c_t2_warm_nz_euro_z_time,
+                type = "additive")
 
 
-tab_contrast_church_euro_time <- margot_tab_lmtp(contrast_church_euro_time, scale = "RD", 
-                                                 new_name = "Warm NZEuro: social >= 1.4 hours pw")
+tab_contrast_church_euro_time <-
+  margot_tab_lmtp(contrast_church_euro_time,
+                  scale = "RD",
+                  new_name = "Warm NZEuro: social >= 1.4 hours pw")
 
 tab_contrast_church_euro_time
 
 # loss
-contrast_church_euro_time_loss <- lmtp_contrast(m_c_t2_warm_nz_euro_z_time_loss,
-                                           ref = null_m_c_t2_warm_nz_euro_z_time,
-                                           type = "additive")
+contrast_church_euro_time_loss <-
+  lmtp_contrast(m_c_t2_warm_nz_euro_z_time_loss,
+                ref = null_m_c_t2_warm_nz_euro_z_time,
+                type = "additive")
 
 
-tab_contrast_church_euro_time_loss <- margot_tab_lmtp(contrast_church_euro_time_loss, scale = "RD", 
-                                                 new_name = "Warm NZEuro: any socialising lost")
+tab_contrast_church_euro_time_loss <-
+  margot_tab_lmtp(contrast_church_euro_time_loss,
+                  scale = "RD",
+                  new_name = "Warm NZEuro: any socialising lost")
 
 tab_contrast_church_euro_time_loss
 
+# strong
+contrast_church_euro_time_strong <-
+  lmtp_contrast(m_c_t2_warm_nz_euro_z_time,
+                ref = m_c_t2_warm_nz_euro_z_time_loss,
+                type = "additive")
+
+
+tab_contrast_church_euro_time_strong <-
+  margot_tab_lmtp(contrast_church_euro_time_strong,
+                  scale = "RD",
+                  new_name = "Warm NZEuro: socialising")
+
+tab_contrast_church_euro_time_strong
+
 
 # overweight
-m_c_t2_warm_overweight_z_time <- here_read("m_c_t2_warm_overweight_z_time")
-m_c_t2_warm_overweight_z_time_loss <- here_read("m_c_t2_warm_overweight_z_time_loss")
+m_c_t2_warm_overweight_z_time <-
+  here_read("m_c_t2_warm_overweight_z_time")
+m_c_t2_warm_overweight_z_time_loss <-
+  here_read("m_c_t2_warm_overweight_z_time_loss")
 
-null_m_c_t2_warm_overweight_z_time<- here_read("null_m_c_t2_warm_overweight_z_time")
+null_m_c_t2_warm_overweight_z_time <-
+  here_read("null_m_c_t2_warm_overweight_z_time")
 
 
 
-contrast_church_overweight_time <- lmtp_contrast(m_c_t2_warm_overweight_z_time,
-                                                 ref = null_m_c_t2_warm_overweight_z_time,
-                                                 type = "additive")
+contrast_church_overweight_time <-
+  lmtp_contrast(m_c_t2_warm_overweight_z_time,
+                ref = null_m_c_t2_warm_overweight_z_time,
+                type = "additive")
 contrast_church_overweight_time
 
-tab_contrast_church_overweight_time<- margot_tab_lmtp(contrast_church_overweight_time, scale = "RD", 
-                                                      new_name = "Warm Overweight: social >= 1.4 hours pw")
+tab_contrast_church_overweight_time <-
+  margot_tab_lmtp(contrast_church_overweight_time,
+                  scale = "RD",
+                  new_name = "Warm Overweight: social >= 1.4 hours pw")
 
 tab_contrast_church_overweight_time
 
 
 # loss
-
-contrast_church_overweight_time_loss <- lmtp_contrast(m_c_t2_warm_overweight_z_time_loss,
-                                                 ref = null_m_c_t2_warm_overweight_z_time,
-                                                 type = "additive")
+contrast_church_overweight_time_loss <-
+  lmtp_contrast(m_c_t2_warm_overweight_z_time_loss,
+                ref = null_m_c_t2_warm_overweight_z_time,
+                type = "additive")
 contrast_church_overweight_time_loss
 
-tab_contrast_church_overweight_time_loss<- margot_tab_lmtp(contrast_church_overweight_time_loss, scale = "RD", 
-                                                      new_name = "Warm Overweight: any socialising lost")
+tab_contrast_church_overweight_time_loss <-
+  margot_tab_lmtp(contrast_church_overweight_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Overweight: any socialising lost")
 
 tab_contrast_church_overweight_time_loss
 
+# strong
+contrast_church_overweight_time_strong <-
+  lmtp_contrast(m_c_t2_warm_overweight_z_time,
+                ref = m_c_t2_warm_overweight_z_time_loss,
+                type = "additive")
+tab_contrast_church_overweight_time_strong <-
+  margot_tab_lmtp(contrast_church_overweight_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Overweight: socialising")
+
+tab_contrast_church_overweight_time_strong
 
 # warm pacific_time
-m_c_t2_warm_pacific_z_time  <- here_read("m_c_t2_warm_pacific_z_time")
-m_c_t2_warm_pacific_z_time_loss  <- here_read("m_c_t2_warm_pacific_z_time_loss")
+m_c_t2_warm_pacific_z_time  <-
+  here_read("m_c_t2_warm_pacific_z_time")
+m_c_t2_warm_pacific_z_time_loss  <-
+  here_read("m_c_t2_warm_pacific_z_time_loss")
 m_c_t2_warm_pacific_z_time
 m_c_t2_warm_pacific_z_time_loss
-null_m_c_t2_warm_pacific_z_time<- here_read("null_m_c_t2_warm_pacific_z_time")
+null_m_c_t2_warm_pacific_z_time <-
+  here_read("null_m_c_t2_warm_pacific_z_time")
 
 
-contrast_church_pacific_time <- lmtp_contrast(m_c_t2_warm_pacific_z_time,
-                                              ref = null_m_c_t2_warm_pacific_z_time,
-                                              type = "additive")
+contrast_church_pacific_time <-
+  lmtp_contrast(m_c_t2_warm_pacific_z_time,
+                ref = null_m_c_t2_warm_pacific_z_time,
+                type = "additive")
 
 
-tab_contrast_church_pacific_time<- margot_tab_lmtp(contrast_church_pacific_time, scale = "RD", 
-                                                   new_name = "Warm Pacific: social >= 1.4 hours pw")
+tab_contrast_church_pacific_time <-
+  margot_tab_lmtp(contrast_church_pacific_time,
+                  scale = "RD",
+                  new_name = "Warm Pacific: social >= 1.4 hours pw")
 
 tab_contrast_church_pacific_time
 
 # loss
-contrast_church_pacific_time_loss <- lmtp_contrast(m_c_t2_warm_pacific_z_time_loss,
-                                              ref = null_m_c_t2_warm_pacific_z_time,
-                                              type = "additive")
+contrast_church_pacific_time_loss <-
+  lmtp_contrast(m_c_t2_warm_pacific_z_time_loss,
+                ref = null_m_c_t2_warm_pacific_z_time,
+                type = "additive")
 
 
-tab_contrast_church_pacific_time_loss<- margot_tab_lmtp(contrast_church_pacific_time_loss, scale = "RD", 
-                                                   new_name = "Warm Pacific: any socialising lost")
+tab_contrast_church_pacific_time_loss <-
+  margot_tab_lmtp(contrast_church_pacific_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Pacific: any socialising lost")
 
 tab_contrast_church_pacific_time_loss
 
+# strong
+contrast_church_pacific_time_strong <-
+  lmtp_contrast(m_c_t2_warm_pacific_z_time,
+                ref = m_c_t2_warm_pacific_z_time_loss,
+                type = "additive")
+
+
+tab_contrast_church_pacific_time_strong <-
+  margot_tab_lmtp(contrast_church_pacific_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Pacific: socialising")
+
+tab_contrast_church_pacific_time_strong
 
 
 #warm refugees
-m_c_t2_warm_refugees_z_time <- here_read("m_c_t2_warm_refugees_z_time")
-m_c_t2_warm_refugees_z_time_loss <- here_read("m_c_t2_warm_refugees_z_time_loss")
-null_m_c_t2_warm_refugees_z_time <- here_read("null_m_c_t2_warm_refugees_z_time")
+m_c_t2_warm_refugees_z_time <-
+  here_read("m_c_t2_warm_refugees_z_time")
+m_c_t2_warm_refugees_z_time_loss <-
+  here_read("m_c_t2_warm_refugees_z_time_loss")
+null_m_c_t2_warm_refugees_z_time <-
+  here_read("null_m_c_t2_warm_refugees_z_time")
 
-contrast_church_refugees_time <- lmtp_contrast(m_c_t2_warm_refugees_z_time,
-                                               ref = null_m_c_t2_warm_refugees_z_time,
-                                               type = "additive")
+contrast_church_refugees_time <-
+  lmtp_contrast(m_c_t2_warm_refugees_z_time,
+                ref = null_m_c_t2_warm_refugees_z_time,
+                type = "additive")
 
 
-tab_contrast_church_refugees_time <- margot_tab_lmtp(contrast_church_refugees_time, scale = "RD", 
-                                                     new_name = "Warm Refugees: social >= 1.4 hours pw")
+tab_contrast_church_refugees_time <-
+  margot_tab_lmtp(contrast_church_refugees_time,
+                  scale = "RD",
+                  new_name = "Warm Refugees: social >= 1.4 hours pw")
 
 
 tab_contrast_church_refugees_time
 
 
 # loss
-contrast_church_refugees_time_loss <- lmtp_contrast(m_c_t2_warm_refugees_z_time_loss,
-                                               ref = null_m_c_t2_warm_refugees_z_time,
-                                               type = "additive")
+contrast_church_refugees_time_loss <-
+  lmtp_contrast(m_c_t2_warm_refugees_z_time_loss,
+                ref = null_m_c_t2_warm_refugees_z_time,
+                type = "additive")
 
 
-tab_contrast_church_refugees_time_loss <- margot_tab_lmtp(contrast_church_refugees_time_loss, scale = "RD", 
-                                                     new_name = "Warm Refugees: any socialising lost")
+tab_contrast_church_refugees_time_loss <-
+  margot_tab_lmtp(contrast_church_refugees_time_loss,
+                  scale = "RD",
+                  new_name = "Warm Refugees: any socialising lost")
 
 
 tab_contrast_church_refugees_time_loss
 
+# strong
+contrast_church_refugees_time_strong <-
+  lmtp_contrast(m_c_t2_warm_refugees_z_time,
+                ref = m_c_t2_warm_refugees_z_time_loss,
+                type = "additive")
+
+
+tab_contrast_church_refugees_time_strong <-
+  margot_tab_lmtp(contrast_church_refugees_time_strong,
+                  scale = "RD",
+                  new_name = "Warm Refugees: socialising")
+
+
+tab_contrast_church_refugees_time_strong
+
+
 
 # perc discrim
-hours_only_religion_perceive_religious_discrim_z <- here_read("hours_only_religion_perceive_religious_discrim_z")
-hours_only_religion_perceive_religious_discrim_z_loss <- here_read("hours_only_religion_perceive_religious_discrim_z_loss")
+hours_only_religion_perceive_religious_discrim_z <-
+  here_read("hours_only_religion_perceive_religious_discrim_z")
+hours_only_religion_perceive_religious_discrim_z_loss <-
+  here_read("hours_only_religion_perceive_religious_discrim_z_loss")
 
-null_hours_only_religion_perceive_religious_discrim_z <- here_read("null_hours_only_religion_perceive_religious_discrim_z")
+null_hours_only_religion_perceive_religious_discrim_z <-
+  here_read("null_hours_only_religion_perceive_religious_discrim_z")
 
-contrast_hours_perceive_religious_discrim_z <- lmtp_contrast(hours_only_religion_perceive_religious_discrim_z,
-                                                             ref = null_hours_only_religion_perceive_religious_discrim_z,
-                                                             type = "additive")
+contrast_hours_perceive_religious_discrim_z <-
+  lmtp_contrast(
+    hours_only_religion_perceive_religious_discrim_z,
+    ref = null_hours_only_religion_perceive_religious_discrim_z,
+    type = "additive"
+  )
 
-
-tab_contrast_contrast_hours_perceive_religious_discrim_z  <- margot_tab_lmtp(contrast_hours_perceive_religious_discrim_z, scale = "RD", 
-                                                                             new_name = "Perc. Religious Discrim: social >= 1.4 hours pw")
+tab_contrast_contrast_hours_perceive_religious_discrim_z  <-
+  margot_tab_lmtp(
+    contrast_hours_perceive_religious_discrim_z,
+    scale = "RD",
+    new_name = "Perc. Religious Discrim: social >= 1.4 hours pw"
+  )
 
 tab_contrast_contrast_hours_perceive_religious_discrim_z
 
 
 # loss
-contrast_hours_perceive_religious_discrim_z_loss <- lmtp_contrast(hours_only_religion_perceive_religious_discrim_z_loss,
-                                                             ref = null_hours_only_religion_perceive_religious_discrim_z,
-                                                             type = "additive")
+contrast_hours_perceive_religious_discrim_z_loss <-
+  lmtp_contrast(
+    hours_only_religion_perceive_religious_discrim_z_loss,
+    ref = null_hours_only_religion_perceive_religious_discrim_z,
+    type = "additive"
+  )
 
-
-tab_contrast_contrast_hours_perceive_religious_discrim_z_loss  <- margot_tab_lmtp(contrast_hours_perceive_religious_discrim_z_loss, scale = "RD", 
-                                                                             new_name = "Perc. Religious Discrim: any socialising lost")
-
+tab_contrast_contrast_hours_perceive_religious_discrim_z_loss  <-
+  margot_tab_lmtp(
+    contrast_hours_perceive_religious_discrim_z_loss,
+    scale = "RD",
+    new_name = "Perc. Religious Discrim: any socialising lost"
+  )
 tab_contrast_contrast_hours_perceive_religious_discrim_z_loss
 
+# strong
+contrast_hours_perceive_religious_discrim_z_strong <-
+  lmtp_contrast(
+    hours_only_religion_perceive_religious_discrim_z,
+    ref = hours_only_religion_perceive_religious_discrim_z_loss,
+    type = "additive"
+  )
 
 
-## contrasts 
-output_asians_time <- lmtp_evalue_tab(tab_contrast_church_asians_time,  delta = 1, sd = 1, scale = c("RD"))
+tab_contrast_contrast_hours_perceive_religious_discrim_z_strong  <-
+  margot_tab_lmtp(
+    contrast_hours_perceive_religious_discrim_z_strong,
+    scale = "RD",
+    new_name = "Perc. Religious Discrim: socialising"
+  )
+
+tab_contrast_contrast_hours_perceive_religious_discrim_z_strong
+
+
+## compute contrasts socialising warmth
+output_asians_time <-
+  lmtp_evalue_tab(
+    tab_contrast_church_asians_time,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 output_asians_time
 
 # loss
-output_asians_time_loss <- lmtp_evalue_tab(tab_contrast_church_asians_time_loss,  delta = 1, sd = 1, scale = c("RD"))
+output_asians_time_loss <-
+  lmtp_evalue_tab(
+    tab_contrast_church_asians_time_loss,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 output_asians_time_loss
 
+# strong
+output_asians_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_asians_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_asians_time_strong
 
 # chinese
-output_chinese_time<- lmtp_evalue_tab(tab_contrast_church_chinese_time,  delta = 1, sd = 1, scale = c("RD"))
+output_chinese_time <-
+  lmtp_evalue_tab(
+    tab_contrast_church_chinese_time,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 output_chinese_time
 
 # loss
-output_chinese_time_loss<- lmtp_evalue_tab(tab_contrast_church_chinese_time_loss,  delta = 1, sd = 1, scale = c("RD"))
+output_chinese_time_loss <-
+  lmtp_evalue_tab(
+    tab_contrast_church_chinese_time_loss,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 output_chinese_time_loss
 
+# strong
+output_chinese_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_chinese_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_chinese_time_strong
 
 # immigrants
-output_immigrants_time <- lmtp_evalue_tab(tab_contrast_church_immigrants_time ,  delta = 1, sd = 1, scale = c("RD"))
-output_immigrants_time 
+output_immigrants_time <-
+  lmtp_evalue_tab(
+    tab_contrast_church_immigrants_time ,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_immigrants_time
 
 # loss
-output_immigrants_time_loss <- lmtp_evalue_tab(tab_contrast_church_immigrants_time_loss ,  delta = 1, sd = 1, scale = c("RD"))
-output_immigrants_time_loss 
+output_immigrants_time_loss <-
+  lmtp_evalue_tab(
+    tab_contrast_church_immigrants_time_loss ,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_immigrants_time_loss
+
+# strong
+output_immigrants_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_immigrants_time_strong ,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_immigrants_time_strong
 
 # indians
-output_indians_time <- lmtp_evalue_tab(tab_contrast_church_indians_time,  delta = 1, sd = 1, scale = c("RD"))
+output_indians_time <-
+  lmtp_evalue_tab(
+    tab_contrast_church_indians_time,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 output_indians_time
 
 
 # loss
-output_indians_time_loss <- lmtp_evalue_tab(tab_contrast_church_indians_time_loss,  delta = 1, sd = 1, scale = c("RD"))
+output_indians_time_loss <-
+  lmtp_evalue_tab(
+    tab_contrast_church_indians_time_loss,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 output_indians_time_loss
+
+# strong
+output_indians_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_indians_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_indians_time_strong
+
+
 
 # elderly 
 output_elderly_time <-
@@ -6880,6 +8107,16 @@ output_elderly_time_loss <-
     scale = c("RD")
   )
 output_elderly_time_loss
+
+# strong
+output_elderly_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_elderly_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_elderly_time_strong
 
 
 #maori
@@ -6902,6 +8139,15 @@ output_maori_time_loss <-
   )
 output_maori_time_loss
 
+# strong
+output_maori_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_maori_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_maori_time_strong
 
 # mental illness
 output_mental_illness_time <-
@@ -6924,6 +8170,17 @@ output_mental_illness_time_loss <-
 
 output_mental_illness_time_loss
 
+# strong
+output_mental_illness_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_mental_illness_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_mental_illness_time_strong
+
+
 # muslims
 output_muslims_time <-
   lmtp_evalue_tab(
@@ -6941,6 +8198,16 @@ output_muslims_time_loss <-
     sd = 1,
     scale = c("RD")
   )
+
+# strong
+output_muslims_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_muslims_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+
 
 # euro time
 output_euro_time <-
@@ -6960,6 +8227,17 @@ output_euro_time_loss <-
     sd = 1,
     scale = c("RD")
   )
+
+
+# strong
+output_euro_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_euro_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+
 
 # overweight
 output_overweight_time <-
@@ -6981,7 +8259,15 @@ output_overweight_time_loss <-
   )
 output_overweight_time_loss
 
-
+# strong
+output_overweight_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_overweight_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_overweight_time_strong
 
 # pacific
 output_pacific_time <-
@@ -7000,7 +8286,14 @@ output_pacific_time_loss <-
     sd = 1,
     scale = c("RD")
   )
-
+# strong
+output_pacific_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_pacific_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 
 # refugees
 output_refugees_time <-
@@ -7024,7 +8317,16 @@ output_refugees_time_loss <-
 
 output_refugees_time_loss
 
+# strong
+output_refugees_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_church_refugees_time_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
 
+output_refugees_time_strong
 
 # perc rel discrim 
 output_perceive_rel_discrimination_time <-
@@ -7045,6 +8347,15 @@ output_perceive_rel_discrimination_time_loss <-
     scale = c("RD")
   )
 output_perceive_rel_discrimination_time_loss
+# strong
+output_perceive_rel_discrimination_time_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_contrast_hours_perceive_religious_discrim_z_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_perceive_rel_discrimination_time_strong
 
 
 #tab
@@ -7097,6 +8408,31 @@ saveRDS(group_tab_warm_socialising_loss, here::here(push_mods, "group_tab_warm_s
 
 tab_warm_socialising_loss<- here_read("tab_warm_socialising_loss")
 group_tab_warm_socialising_loss<- here_read("group_tab_warm_socialising_loss")
+
+
+tab_warm_socialising_strong <- rbind(
+  output_asians_time_strong,
+  output_chinese_time_strong,
+  output_immigrants_time_strong,
+  output_indians_time_strong,
+  output_elderly_time_strong,
+  output_maori_time_strong,
+  output_mental_illness_time_strong,
+  output_muslims_time_strong,
+  output_euro_time_strong,
+  output_overweight_time_strong,
+  output_pacific_time_strong,
+  output_refugees_time_strong,
+  output_perceive_rel_discrimination_time_strong
+)
+
+tab_warm_socialising_strong
+here_save(tab_warm_socialising_strong, "tab_warm_socialising_strong")
+group_tab_warm_socialising_strong <- group_tab(tab_warm_socialising_strong, type = "RD")
+group_tab_warm_socialising_strong
+saveRDS(group_tab_warm_socialising_strong, here::here(push_mods, "group_tab_warm_socialising_strong"))
+
+
 
 # graph socialising prejudice ---------------------------------------------
 
@@ -7178,6 +8514,49 @@ ggsave(
   dpi = 600
 )
 plot_warm_socialising + plot_warm_socialising_loss
+
+
+
+tab_warm_socialising_strong<- here_read("tab_warm_socialising_strong")
+group_tab_warm_warm_socialising_strong <- here_read("group_tab_warm_socialising_strong")
+tab_warm_socialising_strong
+group_tab_warm_warm_socialising_strong
+plot_warm_socialising_strong <- margot_plot(
+  group_tab_warm_warm_socialising_strong,
+  type = "RD",
+  title = "Socialing effect on prejudice/acceptance",
+  subtitle = ">= 1.4 weekly hours socialising vs none",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -1,
+  x_lim_lo = -1,
+  x_lim_hi =  .5
+)
+
+plot_warm_socialising_strong
+
+ggsave(
+  plot_warm_socialising_strong,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_warm_socialising_strong.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
 
 # ALERT SOCIALISING HELP FROM OTHERS ----------------------------------
 socializing_help_from_family_rr  <- here_read( "m_time_family_time")
