@@ -8558,253 +8558,6 @@ ggsave(
 
 
 
-# ALERT SOCIALISING HELP FROM OTHERS ----------------------------------
-socializing_help_from_family_rr  <- here_read( "m_time_family_time")
-socializing_help_from_family_null_rr <- here_read( "m_time_family_null_time")
-socializing_help_from_friends_rr<- here_read( "m_time_friends_time")
-socializing_help_from_friends_null_rr <- here_read( "m_time_friends_null_time")
-socializing_help_from_community_rr<- here_read( "m_time_community_time")
-socializing_help_from_community_null_rr <- here_read( "m_time_community_null_time")
-
-
-## loss
-socializing_help_from_family_rr_loss <- here_read("m_time_family_time_loss")
-socializing_help_from_friends_rr_loss <- here_read("m_time_friends_time_loss")
-socializing_help_from_community_rr_loss <- here_read("m_time_community_time_loss")
-
-
-contrast_socializing_help_from_family_rr <- lmtp_contrast(socializing_help_from_family_rr,ref = socializing_help_from_family_null_rr, type = "rr")
-contrast_socializing_help_from_family_rr
-
-
-tab_contrast_socializing_help_from_family_rr <- margot_tab_lmtp(contrast_socializing_help_from_family_rr, scale = "RR", 
-                                                                      new_name = "Help from Family: socialising >= 1.4 hours pw")
-
-tab_contrast_socializing_help_from_family_rr
-
-
-output_tab_contrast_socializing_help_from_family_rr <-
-  lmtp_evalue_tab(
-    tab_contrast_socializing_help_from_family_rr,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-
-# HERE
-output_tab_contrast_socializing_help_from_family_rr
-
-# loss
-contrast_socializing_help_from_family_rr_loss <- lmtp_contrast(socializing_help_from_family_rr_loss,ref = socializing_help_from_family_null_rr, type = "rr")
-contrast_socializing_help_from_family_rr_loss
-
-tab_contrast_socializing_help_from_family_rr_loss <- margot_tab_lmtp(contrast_socializing_help_from_family_rr_loss, scale = "RR", 
-                                                                new_name = "Help from Family: any community socialising lost")
-
-tab_contrast_socializing_help_from_family_rr_loss
-
-
-output_tab_contrast_socializing_help_from_family_rr_loss <-
-  lmtp_evalue_tab(
-    tab_contrast_socializing_help_from_family_rr_loss,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-
-# HERE
-output_tab_contrast_socializing_help_from_family_rr_loss
-
-### FRIENDS
-contrast_socializing_help_from_friends_rr <- lmtp_contrast(socializing_help_from_friends_rr,ref = socializing_help_from_friends_null_rr, type = "rr")
-contrast_socializing_help_from_friends_rr
-
-tab_contrast_socializing_help_from_friends_rr  <- margot_tab_lmtp(contrast_socializing_help_from_friends_rr, scale = "RR", 
-                                                                  new_name = "Help from Friends: socialising >= 1.4 hours pw")
-
-tab_contrast_socializing_help_from_friends_rr
-
-output_tab_contrast_socializing_help_from_friends_rr <-
-  lmtp_evalue_tab(
-    tab_contrast_socializing_help_from_friends_rr,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-output_tab_contrast_socializing_help_from_friends_rr
-
-# loss
-contrast_socializing_help_from_friends_rr_loss <- lmtp_contrast(socializing_help_from_friends_rr_loss,ref = socializing_help_from_friends_null_rr, type = "rr")
-contrast_socializing_help_from_friends_rr_loss
-
-tab_contrast_socializing_help_from_friends_rr_loss  <- margot_tab_lmtp(contrast_socializing_help_from_friends_rr_loss, scale = "RR", 
-                                                                  new_name = "Help from Friends: any community socialising lost")
-
-tab_contrast_socializing_help_from_friends_rr_loss
-
-output_tab_contrast_socializing_help_from_friends_rr_loss <-
-  lmtp_evalue_tab(
-    tab_contrast_socializing_help_from_friends_rr_loss,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-output_tab_contrast_socializing_help_from_friends_rr_loss
-
-## COMMUNITY
-
-contrast_socializing_help_from_community_rr <- lmtp_contrast(socializing_help_from_community_rr,ref = socializing_help_from_community_null_rr, type = "rr")
-contrast_socializing_help_from_community_rr
-
-tab_contrast_socializing_help_from_community_rr  <- margot_tab_lmtp(contrast_socializing_help_from_community_rr, scale = "RR", 
-                                                             new_name = "Help from Community: socialising >= 1.4 hours pw")
-
-tab_contrast_socializing_help_from_community_rr
-output_tab_contrast_socializing_help_from_community_rr <-
-  lmtp_evalue_tab(
-    tab_contrast_socializing_help_from_community_rr,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-output_tab_contrast_socializing_help_from_community_rr
-output_tab_contrast_socializing_help_from_community_rr
-
-
-# loss
-contrast_socializing_help_from_community_rr_loss <- lmtp_contrast(socializing_help_from_community_rr_loss,ref = socializing_help_from_community_null_rr, type = "rr")
-contrast_socializing_help_from_community_rr_loss
-
-tab_contrast_socializing_help_from_community_rr_loss  <- margot_tab_lmtp(contrast_socializing_help_from_community_rr_loss, scale = "RR", 
-                                                                    new_name = "Help from Community: any community socialising lost")
-
-tab_contrast_socializing_help_from_community_rr_loss
-
-output_tab_contrast_socializing_help_from_community_rr_loss <-
-  lmtp_evalue_tab(
-    tab_contrast_socializing_help_from_community_rr_loss,
-    delta = 1,
-    sd = 1,
-    scale = c("RR")
-  )
-output_tab_contrast_socializing_help_from_community_rr_loss
-output_tab_contrast_socializing_help_from_community_rr_loss
-
-
-output_tab_contrast_socializing_help_from_community_rr_loss
-output_tab_contrast_socializing_help_from_friends_rr_loss
-output_tab_contrast_socializing_help_from_family_rr_loss
-
-# bind and save
-tab_socialising_help_received<- rbind( output_tab_contrast_socializing_help_from_family_rr, output_tab_contrast_socializing_help_from_friends_rr, output_tab_contrast_socializing_help_from_community_rr ) 
-
-
-tab_socialising_help_received
-here_save(tab_socialising_help_received, "tab_socialising_help_received")
-tab_socialising_help_received<- here_read("tab_socialising_help_received")
-
-
-group_tab_socialising_help_received <- group_tab(tab_socialising_help_received, type = "RR")
-
-saveRDS(group_tab_socialising_help_received, here::here(push_mods, "group_tab_socialising_help_received"))
-
-
-
-
-tab_socialising_help_received <- here_read("tab_socialising_help_received")
-group_tab_socialising_help_received <- here_read("group_tab_socialising_help_received")
-
-plot_help_time <- margot_plot(
-  group_tab_socialising_help_received,
-  type = "RR",
-  title = "Socialising effect on help recieved",
-  subtitle = ">= 1.4  x weekly hours socialising",
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
-  point_size = .5,
-  title_size = 12,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = 0,
-  x_lim_lo = 0,
-  x_lim_hi =  2
-)
-
-plot_help_time
-ggsave(
-  plot_help_time,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
-  units = "in",
-  filename = "plot_help_time.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-# bind and save loss
-output_tab_contrast_socializing_help_from_community_rr_loss
-output_tab_contrast_socializing_help_from_friends_rr_loss
-output_tab_contrast_socializing_help_from_family_rr_loss
-
-tab_socialising_help_received_loss<- rbind(output_tab_contrast_socializing_help_from_family_rr_loss, output_tab_contrast_socializing_help_from_friends_rr_loss, output_tab_contrast_socializing_help_from_community_rr_loss ) 
-
-
-tab_socialising_help_received_loss
-here_save(tab_socialising_help_received_loss, "tab_socialising_help_received_loss")
-tab_socialising_help_received_loss<- here_read("tab_socialising_help_received_loss")
-
-
-group_tab_socialising_help_received_loss <- group_tab(tab_socialising_help_received_loss, type = "RR")
-
-saveRDS(group_tab_socialising_help_received_loss, here::here(push_mods, "group_tab_socialising_help_received_loss"))
-
-tab_socialising_help_received_loss<- here_read("tab_socialising_help_received_loss")
-group_tab_socialising_help_received_loss <- here_read("group_tab_socialising_help_received_loss")
-
-plot_help_time_loss <- margot_plot(
-  group_tab_socialising_help_received_loss,
-  type = "RR",
-  title = "Socialising effect on help recieved",
-  subtitle = "any community socialising lost",
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 8,
-  text_size = 2.5,
-  point_size = .5,
-  title_size = 12,
-  subtitle_size = 11,
-  legend_text_size = 8,
-  legend_title_size = 10,
-  x_offset = 0,
-  x_lim_lo = 0,
-  x_lim_hi =  2
-)
-
-plot_help_time_loss
-ggsave(
-  plot_help_time_loss,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 8,
-  height = 6,
-  units = "in",
-  filename = "plot_help_time_loss.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-
-
-
 ### HELP RECEIVED 
 m_time_community_time <- lmtp_tmle(
   data = df,
@@ -9007,6 +8760,435 @@ m_time_friends_church<- here_read( "m_time_friends_time")
 m_time_friends_null_church <- here_read( "m_time_friends_null_time")
 m_time_community_church<- here_read( "m_time_community_time")
 m_time_community_null_church <- here_read( "m_time_community_null_time")
+
+
+# ALERT SOCIALISING HELP FROM OTHERS ----------------------------------
+socializing_help_from_family_rr  <- here_read( "m_time_family_time")
+socializing_help_from_family_null_rr <- here_read( "m_time_family_null_time")
+socializing_help_from_friends_rr<- here_read( "m_time_friends_time")
+socializing_help_from_friends_null_rr <- here_read( "m_time_friends_null_time")
+socializing_help_from_community_rr<- here_read( "m_time_community_time")
+socializing_help_from_community_null_rr <- here_read( "m_time_community_null_time")
+
+
+
+## loss
+socializing_help_from_family_rr_loss <-
+  here_read("m_time_family_time_loss")
+socializing_help_from_friends_rr_loss <-
+  here_read("m_time_friends_time_loss")
+socializing_help_from_community_rr_loss <-
+  here_read("m_time_community_time_loss")
+
+
+
+contrast_socializing_help_from_family_rr <-
+  lmtp_contrast(socializing_help_from_family_rr,
+                ref = socializing_help_from_family_null_rr,
+                type = "rr")
+contrast_socializing_help_from_family_rr
+
+
+tab_contrast_socializing_help_from_family_rr <-
+  margot_tab_lmtp(contrast_socializing_help_from_family_rr,
+                  scale = "RR",
+                  new_name = "Help from Family: socialising >= 1.4 hours pw")
+
+tab_contrast_socializing_help_from_family_rr
+
+
+output_tab_contrast_socializing_help_from_family_rr <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_family_rr,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+
+# HERE
+output_tab_contrast_socializing_help_from_family_rr
+
+# loss
+contrast_socializing_help_from_family_rr_loss <-
+  lmtp_contrast(socializing_help_from_family_rr_loss,
+                ref = socializing_help_from_family_null_rr,
+                type = "rr")
+contrast_socializing_help_from_family_rr_loss
+
+tab_contrast_socializing_help_from_family_rr_loss <-
+  margot_tab_lmtp(
+    contrast_socializing_help_from_family_rr_loss,
+    scale = "RR",
+    new_name = "Help from Family: any community socialising lost"
+  )
+
+tab_contrast_socializing_help_from_family_rr_loss
+
+
+output_tab_contrast_socializing_help_from_family_rr_loss <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_family_rr_loss,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+
+# HERE
+output_tab_contrast_socializing_help_from_family_rr_loss
+
+
+#strong
+contrast_socializing_help_from_family_rr_strong <-
+  lmtp_contrast(socializing_help_from_family_rr,
+                ref = socializing_help_from_family_rr_loss,
+                type = "rr")
+contrast_socializing_help_from_family_rr_strong
+
+
+tab_contrast_socializing_help_from_family_rr_strong <-
+  margot_tab_lmtp(
+    contrast_socializing_help_from_family_rr_strong,
+    scale = "RR",
+    new_name = "Help from Family: socialising"
+  )
+
+tab_contrast_socializing_help_from_family_rr_strong
+
+
+output_tab_contrast_socializing_help_from_family_rr_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_family_rr_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+
+output_tab_contrast_socializing_help_from_family_rr_strong
+# HERE
+output_tab_contrast_socializing_help_from_family_rr_strong
+
+
+### FRIENDS
+contrast_socializing_help_from_friends_rr <-
+  lmtp_contrast(socializing_help_from_friends_rr,
+                ref = socializing_help_from_friends_null_rr,
+                type = "rr")
+contrast_socializing_help_from_friends_rr
+
+tab_contrast_socializing_help_from_friends_rr  <-
+  margot_tab_lmtp(contrast_socializing_help_from_friends_rr,
+                  scale = "RR",
+                  new_name = "Help from Friends: socialising >= 1.4 hours pw")
+
+tab_contrast_socializing_help_from_friends_rr
+
+output_tab_contrast_socializing_help_from_friends_rr <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_friends_rr,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_friends_rr
+
+# loss
+contrast_socializing_help_from_friends_rr_loss <-
+  lmtp_contrast(socializing_help_from_friends_rr_loss,
+                ref = socializing_help_from_friends_null_rr,
+                type = "rr")
+contrast_socializing_help_from_friends_rr_loss
+
+tab_contrast_socializing_help_from_friends_rr_loss  <-
+  margot_tab_lmtp(
+    contrast_socializing_help_from_friends_rr_loss,
+    scale = "RR",
+    new_name = "Help from Friends: any community socialising lost"
+  )
+
+tab_contrast_socializing_help_from_friends_rr_loss
+
+output_tab_contrast_socializing_help_from_friends_rr_loss <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_friends_rr_loss,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_friends_rr_loss
+
+# strong
+contrast_socializing_help_from_friends_rr_strong <-
+  lmtp_contrast(socializing_help_from_friends_rr,
+                ref = socializing_help_from_friends_rr_loss,
+                type = "rr")
+contrast_socializing_help_from_friends_rr_strong
+
+tab_contrast_socializing_help_from_friends_rr_strong  <-
+  margot_tab_lmtp(
+    contrast_socializing_help_from_friends_rr_strong,
+    scale = "RR",
+    new_name = "Help from Friends: socialising"
+  )
+
+
+tab_contrast_socializing_help_from_friends_rr_strong
+
+output_tab_contrast_socializing_help_from_friends_rr_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_friends_rr_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_friends_rr_strong
+
+## COMMUNITY
+
+contrast_socializing_help_from_community_rr <-
+  lmtp_contrast(socializing_help_from_community_rr,
+                ref = socializing_help_from_community_null_rr,
+                type = "rr")
+contrast_socializing_help_from_community_rr
+
+tab_contrast_socializing_help_from_community_rr  <-
+  margot_tab_lmtp(
+    contrast_socializing_help_from_community_rr,
+    scale = "RR",
+    new_name = "Help from Community: socialising >= 1.4 hours pw"
+  )
+
+tab_contrast_socializing_help_from_community_rr
+output_tab_contrast_socializing_help_from_community_rr <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_community_rr,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_community_rr
+output_tab_contrast_socializing_help_from_community_rr
+
+
+# loss
+contrast_socializing_help_from_community_rr_loss <-
+  lmtp_contrast(socializing_help_from_community_rr_loss,
+                ref = socializing_help_from_community_null_rr,
+                type = "rr")
+contrast_socializing_help_from_community_rr_loss
+
+tab_contrast_socializing_help_from_community_rr_loss  <-
+  margot_tab_lmtp(
+    contrast_socializing_help_from_community_rr_loss,
+    scale = "RR",
+    new_name = "Help from Community: any community socialising lost"
+  )
+
+tab_contrast_socializing_help_from_community_rr_loss
+
+output_tab_contrast_socializing_help_from_community_rr_loss <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_community_rr_loss,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_community_rr_loss
+output_tab_contrast_socializing_help_from_community_rr_loss
+
+
+output_tab_contrast_socializing_help_from_community_rr_loss
+output_tab_contrast_socializing_help_from_friends_rr_loss
+output_tab_contrast_socializing_help_from_family_rr_loss
+
+# strong
+contrast_socializing_help_from_community_rr_strong <-
+  lmtp_contrast(socializing_help_from_community_rr,
+                ref = socializing_help_from_community_rr_loss,
+                type = "rr")
+contrast_socializing_help_from_community_rr
+
+
+tab_contrast_socializing_help_from_community_rr_strong  <-
+  margot_tab_lmtp(
+    contrast_socializing_help_from_community_rr_strong,
+    scale = "RR",
+    new_name = "Help from Community: socialising"
+  )
+
+output_tab_contrast_socializing_help_from_community_rr_strong <-
+  lmtp_evalue_tab(
+    tab_contrast_socializing_help_from_community_rr_strong,
+    delta = 1,
+    sd = 1,
+    scale = c("RR")
+  )
+output_tab_contrast_socializing_help_from_community_rr_strong
+output_tab_contrast_socializing_help_from_community_rr_strong
+
+
+
+# bind and save
+tab_socialising_help_received<- rbind( output_tab_contrast_socializing_help_from_family_rr, 
+                                       output_tab_contrast_socializing_help_from_friends_rr, 
+                                       output_tab_contrast_socializing_help_from_community_rr ) 
+
+
+tab_socialising_help_received
+here_save(tab_socialising_help_received, "tab_socialising_help_received")
+tab_socialising_help_received<- here_read("tab_socialising_help_received")
+
+
+group_tab_socialising_help_received <- group_tab(tab_socialising_help_received, type = "RR")
+
+saveRDS(group_tab_socialising_help_received, here::here(push_mods, "group_tab_socialising_help_received"))
+
+tab_socialising_help_received <- here_read("tab_socialising_help_received")
+group_tab_socialising_help_received <- here_read("group_tab_socialising_help_received")
+
+plot_help_time <- margot_plot(
+  group_tab_socialising_help_received,
+  type = "RR",
+  title = "Socialising effect on help recieved",
+  subtitle = ">= 1.4  x weekly hours socialising",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  2
+)
+
+plot_help_time
+ggsave(
+  plot_help_time,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_help_time.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+# bind and save loss
+output_tab_contrast_socializing_help_from_community_rr_loss
+output_tab_contrast_socializing_help_from_friends_rr_loss
+output_tab_contrast_socializing_help_from_family_rr_loss
+
+tab_socialising_help_received_loss<- rbind(output_tab_contrast_socializing_help_from_family_rr_loss, 
+                                           output_tab_contrast_socializing_help_from_friends_rr_loss, 
+                                           output_tab_contrast_socializing_help_from_community_rr_loss ) 
+
+
+tab_socialising_help_received_loss
+here_save(tab_socialising_help_received_loss, "tab_socialising_help_received_loss")
+tab_socialising_help_received_loss<- here_read("tab_socialising_help_received_loss")
+
+
+group_tab_socialising_help_received_loss <- group_tab(tab_socialising_help_received_loss, type = "RR")
+
+saveRDS(group_tab_socialising_help_received_loss, here::here(push_mods, "group_tab_socialising_help_received_loss"))
+
+tab_socialising_help_received_loss<- here_read("tab_socialising_help_received_loss")
+group_tab_socialising_help_received_loss <- here_read("group_tab_socialising_help_received_loss")
+
+plot_help_time_loss <- margot_plot(
+  group_tab_socialising_help_received_loss,
+  type = "RR",
+  title = "Socialising effect on help recieved",
+  subtitle = "any community socialising lost",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  2
+)
+
+plot_help_time_loss
+ggsave(
+  plot_help_time_loss,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_help_time_loss.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
+
+
+
+# bind and save strong
+tab_socialising_help_received_strong<- rbind( output_tab_contrast_socializing_help_from_family_rr_strong,
+                                       output_tab_contrast_socializing_help_from_friends_rr_strong, 
+                                       output_tab_contrast_socializing_help_from_community_rr_strong ) 
+
+
+tab_socialising_help_received_strong
+here_save(tab_socialising_help_received_strong, "tab_socialising_help_received_strong")
+tab_socialising_help_received_strong<- here_read("tab_socialising_help_received_strong")
+
+
+group_tab_socialising_help_received_strong <- group_tab(tab_socialising_help_received_strong, type = "RR")
+
+saveRDS(group_tab_socialising_help_received_strong, here::here(push_mods, "group_tab_socialising_help_received_strong"))
+
+
+
+
+tab_socialising_help_received_strong <- here_read("tab_socialising_help_received_strong")
+group_tab_socialising_help_received_strong <- here_read("group_tab_socialising_help_received_strong")
+
+plot_help_time_strong <- margot_plot(
+  group_tab_socialising_help_received_strong,
+  type = "RR",
+  title = "Socialising effect on help recieved",
+  subtitle = ">= 1.4 weekly hours socialising vs none",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 8,
+  text_size = 2.5,
+  point_size = .5,
+  title_size = 12,
+  subtitle_size = 11,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  2
+)
+
+plot_help_time_strong
+ggsave(
+  plot_help_time_strong,
+  path = here::here(here::here(push_mods, "figs")),
+  width = 8,
+  height = 6,
+  units = "in",
+  filename = "plot_help_time_strong.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 600
+)
 
 
 
