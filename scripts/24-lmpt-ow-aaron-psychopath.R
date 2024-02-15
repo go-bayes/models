@@ -10,7 +10,6 @@
 # preliminaries -----------------------------------------------------------
 
 
-WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
@@ -44,7 +43,6 @@ pull_path <-
 
 # read data: note that you need use the arrow package in R
 dat <- arrow::read_parquet(pull_path)
-
 
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
@@ -261,23 +259,25 @@ get_reversed_vars <- function(vars_clean, reverse_vars_clean) {
   unique(reversed_vars)
 }
 
+
+
 # use function
-antagonism_vars_reversed <- get_reversed_vars(antagonism_vars_clean, reverse_vars_clean)
+antagonism_vars_reversed <- get_reversed_vars(antagonism_vars_clean, clean_reversed_vars)
 
 #check
 antagonism_vars_reversed
 
-emotional_stability_vars_reversed <- get_reversed_vars(emotional_stability_vars_clean, reverse_vars_clean)
+emotional_stability_vars_reversed <- get_reversed_vars(emotional_stability_vars_clean, clean_reversed_vars)
 
 # check
 emotional_stability_vars_reversed
 
-disinhibition_vars_reversed <- get_reversed_vars(disinhibition_vars_clean, reverse_vars_clean)
+disinhibition_vars_reversed <- get_reversed_vars(disinhibition_vars_clean, clean_reversed_vars)
 
 #check
 disinhibition_vars_reversed
 
-narcissism_vars_reversed <- get_reversed_vars(narcissism_vars_clean, reverse_vars_clean)
+narcissism_vars_reversed <- get_reversed_vars(narcissism_vars_clean, clean_reversed_vars)
 
 
 # check all again
@@ -325,12 +325,6 @@ narcissism_vars_reversed <- c(
   "aaron_reversed_pers_modesty02" 
 )
 
-str(psycho_dt$pers_e_ipip01)
-str(psycho_dt$pers_e_ipip04)
-str(psycho_dt$aaron_reversed_pers_modesty01r)
-str(psycho_dt$aaron_reversed_pers_modesty04r)
-str(psycho_dt$aaron_reversed_pers_modesty04r)
-
 
 # combine all the lists into a single vector
 all_vars <- c(antagonism_vars_reversed, emotional_stability_vars_reversed, disinhibition_vars_reversed, narcissism_vars_reversed)
@@ -358,7 +352,6 @@ table(dat_init_use_2$aaron_psychopathy == dat_init_use_2$aaron_psychopathy_test)
 
 
 hist(dat_init_use_2$aaron_psychopathy)
-
 
 
 # psychometric validation -------------------------------------------------
@@ -400,7 +393,7 @@ dt_narcissism<- psycho_dt |> select(all_of(narcissism_vars_reversed))
 dt_all_vars<- psycho_dt |> select(all_of(all_vars))
 dt_subscale_vars <- psycho_dt |> select(all_of(vars_subscale))
 
-
+dt_subscale_vars
 narcissism_vars_reversed
 
 # Check factor structure for each version
@@ -554,8 +547,6 @@ fit_antagonism <- fitMeasures(cfa_antagonism)
 fit_emotional_stability <- fitMeasures(cfa_emotional_stability)
 fit_disinhibition <- fitMeasures(cfa_disinhibition)
 fit_narcissism <- fitMeasures(cfa_narcissism)
-fit_all_vars <- fitMeasures(cfa_all_vars)
-fit_subscale_vars <- fitMeasures(cfa_subscale_vars)
 
 
 
@@ -563,53 +554,6 @@ fit_subscale_vars <- fitMeasures(cfa_subscale_vars)
 
 # data wrangling ----------------------------------------------------------
 
-
-dat_long  <- dat |>
-  dplyr::arrange(id, wave) |>
-  rowwise(wave) |>
-  mutate(power_no_control_composite = mean(c(
-    power_self_nocontrol, power_others_control
-  ), na.rm = TRUE)) |>
-  mutate(kessler_latent_depression =  mean(
-    c(kessler_depressed, kessler_hopeless, kessler_worthless),
-    na.rm = TRUE
-  )) |>
-  mutate(kessler_latent_anxiety  = mean(c(
-    kessler_effort, kessler_nervous, kessler_restless
-  ), na.rm = TRUE)) |>
-  ungroup() |>
-  mutate(power_no_control_composite_reversed = 8 - power_no_control_composite) |>
-
-  
-  
-  
-  
-  select(
-    pers_a_ipip02r,
-    pers_a_ipip04r,
-    pers_a_ipip01,
-    sdo02,
-    sdo03,
-    support_help,# rel_support01
-    pers_n_ipip02r,
-    pers_n_ipip04r,
-    vengeful_rumination01,
-    vengeful_rumination03,
-    self_control_have_lots, # self_control01
-    belong_routside_reversed, #rel_belong02r,
-    pers_c_ipip03r,
-    pers_n_ipip01,
-    pers_c_ipip04r,
-    pers_c_ipip01,
-    police_engagement02,
-    pers_hon_hum04r,
-    pers_e_ipip01,
-    pers_e_ipip04,
-    pers_modesty01r,
-    pers_modesty04r,
-    pers_narc01r,
-    pers_modesty02
-  )
 
 # kessler 6 ---------------------------------------------------------------
 # uncomment to get analysis
@@ -688,28 +632,317 @@ dat_long  <- dat |>
 #
 
 # import data and wrangle-------------------------------------------------
-dat_long  <- dat |>
-  arrange(id, wave) |>
-  mutate(forgiveness = 8 - vengeful_rumin) |> # reverse score veng rumination 
-  rowwise(wave) |>
-  mutate(power_no_control_composite = mean(c(
-    power_self_nocontrol, power_others_control
-  ), na.rm = TRUE)) |>
-  mutate(kessler_latent_depression =  mean(
-    c(kessler_depressed, kessler_hopeless, kessler_worthless),
-    na.rm = TRUE
-  )) |>
-  mutate(kessler_latent_anxiety  = mean(c(
-    kessler_effort, kessler_nervous, kessler_restless
-  ), na.rm = TRUE)) |>
-  ungroup() |>
-  mutate(power_no_control_composite_reversed = 8 - power_no_control_composite) |>
+
+ dt_t <- dat_init_use_2 %>%
+  arrange(id,wave) |> 
+  rowwise() |> 
+  mutate(
+    aaron_psychopathy_combined = mean(c(aaron_antagonism, aaron_emotional_stability, aaron_disinhibition, aaron_narcissism), na.rm = TRUE)) |> 
+  ungroup()
+
+
+
+here_save(dt_t, "dt_t")
+
+
+### READ DATA HERE
+
+dt_t <-here_read("dt_t")
+
+# Assuming antagonism_vars_reversed, emotional_stability_vars_reversed, 
+# disinhibition_vars_reversed, narcissism_vars_reversed, and vars_subscale 
+# are vectors of column names for the respective constructs.
+
+n_unique(dt_t$id)
+n_unique(dt_t$rel_num_l)
+
+str(dt_t$rel_num_l)
+
+library(dplyr)
+
+count_dyads <- function(dat, waves = c(2018), year_measured_val = 1) {
+  rel_count_test <- dat %>%
+    #mutate(rel_num = factor(rel_num)) |> 
+    filter(wave %in% waves, year_measured == year_measured_val, !is.na(rel_num_l)) %>%
+    group_by(rel_num_l) %>%
+    summarise(n_in_couple = n(), .groups = 'drop') %>%
+    ungroup()
+  
+  rel_count_1a <- rel_count_test %>% 
+    filter(n_in_couple == 1)
+  
+  rel_count_2a <- rel_count_test %>% 
+    filter(n_in_couple == 2)
+  
+  list(
+    total_dyads = nrow(rel_count_2a) + nrow(rel_count_1a),
+    singletons = nrow(rel_count_1a),
+    complete_dyads = nrow(rel_count_2a),
+    unique_complete_dyads = n_distinct(rel_count_2a$rel_num_l) # Corrected function for counting unique values
+  )
+}
+
+count_dyads_old <- function(dat, waves = c(2018), year_measured_val = 1) {
+  rel_count_test <- dat %>%
+    #mutate(rel_num = factor(rel_num)) |> 
+    filter(wave %in% waves, year_measured == year_measured_val, !is.na(rel_num)) %>%
+    group_by(rel_num) %>%
+    summarise(n_in_couple = n(), .groups = 'drop') %>%
+    ungroup()
+  
+  rel_count_1a <- rel_count_test %>% 
+    filter(n_in_couple == 1)
+  
+  rel_count_2a <- rel_count_test %>% 
+    filter(n_in_couple == 2)
+  
+  list(
+    total_dyads = nrow(rel_count_2a) + nrow(rel_count_1a),
+    singletons = nrow(rel_count_1a),
+    complete_dyads = nrow(rel_count_2a),
+    unique_complete_dyads = n_distinct(rel_count_2a$rel_num) # Corrected function for counting unique values
+  )
+}
+
+
+# Check for a specific wave, e.g., 2018
+dyad_counts <- count_dyads(dat, waves = c(2018)
+dyad_counts
+
+## OLD DATA
+
+## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE. DO NOT USE THIS PATH
+pull_path_2 <-
+  fs::path_expand(
+    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
+  )
+
+# read data: note that you need use the arrow package in R
+dat_old <- arrow::read_parquet(pull_path_2)
+
+dyad_counts_old <- count_dyads_old(dat_old, waves = c(2018))
+dyad_counts_old
+
+str(dat_old$rel_num)
+
+n_unique(dat_old$rel_num)
+n_unique(dat$rel_num)
+
+dyad_counts_table <- count_dyads_multi_wave(dat)
+dyad_counts_table_old <- count_dyads_multi_wave(dat_old)
+
+dyad_counts_table
+dyad_counts_table_old
+
+
+
+# dyads in all waves ------------------------------------------------------
+count_dyads_multi_wave <- function(dat, start_wave = 2009, end_wave = 2022, year_measured_val = 1) {
+  results <- tibble()
+  
+  for(wave in seq(start_wave, end_wave)) {
+    dyad_counts <- count_dyads(dat, waves = c(wave), year_measured_val = year_measured_val)
+    temp_tibble <- tibble(
+      wave = wave,
+      total_dyads = dyad_counts$total_dyads,
+      singletons = dyad_counts$singletons,
+      complete_dyads = dyad_counts$complete_dyads,
+      unique_dyads = dyad_counts$unique_dyads
+    )
+    
+    results <- bind_rows(results, temp_tibble)
+  }
+  
+  return(results)
+}
+
+
+count_dyads_multi_wave_old <- function(dat, start_wave = 2009, end_wave = 2022, year_measured_val = 1) {
+  results <- tibble()
+  
+  for(wave in seq(start_wave, end_wave)) {
+    dyad_counts <- count_dyads_old(dat, waves = c(wave), year_measured_val = year_measured_val)
+    temp_tibble <- tibble(
+      wave = wave,
+      total_dyads = dyad_counts$total_dyads,
+      singletons = dyad_counts$singletons,
+      complete_dyads = dyad_counts$complete_dyads,
+      unique_dyads = dyad_counts$unique_dyads
+    )
+    
+    results <- bind_rows(results, temp_tibble)
+  }
+  
+  return(results)
+}
+
+
+dyad_counts_table <- count_dyads_multi_wave(dat)
+dyad_counts_table
+dyad_counts_table_old <- count_dyads_multi_wave_old(dat_old)
+dyad_counts_table_old
+
+aaron_psychopathy_combined
+# checks
+
+initial_filter <- dt_t %>%
+  filter((wave %in% c(2018, 2019) & year_measured == 1) | 
+           (wave == 2020)) %>%
+  filter(!is.na(aaron_psychopathy_combined))
+
+glimpse(initial_filter)
+
+initial_filter_dyads <- initial_filter %>% 
+  filter(!is.na(rel_num_l))
+
+time_order_debug <- initial_filter_dyads %>% 
+  group_by(id, rel_num_l) %>% 
+  summarise(waves = list(sort(as.numeric(as.character(unique(wave)))))) %>% 
+  ungroup() %>%
+  rowwise() %>% 
+  filter(all(c(2018, 2019) %in% unlist(waves))) %>% 
+  ungroup()
+
+
+time_order_debug
+
+time_order_check <- initial_filter %>% 
+  group_by(id, rel_num_l) %>% 
+  summarise(waves = list(sort(unique(wave)))) %>% 
+  ungroup() %>%
+  rowwise() %>% 
+  filter(all(c(2018, 2019) %in% unlist(waves)) & 
+           is.unsorted(unlist(waves), strictly = TRUE)) %>%
+  ungroup()
+
+time_order_check
+
+
+
+initial_filter_year <- initial_filter %>% 
+  filter(year_measured == 1)
+
+time_order_debug_year <- initial_filter_year %>% 
+  group_by(id, rel_num_l) %>% 
+  summarise(waves = list(sort(unique(wave)))) %>% 
+  ungroup() %>%
+  rowwise() %>% 
+  filter(all(c(2018, 2019) %in% unlist(waves))) %>% 
+  ungroup()
+
+final_dat <- dt_t %>% 
+  semi_join(time_order_debug_year, by = c("id", "rel_num_l"))
+
+n_unique( final_dat$id )
+n_unique( final_dat$rel_num_l )
+
+# we condintue debugging
+singleton_dyads <- final_dat %>% 
+  group_by(rel_num_l) %>% 
+  summarise(n_id = n_distinct(id)) %>% 
+  filter(n_id != 2)
+
+final_dat_clean <- final_dat %>% 
+  anti_join(singleton_dyads, by = "rel_num_l")
+
+n_unique(final_dat_clean$id)
+n_unique(final_dat_clean$rel_num_l)
+
+
+
+
+# function to identify dyads ----------------------------------------------
+
+
+# another approach for identifying dyads ----------------------------------
+
+
+# Filter the data for years 2018 and 2019 where #year_measured == 1.
+dat_18_19 <- dt_t |> 
+  filter(wave %in% c(2018, 2019) & year_measured == 1 & !is.na(aaron_psychopathy_combined))
+
+#Group by id and find the number of unique waves they are part of.
+id_count <- dat_18_19 |> 
+  group_by(id) |> 
+  summarise(n_unique_waves = n_distinct(wave), .groups = 'drop') |> 
+  filter(n_unique_waves == 2)
+
+valid_ids_1 <- id_count$id
+
+dat_filtered <- dt_t |> 
+  filter(id %in% valid_ids_1 & wave %in% c(2018, 2019, 2020))
+
+n_unique(dat_filtered$id)
+
+# Group by rel_num_l and wave to find the number of individuals in each relationship for each wave.
+rel_count <- dat_filtered |> 
+  filter(wave %in% c(2018, 2019) & year_measured == 1 & !is.na(rel_num_l)) |>  # Only consider 2018 and 2019
+  group_by(rel_num_l, wave) |> 
+  summarise(n_in_wave = n(), .groups = 'drop') 
+
+rel_count_1 <- rel_count |> 
+  filter(n_in_wave == 2)
+
+rel_count_2 <- rel_count |> 
+  filter(n_in_wave == 2)
+
+nrow( rel_count_2) + nrow(rel_count_1)
+nrow( rel_count_2)
+
+# 
+# rel_count_compare <- dat_2 |> 
+#   filter(wave %in% c(2018, 2019) & year_measured == 1 & !is.na(rel_num_l) & !is.na(psychopathy_scale) & employed == 1) |>  # Only consider 2018 and 2019
+#   group_by(rel_num_l, wave) |> 
+#   summarise(n_in_wave = n(), .groups = 'drop') 
+# 
+# table( rel_count_compare$n_in_wave)
+
+# constitent relationship
+dyadic_rel <- rel_count |> 
+  filter(n_in_wave == 2) 
+
+
+dyadic_rel
+
+valid_dyadic_rel_num_l<- dyadic_rel$rel_num_l
+length(valid_dyadic_rel_num_l)
+
+# Filter the dat_filtered data frame for these consistent rel_num_l.
+dat_final_dyadic <- dat_filtered |> 
+  filter(rel_num_l %in% valid_dyadic_rel_num_l)
+
+n_unique(dat_final_dyadic$id)
+
+skimr::n_unique(dat_final_dyadic$id)
+skimr::n_unique(dat_final_dyadic$rel_num_l)
+
+hist( dat_final_dyadic$aaron_psychopathy_combined )
+
+hist( dat_final_dyadic$aaron_antagonism )
+
+
+
+# define exposure
+nzavs_exposure <- "aaron_psychopathy_combined"
+exposure_var = c("aaron_psychopathy_combined", "aaron_antagonism", "not_lost") #
+
+# data
+dat_final_dyadic$wave
+
+
+dat_long <- dat_final_dyadic |> 
   # ungroup
   select(
     "wave",
     "year_measured",
     "id",
-    # "edu",
+    "aaron_psychopathy_combined", #aaron
+    "aaron_antagonism",#aaron
+    "aaron_emotional_stability",#aaron
+    "aaron_disinhibition", #aaron
+    "aaron_narcissism",#aaron
+    "aaron_psychopathy_combined",#aaron
+    "sat_relationship", # Relationship satisfication
     "sample_origin_names_combined",
     # Sample origin names combined
     #"alert_level_combined_lead",  not needed because all receive all levels by the point the outcome is measured
@@ -717,7 +950,6 @@ dat_long  <- dat |>
     "education_level_coarsen",
     # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing)  Combined highschool levels See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
     "male",
-    # 0 = female, 0.5 = neither female nor male, 1 = male.
     "age",
     "born_nz",
     "hlth_disability",
@@ -815,52 +1047,52 @@ dat_long  <- dat |>
     # "religion_religious_not",  # reverse this indicator
     "religion_identification_level",
     #How important is your religion to how you see yourself?"
-    "religion_prayer",
-    # How many times did you pray in the last week?
-    "religion_scripture",
-    # How many times did you read religious scripture in the last week?
-    "religion_church",
-    # How many times did you attend a church or place of worship in the last month?
-    "religion_believe_spirit",
-    #Do you believe in some form of spirit or lifeforce?
-    "religion_believe_spirit",
-    #inverse believe in god
-    "religion_believe_god",
-    #Do you believe in a God
-    "religion_believe_god_not",
-    #inverse believe in god
-    "religion_spiritual_identification",
+    # "religion_prayer",
+    # # How many times did you pray in the last week?
+    # "religion_scripture",
+    # # How many times did you read religious scripture in the last week?
+    # "religion_church",
+    # # How many times did you attend a church or place of worship in the last month?
+    # "religion_believe_spirit",
+    # #Do you believe in some form of spirit or lifeforce?
+    # "religion_believe_spirit",
+    # #inverse believe in god
+    # "religion_believe_god",
+    # #Do you believe in a God
+    # "religion_believe_god_not",
+    # #inverse believe in god
+  #  "religion_spiritual_identification",
     #w8,w10,w12-13 "I identify as a spiritual person."
-    "religion_perceive_religious_discrim",
+  #  "religion_perceive_religious_discrim",
     #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
     # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
     "w_gend_age_euro",
     # sample_weights.
     # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-    "gratitude",
+    # "gratitude",
     ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of peopl
     "modesty",
     # see above
-    "vengeful_rumin",
-    "forgiveness",
-    "charity_donate",
-    #How much money have you donated to charity in the last year?
-    "hours_charity",
+    # "vengeful_rumin",
+    # "forgiveness",
+    # "charity_donate",
+    # #How much money have you donated to charity in the last year?
+    # "hours_charity",
     #,#Hours spent in activities/Hours spent … voluntary/charitable work
-    "warm_asians",
-    "warm_chinese",
-    #"warm_disabled" ,  missing at time 0
-    # begins w9
-    "warm_immigrants",
-    "warm_indians",
-    "warm_elderly",
-    # warm_lgbtq starts w12
-    "warm_maori",
-    "warm_mental_illness",
-    "warm_muslims",
-    "warm_nz_euro",
-    "warm_overweight",
-    "warm_pacific",
+    # "warm_asians",
+    # "warm_chinese",
+    # #"warm_disabled" ,  missing at time 0
+    # # begins w9
+    # "warm_immigrants",
+    # "warm_indians",
+    # "warm_elderly",
+    # # warm_lgbtq starts w12
+    # "warm_maori",
+    # "warm_mental_illness",
+    # "warm_muslims",
+    # "warm_nz_euro",
+    # "warm_overweight",
+    # "warm_pacific",
     "warm_refugees",
     # "issue_same_sex_marriage", not in range
     "support",
@@ -871,12 +1103,12 @@ dat_long  <- dat |>
     # # There is no one I can turn to for guidance in times of stress.
     # "support_rnoguidance",
     #There is no one I can turn to for guidance in times of stress.
-    "family_time",
-    "friends_time",
-    "community_time",
-    "family_money",
-    "friends_money",
-    "community_money",
+    # "family_time",
+    # "friends_time",
+    # "community_time",
+    # "family_money",
+    # "friends_money",
+    # "community_money",
     #Please estimate how much help you have received from the following sources in the last week?
     # Received help and support - hours
     # family
@@ -888,7 +1120,7 @@ dat_long  <- dat |>
     # others in my community
     # outcomewide,
     #w8,w10,w12-13 "I identify as a spiritual person."
-    "religion_perceive_religious_discrim",
+  #  "religion_perceive_religious_discrim",
     #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
     # "bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
     # sample_weights
@@ -900,16 +1132,16 @@ dat_long  <- dat |>
     # " What is your height? (metres)\nWhat is your weight? (kg)\nKg
     "hours_exercise",
     # Hours spent … exercising/physical activity
-    "sfhealth",
-    "sfhealth_your_health",
-    # "In general, would you say your health is...
-    "sfhealth_get_sick_easier_reversed",
-    #\nI seem to get sick a little easier than other people.
-    "sfhealth_expect_worse_health_reversed",
+    # "sfhealth",
+    # "sfhealth_your_health",
+    # # "In general, would you say your health is...
+    # "sfhealth_get_sick_easier_reversed",
+    # #\nI seem to get sick a little easier than other people.
+    # "sfhealth_expect_worse_health_reversed",
     #\nI expect my health to get worse." ****
     "hlth_sleep_hours",
     #During the past month, on average, how many hours of actual sleep did you get per night?
-    "smoker",
+   # "smoker",
     #Do you currently smoke?
     "hlth_fatigue",
     #During the last 30 days, how often did.... you feel exhausted?
@@ -940,11 +1172,11 @@ dat_long  <- dat |>
     "perfectionism",
     # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
     # I am hardly ever satisfied with my performance.
-    "power_no_control_composite",
-    "power_self_nocontrol",
-    "power_no_control_composite_reversed",
-    # I do not have enough power or control over\nimportant parts of my life.
-    "power_others_control",
+    # "power_no_control_composite",
+    # "power_self_nocontrol",
+    # "power_no_control_composite_reversed",
+    # # I do not have enough power or control over\nimportant parts of my life.
+    # "power_others_control",
     # Other people have too much power or control over\nimportant parts of my life
     "self_esteem",
     "selfesteem_satself",
@@ -954,9 +1186,9 @@ dat_long  <- dat |>
     "selfesteem_failure_reversed",
     # Am inclined to feel that I am a failure.
     #  "self_control",
-    "self_control_have_lots",
+  #  "self_control_have_lots",
     #In general, I have a lot of self-control.
-    "self_control_wish_more_reversed",
+ #   "self_control_wish_more_reversed",
     #I wish I had more self-discipline.(r)
     "emotion_regulation_out_control",
     # When I feel negative emotions, my emotions feel out of control. w10 - w13
@@ -966,9 +1198,9 @@ dat_long  <- dat |>
     # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
     # "emp_work_life_balance",# I have a good balance between work and other important things in my life. # not measured at baseline
     # "respect_self",  #If they knew me, most NZers would respect what I have accomplished in life. Missing at T12
-    "gratitude",
+    # "gratitude",
     ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-    #"pwi",
+    "pwi",
     "pwb_your_health",
     # #Your health.
     "pwb_your_relationships",
@@ -982,75 +1214,41 @@ dat_long  <- dat |>
     # I am satisfied with my life.
     "lifesat_ideal",
     # In most ways my life is close to ideal.
-    "lifemeaning",
-    # average meaning_purpose, meaning_sense
-    "meaning_purpose",
-    # My life has a clear sense of purpose.
-    "meaning_sense",
+    # "lifemeaning",
+    # # average meaning_purpose, meaning_sense
+    # "meaning_purpose",
+    # # My life has a clear sense of purpose.
+    # "meaning_sense",
     # I have a good sense of what makes my life meaningful.
-    "permeability_individual",
-    #I believe I am capable, as an individual\nof improving my status in society.
-    "impermeability_group",
-    #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
-    "neighbourhood_community",
+    # "permeability_individual",
+    # #I believe I am capable, as an individual\nof improving my status in society.
+    # "impermeability_group",
+    # #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
+    # "neighbourhood_community",
     #I feel a sense of community with others in my local neighbourhood.
-    "support",
-    "support_help",
+  #  "support",
+   # "support_help",
     # 'There are people I can depend on to help me if I really need it.
-    "support_turnto",
+   # "support_turnto",
     # There is no one I can turn to for guidance in times of stress.
-    "support_noguidance_reverseed",
+ #   "support_noguidance_reverseed",
     #There is no one I can turn to for guidance in times of stress.
-    "belong",
-    "belong_accept",
+   # "belong",
+    #"belong_accept",
     #Know that people in my life accept and value me.
-    "belong_routside_reversed",
+   # "belong_routside_reversed",
     # Feel like an outsider.
-    "belong_beliefs",
-    # Know that people around me share my attitudes and beliefs.
-    "charity_donate",
-    #How much money have you donated to charity in the last year?
-    "hours_charity",
-    #,#Hours spent in activities/Hours spent … voluntary/charitable work
-    "nwi",
-    # The economic situation in New Zealand./# The social conditions in New Zealand. # Business in New Zealand.
-    "emp_job_sat",
-    # How satisfied are you with your current job? #Eisenbarth, H., Hart, C. M., Zubielevitch, E., Keilor, T., Wilson, M. S., Bulbulia, J. A., Sibley, C. G., &
-    #Sedikides, C. (in press). Aspects of psychopathic personality relate to lower subjective and objective professional success. Personality and Individual Differences, 186, 111340.
-    "emp_job_secure",
-    #only for employed people
-    "emp_job_valued",
-    "rural_gch2018",
-    "hours_community",
-    "hours_friends",
-    "hours_family",
-    "alert_level_combined_lead"
-    # Hours spent … socialising with family
-    # Hours spent … socialising with friends
-    # Hours spent … socialising with community groups
-    # Hours spent … socialising with religious groups (only for religion only studies)
+   # "belong_beliefs",
+    "sat_relationship",
+    "kessler_latent_anxiety",
+    "kessler_latent_depression",
+    "alert_level_combined_lead",
+ "rel_num_l"
   ) |>
-  # select variables
-  # mutate(across(where(is.double), as.numeric)) |>
   mutate(
-    hours_community_log = log(hours_community + 1),
-    hours_friends_log = sqrt(hours_friends + 1),
-    hours_family_log = sqrt(hours_family + 1)
-  ) |>
-  mutate(male = as.numeric(male)) |>
-  mutate(total_siblings_factor = ordered(round(
-    ifelse(total_siblings > 7, 7, total_siblings), 0
-  ))) |>
-  mutate(religion_prayer_binary = ifelse(religion_prayer > 0, 1, 0)) |>
-  mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0)) |>
-  mutate(religion_church_f = ifelse(religion_church >= 21, 21, 0)) |>
-  mutate(religion_scripture_binary = ifelse(religion_scripture > 0, 1, 0)) |>
-  mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
-  mutate(
-    #   eth_cat = as.integer(eth_cat),
-    urban = as.numeric(urban) #,
-    # education_level_coarsen = as.integer(education_level_coarsen)
+    eth_cat = as.integer(eth_cat),
+    urban = as.numeric(urban),
+    education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
   dplyr::filter((wave == 2018 & year_measured  == 1) |
                   (wave == 2019  &
@@ -1058,8 +1256,9 @@ dat_long  <- dat |>
                   (wave == 2020)) |>  # Eligibility criteria  Observed in 2018/2019 & Outcomes in 2020 or 2021
   group_by(id) |>
   ## MAKE SURE YOU HAVE ELIGIBILITY CRITERIA
-  dplyr::mutate(meets_criteria_baseline = ifelse(year_measured == 1 &
-                                                   !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
+  dplyr::mutate(
+    meets_criteria_baseline = ifelse(year_measured == 1 &
+                                       !is.na(!!sym(nzavs_exposure)), 1, 0)) |>  # using R lang
   dplyr::mutate(sample_origin = as.factor( sample_origin_names_combined)) |>  #shorter name
   arrange(id) |>
   filter((wave == 2018 & year_measured == 1) |
@@ -1084,15 +1283,15 @@ dat_long  <- dat |>
     not_lost = ifelse(is.na(not_lost), 0, not_lost)
   ) |>
   ungroup() |>
-  dplyr::mutate(
-    friends_money = ifelse(friends_money < 0, 0, friends_money),
-    # someone gave neg number
-    household_inc_log = log(household_inc + 1),
-    hours_children_log = log(hours_children + 1),
-    hours_work_log = log(hours_work + 1),
-    hours_housework_log = log(hours_housework + 1),
-    hours_exercise_log = log(hours_exercise + 1)
-  ) |>
+  # dplyr::mutate(
+  #   friends_money = ifelse(friends_money < 0, 0, friends_money),
+  #   # someone gave neg number
+  #   household_inc_log = log(household_inc + 1),
+  #   hours_children_log = log(hours_children + 1),
+  #   hours_work_log = log(hours_work + 1),
+  #   hours_housework_log = log(hours_housework + 1),
+  #   hours_exercise_log = log(hours_exercise + 1)
+  # ) |>
   dplyr::rename(sample_weights = w_gend_age_euro) |>
   dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
   arrange(id, wave) |>
@@ -1119,115 +1318,42 @@ dat_long  <- dat |>
 mutate(
   # eth_cat = as.integer(eth_cat),
   urban = as.numeric(urban),
-  education_level_coarsen = as.integer(education_level_coarsen)
+ # education_level_coarsen = as.integer(education_level_coarsen)
 ) |>
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
 
 
-
-
 # check sample 
-N_participants <-n_unique(dat_long$id) #34764 
+N_participants <-n_unique(dat_long$id) #514 
 N_participants
+
+N_participants <-n_unique(dat_long$rel_num_l) #514 
+N_participants
+
 
 
 # save for paper
 here_save(N_participants, "N_participants")
 
-# factors 
-#
-# dt_only_k6 <- dt_19 |> select(kessler_depressed, kessler_effort,kessler_hopeless,
-#                                  kessler_worthless, kessler_nervous,
-#                                  kessler_restless)
-#
-#
-# # check factor structure
-# performance::check_factorstructure(dt_only_k6)
-#
-# # explore a factor structure made of 3 latent variables
-# efa <- psych::fa(dt_only_k6, nfactors = 2) %>%
-#   model_parameters(sort = TRUE, threshold = "max")
-#
-# efa
-#
-#
-# n <- n_factors(dt_only_k6)
-#
-# # plot
-# plot(n) + theme_classic()
-#
-# # CFA
-# part_data <- datawizard::data_partition(dt_only_k6, traing_proportion = .7, seed = seed)
-#
-#
-# # set up training data
-# training <- part_data$p_0.7
-# test <- part_data$test
-#
-#
-# # one factor model
-# structure_k6_one <- psych::fa(training, nfactors = 1) |>
-#   efa_to_cfa()
-#
-# # two factor model model
-# structure_k6_two <- psych::fa(training, nfactors = 2) |>
-#   efa_to_cfa()
-#
-# # three factor model
-# structure_k6_three <- psych::fa(training, nfactors = 3) %>%
-#   efa_to_cfa()
-#
-# # inspect models
-# structure_k6_one
-# structure_k6_two
-# structure_k6_three
-#
-#
-# # Next we perform the confirmatory factor analysis.
-#
-#
-# one_latent <-
-#   suppressWarnings(lavaan::cfa(structure_k6_one, data = test))
-#
-# # two latents model
-# two_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_two, data = test))
-#
-# # three latents model
-# three_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
-#
-#
-# # compare models
-# compare <-
-#   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
-#
-# # view as html table
-# as.data.frame(compare) |>
-#   kbl(format = "markdown")
-#
-
-
-
 # eyeball distribution
 # table(dat_long$wave)
 dt_19 <- dat_long |>
   filter(year_measured == 1 & wave == 2) |> 
-  mutate(gratitude_z = scale(gratitude))
+  mutate(aaron_psychopathy_combined_z = scale(aaron_psychopathy_combined))
 
 
 here_save_arrow(dt_19, "dt_19")
 
 
-min_score <- min(dt_19$gratitude_z, na.rm = TRUE)
+min_score <- min(dt_19$aaron_psychopathy_combined, na.rm = TRUE)
 min_score
 
-max_score <- max(dt_19$gratitude_z, na.rm = TRUE)
+max_score <- max(dt_19$aaron_psychopathy_combined, na.rm = TRUE)
 max_score
 
-sd_exposure <- sd(dt_19$gratitude,
+sd_exposure <- sd(dt_19$aaron_psychopathy_combined,
                   na.rm = TRUE)
 sd_exposure
 
@@ -1238,37 +1364,23 @@ one_point_in_sd_units
 # half_sd
 
 
-
-# shift to mean
+# Decrease by one point (raw scores)
 f <- function(data, trt) {
-  ifelse(data[[trt]] <= 0, 0,  data[[trt]])
-}
-
-
-#  increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
-
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
 }
 
 
 
-
-#  increase everyone by one point, contrasted with what they would be anyway.
+#  Increase everyone by one point, contrasted with what they would be anyway.
 # only use this function for raw scores
 
 f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
 }
 
 # check function logic
-max_score - one_point_in_sd_units
-
-# make sure positions align.
-table(dt_19$gratitude_z)
-
-table(dt_19$gratitude)
+max_score - 1
+min_score + 1
 
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
@@ -1283,7 +1395,7 @@ table(scale(dat_long$kessler_latent_anxiety))
 
 
 # check sample 
-N <-n_unique(dat_long$id) #34749 
+N <-n_unique(dat_long$id) #1070 
 N
 
 # double check path
@@ -1297,10 +1409,10 @@ dev.off()
 dt_check_exposure <- dat_long |> filter(wave == 1| wave == 2)
 
 # makes sure all is false
-table (is.na(dt_check_exposure$gratitude))
+table (is.na(dt_check_exposure$aaron_psychopathy_combined))
 
 # makes sure all is false
-table ((dt_check_exposure$gratitude))
+table ((dt_check_exposure$aaron_psychopathy_combined))
 # make
 dt_18 <- dat_long |>
   filter(wave == 1 )
@@ -1309,8 +1421,8 @@ dt_18 <- dat_long |>
 
 dt_positivity_full <- dt_check_exposure |>
   filter(wave == 1 | wave == 2) |>
-  select(wave, id, gratitude, sample_weights) |> 
-  mutate(gratitude_round = round(gratitude, 0))
+  select(wave, id, aaron_psychopathy_combined, sample_weights) |> 
+  mutate(aaron_psychopathy_combined_round = round(aaron_psychopathy_combined, 0))
 
 dt_positivity_full
 
@@ -1319,7 +1431,7 @@ table (is.na(dt_positivity_full$sample_weights)) #
 
 # test positivity
 out <-
-  msm::statetable.msm(gratitude_round, id, data = dt_positivity_full)
+  msm::statetable.msm(aaron_psychopathy_combined_round, id, data = dt_positivity_full)
 
 # transition table
 t_tab <- transition_table(out, state_names = NULL)
@@ -1330,7 +1442,7 @@ here_save(t_tab, "t_tab")
 
 
 standard_deviation_exposure <-
-  coloured_histogram_sd(dt_19, col_name = "gratitude", binwidth = .1)
+  coloured_histogram_sd(dt_19, col_name = "aaron_psychopathy_combined", binwidth = .1)
 
 standard_deviation_exposure
 
@@ -1354,7 +1466,7 @@ ggsave(
 # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
 source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
 
-histogram_shift <- coloured_histogram_shift(dt_19, col_name = "gratitude", binwidth = .1, range_highlight = "below")
+histogram_shift <- coloured_histogram_shift(dt_19, col_name = "standard_deviation_exposure", binwidth = .1, range_highlight = "below")
 
 histogram_shift
 
@@ -1374,7 +1486,7 @@ ggsave(
 
 
 # generate bar plot
-graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "gratitude", scale_min = 1, scale_max = 7)
+graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "standard_deviation_exposure", scale_min = 1, scale_max = 7)
 
 graph_density_of_exposure
 
@@ -1396,6 +1508,8 @@ ggsave(
 
 # set variables for baseline exposure and outcome -------------------------
 
+str(dat_long$sample_origin)
+
 baseline_vars = c(
   "male",
   "age",
@@ -1408,64 +1522,38 @@ baseline_vars = c(
   "nz_dep2018",
   "nzsei13",
   "born_nz",
-  "hlth_disability",
-  # "hlth_bmi",
-  # "pwi", # pwi
-  # "kessler6_sum",
   "kessler_latent_depression",
   "kessler_latent_anxiety",
-  "support",
-  #soc support
-  "belong",
   # social belonging
-  "total_siblings_factor",
-  #  "smoker", # smoker
-  # "sfhealth",
-  # "alcohol_frequency", measured with error
-  # "alcohol_intensity",
-  # "hours_family_log",
-  # "hours_friends_log",
-  # "hours_community_log",
-  # "hours_community_sqrt_round",
-  # "lifemeaning",
-  "household_inc_log",
+ # "household_inc_log",
   # added: measured with error but OK for imputations
-  "partner",
+ # "partner",
   # "parent",  # newly changed - have information in child number
   "political_conservative",
   #Please rate how politically liberal versus conservative you see yourself as being.
   # Sample origin names combined
   "urban",
-  "children_num",
-  "hours_children_log",
+ #  "children_num",
+ #  "hours_children_log",
   # new
-  "hours_work_log",
+#  "hours_work_log",
   # new
-  "hours_housework_log",
+ # "hours_housework_log",
   #new
-  "hours_exercise_log",
-  "agreeableness",
-  "conscientiousness",
-  "extraversion",
-  "honesty_humility",
-  "openness",
-  "neuroticism",
-  "modesty",
+ # "hours_exercise_log",
+ # "agreeableness",
+ # "conscientiousness",
+#  "extraversion",
+ # "honesty_humility",
+ # "openness",
+ # "neuroticism",
+ # "modesty",
   # I want people to know that I am an important person of high status, I am an ordinary person who is no better than others. , I wouldn’t want people to treat me as though I were superior to them. I think that I am entitled to more respect than the average person is.
   # "religion_religious", # Do you identify with a religion and/or spiritual group?
-  # "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of virtue, virtue is a mean between extremes.
-  "religion_church_round",
-  # "religion_religious", #
-  "religion_spiritual_identification",
-  "religion_identification_level",
-  #  "religion_religious",
-  #  "religion_church_binary",
-  #  "religion_prayer_binary",
-  #  "religion_scripture_binary",
-  #"religion_believe_god",
-  #"religion_believe_spirit",
+  "religion_identification_level", #How important is your religion to how you see yourself?"  # note this is not a great measure of 
   "sample_weights",
-  "alert_level_combined_lead"
+  "alert_level_combined_lead",
+  "rel_num_l"
 )
 
 
@@ -1474,90 +1562,22 @@ baseline_vars
 
 # check
 exposure_var
-
+dat_long$kessler_latent_anxiety
 # outcomes
 outcome_vars = c(
-  "alcohol_frequency",
-  # health
-  "alcohol_intensity",
-  # health
-  "hlth_bmi",
-  # health
-  "hours_exercise_log",
-  # health
-  "sfhealth",
-  # health
-  "sfhealth_your_health",
-  # "In general, would you say your health is...
-  # "sfhealth_get_sick_easier",#\nI seem to get sick a little easier than other people.
-  # "sfhealth_expect_worse_health",
-  "hlth_sleep_hours",
-  # health
-  "smoker",
-  # health
-  "hlth_fatigue",
-  # embodied
-  "rumination",
-  # embodied
-  # "kessler6_sum",
+  "sat_relationship",
   "kessler_latent_depression",
   "kessler_latent_anxiety",
-  # embodied
-  "bodysat",
-  #ego
-  # "vengeful_rumin",
-  #ego
-  ## Am satisfied with the appearance, size and shape of my body.
-  # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-  "perfectionism",
-  # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-  # I am hardly ever satisfied with my performance.
-  "power_no_control_composite",
-  # "power_self_nocontrol",
-  # I do not have enough power or control over\nimportant parts of my life.
-  #"power_others_control",
-  # Other people have too much power or control over\nimportant parts of my life
-  "self_esteem",
-  # "selfesteem_satself", #  On the whole am satisfied with myself.
-  # "selfesteem_postiveself",# Take a positive attitude toward myself
-  # "selfesteem_rfailure", # Am inclined to feel that I am a failure.
-  "sexual_satisfaction",
-  "self_control_have_lots",
-  #In general, I have a lot of self-control.
-  "self_control_wish_more_reversed",
-  #I wish I had more self-discipline.(r)
-  "emotion_regulation_out_control",
-  # When I feel negative emotions, my emotions feel out of control. w10 - w13
-  # "emotion_regulation_hide_neg_emotions",
-  # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
-  # "emotion_regulation_change_thinking_to_calm",#,#, # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
-  # "emp_work_life_balance"# I have a good balance between work and other important things in my life.
-  #"respect_self",
-  "vengeful_rumin",
-  ################"gratitude",
-  ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-  "pwb_your_health",
-  #Your health.
-  "pwb_your_relationships",
-  #Your personal relationships.
-  "pwb_your_future_security",
-  #Your future security.
-  "pwb_standard_living",
-  #Your standard of living.
+#  "pwb_your_health",
+  # #Your health.
+#  "pwb_your_relationships",
+  # #Your personal relationships.
+#  "pwb_your_future_security",
+  # #Your future security.
+#  "pwb_standard_living",
   "lifesat",
-  # "lifesat_satlife",# I am satisfied with my life.
-  # "lifesat_ideal"#,# In most ways my life is close to ideal.
-  #"lifemeaning",
-  "meaning_purpose",# My life has a clear sense of purpose.
-  "meaning_sense", # I have a good sense of what makes my life meaningful.
-  "permeability_individual",
-  #I believe I am capable, as an individual\nof improving my status in society.
-  #"impermeability_group",
-  #The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
-  "neighbourhood_community",
-  #I feel a sense of community with others in my local neighbourhood.
-  "belong",
-  "support"
+  "pwi",
+  "self_esteem"
 )
 # impute baseline data (we use censoring for the outcomes)
 #colnames(dat_long)
@@ -1569,6 +1589,18 @@ outcome_vars = c(
 
 
 # custom function
+
+dat_long <- as.data.frame(dat_long)
+dat_long <- haven::zap_formats(dat_long)
+dat_long <- haven::zap_label(dat_long)
+dat_long <- haven::zap_widths(dat_long)
+
+
+naniar::vis_miss(dat_long)
+dat_long$wave
+
+str(dat_long)
+
 prep_coop_all <- margot_wide_impute_baseline(
   dat_long,
   baseline_vars = baseline_vars,
@@ -1576,11 +1608,13 @@ prep_coop_all <- margot_wide_impute_baseline(
   outcome_vars = outcome_vars
 )
 
-# check mi model
+
+
+# # check mi model
 # outlist <-
 #   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
 # length(outlist)
-#
+# 
 # # checks. We do not impute with weights: area of current research
 # head(prep_coop_all$loggedEvents, 10)
 
@@ -1604,66 +1638,171 @@ colnames(prep_coop_all)
 
 prep_coop_all <- as.data.frame(prep_coop_all)
 
+
+
+## dyads response
+
+library(magrittr)
+prep_coop_all_1 <- prep_coop_all %>%
+  group_by(id, t0_rel_num_l) %>%
+  mutate_all(rev) %>%
+  ungroup() %>%
+  select(-id, -t0_rel_num_l) %>%
+  set_colnames(paste0('partner_', colnames(.)))
+
+prep_coop_all_1
+prep_coop_all_use  <- cbind(prep_coop_all, prep_coop_all_1)
+
+colnames(prep_coop_all_use)
+
+#
+n_unique(prep_coop_all_use$t0_rel_num)
+
+# spit and shine:
+# load required libraries
+library(dplyr)
+library(stringr)
+
+# extract column names
+col_names <- colnames(prep_coop_all_use)
+
+# identify columns that start with 'partner_'
+partner_cols <- str_detect(col_names, "^partner_")
+
+# replace and rename columns
+new_col_names <- col_names
+
+# rename operation
+new_col_names[partner_cols] <-
+  gsub("partner_(t\\d+)_(.*)", "\\1_partner_\\2", col_names[partner_cols])
+
+# apply new column names to dataframe
+colnames(prep_coop_all_use) <- new_col_names
+
+# check
+colnames(prep_coop_all_use)
+
+# extract column names
+col_names <- colnames(prep_coop_all_use)
+
+# extract time prefix and sort based on it
+sorted_indices <- order(gsub(".*(t\\d+).*", "\\1", col_names))
+
+# get sorted column names
+sorted_col_names <- col_names[sorted_indices]
+
+# use relocate to rearrange the columns
+prep_coop_all_use_1 <-
+  prep_coop_all_use %>% relocate(all_of(sorted_col_names))
+
+# remove
+colnames(prep_coop_all_use_1)
+
+
+# save function -- will save to your "push_mod" directory
+here_save(prep_coop_all_use_1, "prep_coop_all_use_1_backup")
+
+# read function
+prep_coop_all_use_1 <- here_read("prep_coop_all_use_1_backup")
+
+colnames(prep_coop_all_use_1)
+naniar::vis_miss(prep_coop_all_use_1, warn_large_data = FALSE)
+dev.off()
+
+
+
+#check must be a dataframe
+str(prep_coop_all_use_1)
+nrow(prep_coop_all_use_1)
+colnames(prep_coop_all_use_1)
+
+prep_coop_all_use_1 <- as.data.frame(prep_coop_all_use_1)
+
 # arrange data for analysis -----------------------------------------------
 # spit and shine
 df_wide_censored <-
-  prep_coop_all |>
+  prep_coop_all_use_1 |>
   mutate(
-    t0_eth_cat = as.factor(t0_eth_cat),
-    t0_smoker_binary = as.integer(ifelse(t0_smoker > 0, 1, 0)),
-    t2_smoker_binary = as.integer(ifelse(t2_smoker > 0, 1, 0)),
+    t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+    t0_eth_cat = as.factor(t0_eth_cat)
   ) |>
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_lost", .before = starts_with("t2_"))
+  relocate("t1_not_lost", .before = starts_with("t2_")) |>
+  relocate("t1_partner_not_lost", .before = starts_with("t2_"))
+
 #check
 head(df_wide_censored)
 dim(df_wide_censored)
 str(df_wide_censored)
 
-A
+A <- "t1_aaron_psychopathy_combined"
+
+
+# spit and shine
+# df_wide_censored <-
+#   prep_coop_all |>
+#   mutate(
+#     t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
+#     t0_eth_cat = as.factor(t0_eth_cat)
+#   ) |>
+#   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
+#   relocate("t1_not_lost", .before = starts_with("t2_"))
+
+
+# save
+here_save(df_wide_censored, "df_wide_censored")
+df_wide_censored <- here_read("df_wide_censored")
+
+
+
+# arrange data for analysis -----------------------------------------------
 # spit and shine
 df_clean <- df_wide_censored %>%
-  mutate(t2_na_flag = rowSums(is.na(select(
-    ., starts_with("t2_")
-  ))) > 0) %>%
+  mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
   mutate(t1_not_lost = ifelse(t2_na_flag, 0, t1_not_lost)) %>%
   # select(-t2_na_flag) %>%
-  filter(!rowSums(is.na(select(
-    ., starts_with("t0_")
-  )))) |>
-  dplyr::mutate(
-    across(
-      where(is.numeric) &
-        !t0_not_lost &
-        !t1_not_lost &
-        !t0_sample_weights &
-        !t0_smoker_binary,       
-      ~ scale(.x),
-      .names = "{col}_z"
-    )
-  ) |>
-  select(
-    where(is.factor),
-    t0_smoker_binary,
+  filter(!rowSums(is.na(select(., starts_with("t0_"))))) %>%
+  mutate(across(
+    .cols = where(is.numeric),
+    .fns = ~ ifelse(
+      cur_column() %in% c(
+        "t0_not_lost",
+        "t1_not_lost",
+        "t0_sample_weights",
+        "t0_rel_num_l",
+        "t1_aaron_psychopathy_combined"
+      ),
+      .,
+      scale(.)
+    ),
+    .names = "{.col}_z"
+  )) %>%
+  select(where(is.factor), 
+    # t0_smoker_binary,
     t0_not_lost,
     t0_sample_weights,
-    #  t1_permeability_individual, # make sure to change for each study
+    # t1_permeability_individual, # make sure to change for each study
     t1_not_lost,
-    t2_smoker_binary,
+    t0_rel_num_l,
+    # t2_smoker_binary,
+    t1_aaron_psychopathy_combined,
     ends_with("_z")
-  ) |>
-  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
-  relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
-  relocate("t1_not_lost", .before = starts_with("t2_")) |>
-  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
+  ) %>%
+  relocate(starts_with("t0_"), .before = starts_with("t1_")) %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_")) %>%
+  relocate("t0_not_lost", .before = starts_with("t1_")) %>%
+  relocate("t1_not_lost", .before = starts_with("t2_")) %>%
+  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) %>%
+  select(-t0_rel_num_l_z, -t0_sample_weights_z, -t0_partner_sample_weights_z, -t0_partner_not_lost_z) |> 
+  mutate(t0_rel_num_l = as.character(t0_rel_num_l)) |> 
   data.frame()
 
+df_clean$t1_aaron_psychopathy_combined
 dim(df_clean)
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 dev.off()
 
-
+colnames(df_clean)
 # again check path
 push_mods
 # save
@@ -1684,7 +1823,8 @@ names_base <-
   df_clean |> select(starts_with("t0"),
                      -t0_sample_weights,
                      -t0_not_lost,
-                     -t0_smoker_z) |> colnames()
+                     -t0_partner_not_lost_z,
+                     -id) |> colnames()
 
 names_base
 
@@ -1699,7 +1839,7 @@ colnames(df_clean)
 
 #### SET VARIABLE NAMES: Customise for each outcomewide model
 #  model
-A
+A<- "t1_aaron_psychopathy_combined"
 
 
 C <- c("t1_not_lost")
@@ -1716,8 +1856,8 @@ f
 
 
 # make test data (if needed)
-df_clean_test <- df_clean |>
-  slice_head(n = 2000)
+# df_clean_test <- df_clean |>
+#   slice_head(n = 2000)
 
 # "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
 # MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
@@ -1740,69 +1880,85 @@ df_clean_test <- df_clean |>
 #
 #   return(final_cols)
 # }
+names_outcomes
 
-
-names_base_t2_smoker_binary <-
+names_base_t2_sat_relationship_z <-
   select_and_rename_cols(names_base = names_base,
                          baseline_vars = baseline_vars,
-                         outcome = "t2_smoker_binary")
-names_base_t2_smoker_binary
+                         outcome = "t2_sat_relationship_z")
 
-timing_info <- system.time({
-  t2_smoker_binary <- lmtp_tmle(
+C
+A
+n_cores = 10
+  
+t2_sat_relationship_z <- lmtp_tmle(
     data = df_clean,
     trt = A,
-    baseline = names_base_t2_smoker_binary,
-    outcome = "t2_smoker_binary",
+    baseline = names_base,
+    outcome = "t2_partner_sat_relationship_z",
     cens = C,
     shift = f,
     mtp = TRUE,
     folds = 5,
     # trim = 0.99, # if needed
     # time_vary = NULL,
-    outcome_type = "binomial",
-    #  id = "id",
+    outcome_type = "continuous",
+    id = "t0_rel_num_l",
     weights = df_clean$t0_sample_weights,
-    learners_trt = sl_lib,
-    learners_outcome = sl_lib,
+    learners_trt = "SL.ranger",
+    learners_outcome = "SL.ranger",
     parallel = n_cores
   )
-})
+sl_lib
 
 
+t2_sat_relationship_z
+here_save(t2_sat_relationship_z, "t2_sat_relationship_z")
 
-t2_smoker_binary
-here_save(t2_smoker_binary, "t2_smoker_binary")
-# t2_smoker_binary <-here_read( "t2_smoker_binary")
-# t2_smoker_binary
+t2_sat_relationship_z_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_sat_relationship_z",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  id = "t0_rel_num_l",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+here_save(t2_sat_relationship_z_1, "t2_sat_relationship_z_1")
 
-# print timing info
-print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
 
+t2_sat_relationship_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_sat_relationship_z",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = 5,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  id = "t0_rel_num_l",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores
+)
+here_save(t2_sat_relationship_z_null, "t2_sat_relationship_z_null")
 
-timing_info <- system.time({
-  t2_smoker_binary_1 <- lmtp_tmle(
-    data = df_clean,
-    trt = A,
-    baseline = names_base_t2_smoker_binary,
-    outcome = "t2_smoker_binary",
-    cens = C,
-    shift = f_1,
-    mtp = TRUE,
-    folds = 5,
-    # trim = 0.99, # if needed
-    # time_vary = NULL,
-    outcome_type = "binomial",
-    #  id = "id",
-    weights = df_clean$t0_sample_weights,
-    learners_trt = sl_lib,
-    learners_outcome = sl_lib,
-    parallel = n_cores
-  )
-})
-
-t2_smoker_binary_1
-here_save(t2_smoker_binary_1, "t2_smoker_binary_1")
+sum(is.na(df_clean$t2_sat_relationship_z))
+sd(df_clean$t2_sat_relationship, na.rm = TRUE)
+head(df_clean$t2_sat_relationship)
 
 
 #Do you currently smoke?
@@ -1934,467 +2090,6 @@ t2_alcohol_intensity_z <- lmtp_tmle(
 t2_alcohol_intensity_z
 here_save(t2_alcohol_intensity_z, "t2_alcohol_intensity_z")
 
-
-
-
-# How many drinks containing alcohol do you have on a typical day when drinking?
-t2_alcohol_intensity_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_alcohol_intensity_z,
-  outcome = "t2_alcohol_intensity_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_alcohol_intensity_z_1
-here_save(t2_alcohol_intensity_z_1, "t2_alcohol_intensity_z_1")
-
-
-
-# How many drinks containing alcohol do you have on a typical day when drinking?
-t2_alcohol_intensity_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_alcohol_intensity_z,
-  outcome = "t2_alcohol_intensity_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_alcohol_intensity_z_null
-here_save(t2_alcohol_intensity_z_null, "t2_alcohol_intensity_z_null")
-
-
-
-
-# names_base_t2_sfhealth_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_sfhealth_z")
-# names_base_t2_sfhealth_z
-
-# "In general, would you say your health is...
-# "I seem to get sick a little easier than other people."
-# "I expect my health to get worse." ****
-
-# t2_sfhealth_z <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_sfhealth_z,
-#   outcome = "t2_sfhealth_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-#
-# t2_sfhealth_z
-# here_save(t2_sfhealth_z, "t2_sfhealth_z")
-#
-#
-names_base_t2_sfhealth_your_health_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_sfhealth_your_health_z")
-names_base_t2_sfhealth_your_health_z
-
-
-# "In general, would you say your health is...
-t2_sfhealth_your_health_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_sfhealth_your_health_z,
-  outcome = "t2_sfhealth_your_health_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_sfhealth_your_health_z
-here_save(t2_sfhealth_your_health_z, "t2_sfhealth_your_health_z")
-
-
-# "In general, would you say your health is...
-t2_sfhealth_your_health_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_sfhealth_your_health_z,
-  outcome = "t2_sfhealth_your_health_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_sfhealth_your_health_z_1
-here_save(t2_sfhealth_your_health_z_1, "t2_sfhealth_your_health_z_1")
-
-
-
-
-
-# "In general, would you say your health is...
-t2_sfhealth_your_health_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_sfhealth_your_health_z,
-  outcome = "t2_sfhealth_your_health_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_sfhealth_your_health_z_null
-here_save(t2_sfhealth_your_health_z_null,
-          "t2_sfhealth_your_health_z_null")
-
-
-
-names_base_t2_hours_exercise_log_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_hours_exercise_log_z")
-names_base_t2_hours_exercise_log_z
-
-
-# Hours spent … exercising/physical activity
-t2_hours_exercise_log_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hours_exercise_log_z,
-  outcome = "t2_hours_exercise_log_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_hours_exercise_log_z
-here_save(t2_hours_exercise_log_z, "t2_hours_exercise_log_z")
-
-# Hours spent … exercising/physical activity
-t2_hours_exercise_log_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hours_exercise_log_z,
-  outcome = "t2_hours_exercise_log_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_hours_exercise_log_z_1
-here_save(t2_hours_exercise_log_z_1, "t2_hours_exercise_log_z_1")
-
-
-
-
-# Hours spent … exercising/physical activity
-t2_hours_exercise_log_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hours_exercise_log_z,
-  outcome = "t2_hours_exercise_log_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_hours_exercise_log_z_null
-here_save(t2_hours_exercise_log_z_null,
-          "t2_hours_exercise_log_z_null")
-
-
-
-
-names_base_t2_hlth_sleep_hours_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_hlth_sleep_hours_z")
-names_base_t2_hlth_sleep_hours_z
-
-
-#During the past month, on average, how many hours of actual sleep did you get per night?
-t2_hlth_sleep_hours_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hlth_sleep_hours_z,
-  outcome = "t2_hlth_sleep_hours_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-t2_hlth_sleep_hours_z
-here_save(t2_hlth_sleep_hours_z, "t2_hlth_sleep_hours_z")
-
-
-
-#During the past month, on average, how many hours of actual sleep did you get per night?
-t2_hlth_sleep_hours_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hlth_sleep_hours_z,
-  outcome = "t2_hlth_sleep_hours_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-t2_hlth_sleep_hours_z_1
-here_save(t2_hlth_sleep_hours_z_1, "t2_hlth_sleep_hours_z_1")
-
-
-
-
-#During the past month, on average, how many hours of actual sleep did you get per night?
-t2_hlth_sleep_hours_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hlth_sleep_hours_z,
-  outcome = "t2_hlth_sleep_hours_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_hlth_sleep_hours_z_null
-here_save(t2_hlth_sleep_hours_z_null, "t2_hlth_sleep_hours_z_null")
-
-
-
-names_base_t2_hlth_bmi_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_hlth_bmi_z")
-names_base_t2_hlth_bmi_z
-
-
-# " What is your height? (metres)\nWhat is your weight? (kg)\nKg
-t2_hlth_bmi_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hlth_bmi_z,
-  outcome = "t2_hlth_bmi_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_hlth_bmi_z
-here_save(t2_hlth_bmi_z, "t2_hlth_bmi_z")
-
-
-
-# " What is your height? (metres)\nWhat is your weight? (kg)\nKg
-t2_hlth_bmi_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hlth_bmi_z,
-  outcome = "t2_hlth_bmi_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_hlth_bmi_z_1
-here_save(t2_hlth_bmi_z_1, "t2_hlth_bmi_z_1")
-
-
-
-# " What is your height? (metres)\nWhat is your weight? (kg)\nKg
-t2_hlth_bmi_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_hlth_bmi_z,
-  outcome = "t2_hlth_bmi_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_hlth_bmi_z_null
-here_save(t2_hlth_bmi_z_null, "t2_hlth_bmi_z_null")
-
-
-
-# embodied models ----------------------------------------------------------------
-
-
-## Am satisfied with the appearance, size and shape of my body.
-
-names_base_t2_bodysat_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_bodysat_z")
-names_base_t2_bodysat_z
-
-
-## Am satisfied with the appearance, size and shape of my body.
-
-t2_bodysat_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_bodysat_z,
-  outcome = "t2_bodysat_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_bodysat_z
-here_save(t2_bodysat_z, "t2_bodysat_z")
-
-
-## Am satisfied with the appearance, size and shape of my body.
-
-
-
-t2_bodysat_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_bodysat_z,
-  outcome = "t2_bodysat_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_bodysat_z_1
-here_save(t2_bodysat_z_1, "t2_bodysat_z_1")
-
-
-## Am satisfied with the appearance, size and shape of my body.
-t2_bodysat_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_bodysat_z,
-  outcome = "t2_bodysat_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_bodysat_z_null
-here_save(t2_bodysat_z_null,
-          "t2_bodysat_z_null")
-
-
-
-# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
-# During the last 30 days, how often did.... you feel that everything was an effort?
-# During the last 30 days, how often did.... you feel hopeless?
-# During the last 30 days, how often did.... you feel nervous?
-# During the last 30 days, how often did.... you feel restless or fidgety?
-# During the last 30 days, how often did.... you feel worthless?
 
 
 

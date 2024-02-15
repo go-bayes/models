@@ -9151,9 +9151,6 @@ group_tab_socialising_help_received_strong <- group_tab(tab_socialising_help_rec
 
 saveRDS(group_tab_socialising_help_received_strong, here::here(push_mods, "group_tab_socialising_help_received_strong"))
 
-
-
-
 tab_socialising_help_received_strong <- here_read("tab_socialising_help_received_strong")
 group_tab_socialising_help_received_strong <- here_read("group_tab_socialising_help_received_strong")
 
@@ -9161,7 +9158,7 @@ plot_help_time_strong <- margot_plot(
   group_tab_socialising_help_received_strong,
   type = "RR",
   title = "Socialising effect on help recieved",
-  subtitle = ">= 1.4 weekly hours socialising vs none",
+  subtitle = ">= 1.4 weekly hours socialising vs None",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
