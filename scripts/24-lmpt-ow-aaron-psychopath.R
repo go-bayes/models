@@ -1638,7 +1638,7 @@ colnames(prep_coop_all)
 
 prep_coop_all <- as.data.frame(prep_coop_all)
 
-
+sd( prep_coop_all$t2_sat_relationship, na.rm = TRUE)
 
 ## dyads response
 
@@ -1654,6 +1654,7 @@ prep_coop_all_1
 prep_coop_all_use  <- cbind(prep_coop_all, prep_coop_all_1)
 
 colnames(prep_coop_all_use)
+
 
 #
 n_unique(prep_coop_all_use$t0_rel_num)
@@ -1735,6 +1736,7 @@ head(df_wide_censored)
 dim(df_wide_censored)
 str(df_wide_censored)
 
+
 A <- "t1_aaron_psychopathy_combined"
 
 
@@ -1757,45 +1759,65 @@ df_wide_censored <- here_read("df_wide_censored")
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
+
+"t0_not_lost",
+"t1_not_lost",
+"t0_sample_weights",
+"t0_rel_num_l",
+"t1_aaron_psychopathy_combined"
+# spit and shine
 df_clean <- df_wide_censored %>%
-  mutate(t2_na_flag = rowSums(is.na(select(., starts_with("t2_")))) > 0) %>%
+  mutate(t2_na_flag = rowSums(is.na(select(
+    ., starts_with("t2_")
+  ))) > 0) %>%
   mutate(t1_not_lost = ifelse(t2_na_flag, 0, t1_not_lost)) %>%
+  mutate(t1_partner_not_lost = ifelse(t2_na_flag, 0, t1_partner_not_lost)) %>%
   # select(-t2_na_flag) %>%
-  filter(!rowSums(is.na(select(., starts_with("t0_"))))) %>%
-  mutate(across(
-    .cols = where(is.numeric),
-    .fns = ~ ifelse(
-      cur_column() %in% c(
-        "t0_not_lost",
-        "t1_not_lost",
-        "t0_sample_weights",
-        "t0_rel_num_l",
-        "t1_aaron_psychopathy_combined"
-      ),
-      .,
-      scale(.)
-    ),
-    .names = "{.col}_z"
-  )) %>%
-  select(where(is.factor), 
-    # t0_smoker_binary,
+  filter(!rowSums(is.na(select(
+    ., starts_with("t0_")
+  )))) |>
+  dplyr::mutate(
+    across(
+      where(is.numeric) &
+        !t0_not_lost &
+        !t1_not_lost &
+        !t0_partner_not_lost &
+        !t1_partner_not_lost &
+        !t0_sample_weights &
+       !t0_rel_num_l &
+      !t1_aaron_psychopathy_combined,
+      ~ scale(.x),
+      .names = "{col}_z"
+    )
+  ) |>
+  select(
+    where(is.factor),
     t0_not_lost,
+    t0_partner_not_lost,
     t0_sample_weights,
-    # t1_permeability_individual, # make sure to change for each study
-    t1_not_lost,
     t0_rel_num_l,
-    # t2_smoker_binary,
     t1_aaron_psychopathy_combined,
+    t1_not_lost,
+    t1_partner_not_lost,
     ends_with("_z")
-  ) %>%
-  relocate(starts_with("t0_"), .before = starts_with("t1_")) %>%
-  relocate(starts_with("t2_"), .after = starts_with("t1_")) %>%
-  relocate("t0_not_lost", .before = starts_with("t1_")) %>%
-  relocate("t1_not_lost", .before = starts_with("t2_")) %>%
-  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) %>%
-  select(-t0_rel_num_l_z, -t0_sample_weights_z, -t0_partner_sample_weights_z, -t0_partner_not_lost_z) |> 
-  mutate(t0_rel_num_l = as.character(t0_rel_num_l)) |> 
+  ) |>
+  relocate(starts_with("t0_"), .before = starts_with("t1_"))  %>%
+  relocate(starts_with("t2_"), .after = starts_with("t1_"))  %>%
+  relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
+  relocate("t0_partner_not_lost", .before = starts_with("t1_"))  %>%
+  relocate("t1_not_lost", .before = starts_with("t2_")) |>
+  relocate("t1_partner_not_lost", .before = starts_with("t2_")) |>
+  mutate(t0_sample_weights = as.numeric(t0_sample_weights)) |>
   data.frame()
+
+dim(df_clean)
+naniar::vis_miss(df_clean, warn_large_data = FALSE)
+dev.off()
+
+
+sd( df_clean$t2_sat_relationship_z, na.rm = TRUE)
+sd( df_clean$t2_kessler_latent_depression_z, na.rm = TRUE)
+
 
 df_clean$t1_aaron_psychopathy_combined
 dim(df_clean)
@@ -1823,7 +1845,6 @@ names_base <-
   df_clean |> select(starts_with("t0"),
                      -t0_sample_weights,
                      -t0_not_lost,
-                     -t0_partner_not_lost_z,
                      -id) |> colnames()
 
 names_base
@@ -1891,7 +1912,7 @@ C
 A
 n_cores = 10
   
-t2_sat_relationship_z <- lmtp_tmle(
+t2_partner_sat_relationship_z <- lmtp_tmle(
     data = df_clean,
     trt = A,
     baseline = names_base,
@@ -1909,17 +1930,16 @@ t2_sat_relationship_z <- lmtp_tmle(
     learners_outcome = "SL.ranger",
     parallel = n_cores
   )
-sl_lib
 
 
-t2_sat_relationship_z
-here_save(t2_sat_relationship_z, "t2_sat_relationship_z")
+t2_partner_sat_relationship_z
+here_save(t2_partner_sat_relationship_z, "t2_partner_sat_relationship_z")
 
-t2_sat_relationship_z_1 <- lmtp_tmle(
+t2_partner_sat_relationship_z_1 <- lmtp_tmle(
   data = df_clean,
   trt = A,
   baseline = names_base,
-  outcome = "t2_sat_relationship_z",
+  outcome = "t2_partner_sat_relationship_z",
   cens = C,
   shift = f_1,
   mtp = TRUE,
@@ -1929,18 +1949,18 @@ t2_sat_relationship_z_1 <- lmtp_tmle(
   outcome_type = "continuous",
   id = "t0_rel_num_l",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
   parallel = n_cores
 )
-here_save(t2_sat_relationship_z_1, "t2_sat_relationship_z_1")
+here_save(t2_partner_sat_relationship_z_1, "t2_partner_sat_relationship_z_1")
+t2_partner_sat_relationship_z_1
 
-
-t2_sat_relationship_z_null <- lmtp_tmle(
+t2_partner_sat_relationship_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
   baseline = names_base,
-  outcome = "t2_sat_relationship_z",
+  outcome = "t2_partner_sat_relationship_z",
   cens = C,
   shift = NULL,
   mtp = FALSE,
@@ -1954,142 +1974,11 @@ t2_sat_relationship_z_null <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores
 )
-here_save(t2_sat_relationship_z_null, "t2_sat_relationship_z_null")
+here_save(t2_partner_sat_relationship_z_null, "t2_partner_sat_relationship_z_null")
 
-sum(is.na(df_clean$t2_sat_relationship_z))
-sd(df_clean$t2_sat_relationship, na.rm = TRUE)
-head(df_clean$t2_sat_relationship)
-
-
-#Do you currently smoke?
-t2_smoker_binary_null  <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_smoker_binary,
-  outcome = "t2_smoker_binary",
-  cens = C,
-  shift = NULL,
-  mtp = FALSE,
-  folds = 5,
-  # trim = 0.99, # if needed
-  # time_vary = NULL,
-  outcome_type = "binomial",
-  #  id = "id",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_smoker_binary_null
-here_save(t2_smoker_binary_null, "t2_smoker_binary_null")
-
-
-
-names_base_t2_alcohol_frequency_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_alcohol_frequency_z")
-names_base_t2_alcohol_frequency_z
-
-
-#"How often do you have a drink containing alcohol?"
-t2_alcohol_frequency_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_alcohol_frequency_z,
-  outcome = "t2_alcohol_frequency_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-
-t2_alcohol_frequency_z
-here_save(t2_alcohol_frequency_z, "t2_alcohol_frequency_z")
-
-
-
-#"How often do you have a drink containing alcohol?"
-t2_alcohol_frequency_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_alcohol_frequency_z,
-  outcome = "t2_alcohol_frequency_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-
-t2_alcohol_frequency_z_1
-here_save(t2_alcohol_frequency_z_1, "t2_alcohol_frequency_z_1")
-
-
-
-#"How often do you have a drink containing alcohol?"
-t2_alcohol_frequency_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_alcohol_frequency_z,
-  outcome = "t2_alcohol_frequency_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_alcohol_frequency_z_null
-here_save(t2_alcohol_frequency_z_null, "t2_alcohol_frequency_z_null")
-
-
-
-
-names_base_t2_alcohol_intensity_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_alcohol_intensity_z")
-names_base_t2_alcohol_intensity_z
-
-# How many drinks containing alcohol do you have on a typical day when drinking?
-t2_alcohol_intensity_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_alcohol_intensity_z,
-  outcome = "t2_alcohol_intensity_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_alcohol_intensity_z
-here_save(t2_alcohol_intensity_z, "t2_alcohol_intensity_z")
-
+t2_sat_relationship_z
+t2_sat_relationship_z_null
+t2_sat_relationship_z_1
 
 
 
@@ -2494,85 +2383,6 @@ t2_sexual_satisfaction_z_null
 here_save(t2_sexual_satisfaction_z_null,
           "t2_sexual_satisfaction_z_null")
 
-
-
-# 
-names_base_t2_power_no_control_composite_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_power_no_control_composite_z")
-names_base_t2_power_no_control_composite_z
-
-# I do not have enough power or control over\nimportant parts of my life.
-# Other people have too much power or control over\nimportant parts of my life.
-t2_power_no_control_composite_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_power_no_control_composite_z,
-  outcome = "t2_power_no_control_composite_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_power_no_control_composite_z
-here_save(t2_power_no_control_composite_z,
-          "t2_power_no_control_composite_z")
-
-
-t2_power_no_control_composite_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_power_no_control_composite_z,
-  outcome = "t2_power_no_control_composite_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_power_no_control_composite_z_1
-here_save(t2_power_no_control_composite_z_1,
-          "t2_power_no_control_composite_z_1")
-
-
-
-# I do not have enough power or control over\nimportant parts of my life.
-# Other people have too much power or control over\nimportant parts of my life.
-t2_power_no_control_composite_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_power_no_control_composite_z,
-  outcome = "t2_power_no_control_composite_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_power_no_control_composite_z_null
-here_save(t2_power_no_control_composite_z_null,
-          "t2_power_no_control_composite_z_null")
-
-
-
-
 names_base_t2_self_esteem_z <-
   select_and_rename_cols(names_base = names_base,
                          baseline_vars = baseline_vars,
@@ -2650,602 +2460,6 @@ here_save(t2_self_esteem_z_null, "t2_self_esteem_z_null")
 
 
 
-
-
-names_base_t2_self_control_have_lots_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_self_control_have_lots_z")
-names_base_t2_self_control_have_lots_z
-
-# In general, I have a lot of self-control.
-t2_self_control_have_lots_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_self_control_have_lots_z,
-  outcome = "t2_self_control_have_lots_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_self_control_have_lots_z
-here_save(t2_self_control_have_lots_z, "t2_self_control_have_lots_z")
-
-
-t2_self_control_have_lots_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_self_control_have_lots_z,
-  outcome = "t2_self_control_have_lots_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_self_control_have_lots_z_1
-here_save(t2_self_control_have_lots_z_1, "t2_self_control_have_lots_z_1")
-
-
-
-
-#In general, I have a lot of self-control.
-t2_self_control_have_lots_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_self_control_have_lots_z,
-  outcome = "t2_self_control_have_lots_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_self_control_have_lots_z_null
-here_save(t2_self_control_have_lots_z_null,
-          "t2_self_control_have_lots_z_null")
-
-
-
-
-
-names_base_t2_self_control_wish_more_reversed_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_self_control_wish_more_reversed_z")
-names_base_t2_self_control_wish_more_reversed_z
-
-
-# I wish I had more self-discipline.(r)
-t2_self_control_wish_more_reversed_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_self_control_wish_more_reversed_z,
-  outcome = "t2_self_control_wish_more_reversed_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_self_control_wish_more_reversed_z
-here_save(t2_self_control_wish_more_reversed_z,
-          "t2_self_control_wish_more_reversed_z")
-
-
-
-# I wish I had more self-discipline.(r)
-t2_self_control_wish_more_reversed_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_self_control_wish_more_reversed_z,
-  outcome = "t2_self_control_wish_more_reversed_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_self_control_wish_more_reversed_z_1
-here_save(t2_self_control_wish_more_reversed_z_1,
-          "t2_self_control_wish_more_reversed_z_1")
-
-
-
-# I wish I had more self-discipline.(r)
-t2_self_control_wish_more_reversed_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_self_control_wish_more_reversed_z,
-  outcome = "t2_self_control_wish_more_reversed_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_self_control_wish_more_reversed_z_null
-here_save(
-  t2_self_control_wish_more_reversed_z_null,
-  "t2_self_control_wish_more_reversed_z_null"
-)
-
-
-
-
-
-
-
-names_base_t2_permeability_individual_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_permeability_individual_z")
-names_base_t2_permeability_individual_z
-
-# I believe I am capable, as an individual\nof improving my status in society.
-t2_permeability_individual_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_permeability_individual_z,
-  outcome = "t2_permeability_individual_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_permeability_individual_z
-here_save(t2_permeability_individual_z,
-          "t2_permeability_individual_z")
-
-
-
-# I believe I am capable, as an individual\nof improving my status in society.
-t2_permeability_individual_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_permeability_individual_z,
-  outcome = "t2_permeability_individual_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_permeability_individual_z_1
-here_save(t2_permeability_individual_z_1,
-          "t2_permeability_individual_z_1")
-
-
-
-# I believe I am capable, as an individual\nof improving my status in society.
-t2_permeability_individual_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_permeability_individual_z,
-  outcome = "t2_permeability_individual_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_permeability_individual_z_null
-here_save(t2_permeability_individual_z_null,
-          "t2_permeability_individual_z_null")
-
-
-names_base_t2_emotion_regulation_out_control_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_emotion_regulation_out_control_z")
-names_base_t2_emotion_regulation_out_control_z
-
-
-# emotional regulation
-# When I feel negative emotions, my emotions feel out of control. w10 - w13
-t2_emotion_regulation_out_control_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_emotion_regulation_out_control_z,
-  outcome = "t2_emotion_regulation_out_control_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_emotion_regulation_out_control_z
-here_save(t2_emotion_regulation_out_control_z,
-          "t2_emotion_regulation_out_control_z")
-
-
-
-# When I feel negative emotions, my emotions feel out of control. w10 - w13
-t2_emotion_regulation_out_control_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_emotion_regulation_out_control_z,
-  outcome = "t2_emotion_regulation_out_control_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_emotion_regulation_out_control_z_1
-here_save(t2_emotion_regulation_out_control_z_1,
-          "t2_emotion_regulation_out_control_z_1")
-
-
-
-
-t2_emotion_regulation_out_control_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_emotion_regulation_out_control_z,
-  outcome = "t2_emotion_regulation_out_control_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-t2_emotion_regulation_out_control_z_null
-here_save(
-  t2_emotion_regulation_out_control_z_null,
-  "t2_emotion_regulation_out_control_z_null"
-)
-
-
-#
-# Not relevant
-# names_base_t2_impermeability_group_z <- select_and_rename_cols(names_base = names_base, baseline_vars = baseline_vars, outcome = "t2_impermeability_group_z")
-# names_base_t2_impermeability_group_z
-#
-# # The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
-# ##(NEG CONTROL)
-# t2_impermeability_group_z<- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_impermeability_group_z,
-#   outcome = "t2_impermeability_group_z",
-#   cens = C,
-#   shift = f,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-#
-# t2_impermeability_group_z
-# here_save(t2_impermeability_group_z, "t2_impermeability_group_z")
-#
-# # The current income gap between New Zealand Europeans and other ethnic groups would be very hard to change.
-# ##(NEG CONTROL)
-# t2_impermeability_group_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_impermeability_group_z,
-#   outcome = "t2_impermeability_group_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-#
-# t2_impermeability_group_z_null
-# here_save(t2_impermeability_group_z_null, "t2_impermeability_group_z_null")
-#
-
-
-
-names_base_t2_perfectionism_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_perfectionism_z")
-names_base_t2_perfectionism_z
-
-# # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-t2_perfectionism_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_perfectionism_z
-here_save(t2_perfectionism_z, "t2_perfectionism_z")
-
-
-
-# # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-t2_perfectionism_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_perfectionism_z_1
-here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
-
-
-
-
-
-
-# # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-# I am hardly ever satisfied with my performance.
-t2_perfectionism_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_perfectionism_z,
-  outcome = "t2_perfectionism_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_perfectionism_z_null
-here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
-
-
-
-# reflective models --------------------------------------------------------------
-
-
-names_base_t2_gratitude_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_gratitude_z")
-names_base_t2_gratitude_z
-
-
-
-## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-t2_gratitude_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_gratitude_z,
-  outcome = "t2_gratitude_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_gratitude_z
-here_save(t2_gratitude_z, "t2_gratitude_z")
-
-
-# ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-# t2_gratitude_z_1 <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_gratitude_z,
-#   outcome = "t2_gratitude_z",
-#   cens = C,
-#   shift = f_1,
-#   mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_gratitude_z_1
-# here_save(t2_gratitude_z_1, "t2_gratitude_z_1")
-# 
-# 
-# 
-# ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-# t2_gratitude_z_null <- lmtp_tmle(
-#   data = df_clean,
-#   trt = A,
-#   baseline = names_base_t2_gratitude_z,
-#   outcome = "t2_gratitude_z",
-#   cens = C,
-#   shift = NULL,
-#   # mtp = TRUE,
-#   folds = 5,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
-#   parallel = n_cores
-# )
-# 
-# t2_gratitude_z_null
-# here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
-
-
-
-
-names_base_t2_vengeful_rumin_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_vengeful_rumin_z")
-names_base_t2_vengeful_rumin_z
-
-
-
-
-# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-t2_vengeful_rumin_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_vengeful_rumin_z,
-  outcome = "t2_vengeful_rumin_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_vengeful_rumin_z
-here_save(t2_vengeful_rumin_z, "t2_vengeful_rumin_z")
-
-
-
-
-# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-t2_vengeful_rumin_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_vengeful_rumin_z,
-  outcome = "t2_vengeful_rumin_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_vengeful_rumin_z_1
-here_save(t2_vengeful_rumin_z_1, "t2_vengeful_rumin_z_1")
-
-# Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-t2_vengeful_rumin_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_vengeful_rumin_z,
-  outcome = "t2_vengeful_rumin_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_vengeful_rumin_z_null
-here_save(t2_vengeful_rumin_z_null, "t2_vengeful_rumin_z_null")
-
-
-
-
-names_base_t2_pwb_your_health_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_pwb_your_health_z")
-names_base_t2_pwb_your_health_z
 
 
 # Your health.
@@ -3821,351 +3035,52 @@ here_save(t2_lifesat_z_null, "t2_lifesat_z_null")
 
 
 
-# social models -----------------------------------------------------------
-
-
-names_base_t2_support_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_support_z")
-names_base_t2_support_z
-
-# There are people I can depend on to help me if I really need it.
-# There is no one I can turn to for guidance in times of stress (r)
-# There is no one I can turn to for guidance in times of stress.
-t2_support_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_support_z,
-  outcome = "t2_support_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_support_z
-here_save(t2_support_z, "t2_support_z")
-
-
-t2_support_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_support_z,
-  outcome = "t2_support_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_support_z_1
-here_save(t2_support_z_1, "t2_support_z_1")
-
-
-
-
-# There are people I can depend on to help me if I really need it.
-# There is no one I can turn to for guidance in times of stress (r)
-# There is no one I can turn to for guidance in times of stress.
-t2_support_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_support_z,
-  outcome = "t2_support_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_support_z_null
-here_save(t2_support_z_null, "t2_support_z_null")
-
-
-
-
-names_base_t2_neighbourhood_community_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_neighbourhood_community_z")
-names_base_t2_neighbourhood_community_z
-
-# I feel a sense of community with others in my local neighbourhood.
-t2_neighbourhood_community_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_neighbourhood_community_z,
-  outcome = "t2_neighbourhood_community_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_neighbourhood_community_z
-here_save(t2_neighbourhood_community_z,
-          "t2_neighbourhood_community_z")
-
-
-t2_neighbourhood_community_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_neighbourhood_community_z,
-  outcome = "t2_neighbourhood_community_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_neighbourhood_community_z_1
-here_save(t2_neighbourhood_community_z_1,
-          "t2_neighbourhood_community_z_1")
-
-
-# I feel a sense of community with others in my local neighbourhood.
-t2_neighbourhood_community_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_neighbourhood_community_z,
-  outcome = "t2_neighbourhood_community_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_neighbourhood_community_z_null
-here_save(t2_neighbourhood_community_z_null,
-          "t2_neighbourhood_community_z_null")
-
-
-
-
-names_base_t2_belong_z <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_belong_z")
-names_base_t2_belong_z
-
-# Know that people in my life accept and value me.
-# Feel like an outsider.
-# Know that people around me share my attitudes and beliefs.
-t2_belong_z <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_belong_z,
-  outcome = "t2_belong_z",
-  cens = C,
-  shift = f,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_belong_z
-here_save(t2_belong_z, "t2_belong_z")
-
-
-
-t2_belong_z_1 <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_belong_z,
-  outcome = "t2_belong_z",
-  cens = C,
-  shift = f_1,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-t2_belong_z_1
-here_save(t2_belong_z_1, "t2_belong_z_1")
-
-
-# Know that people in my life accept and value me.
-# Feel like an outsider.
-# Know that people around me share my attitudes and beliefs.
-t2_belong_z_null <- lmtp_tmle(
-  data = df_clean,
-  trt = A,
-  baseline = names_base_t2_belong_z,
-  outcome = "t2_belong_z",
-  cens = C,
-  shift = NULL,
-  # mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-
-t2_belong_z_null
-here_save(t2_belong_z_null, "t2_belong_z_null")
-
-
 # contrasts health ---------------------------------------------------------------
 
-# smoker
-t2_smoker_binary <- here_read("t2_smoker_binary")
-t2_smoker_binary_1 <- here_read("t2_smoker_binary_1")
-t2_smoker_binary_null <-
-  here_read("t2_smoker_binary_null")
-
-
-# first contrast
-contrast_t2_smoker_binary <-
-  lmtp_contrast(t2_smoker_binary,
-                ref = t2_smoker_binary_null,
-                type = "rr")
-
-
-tab_contrast_t2_smoker_binary <-
-  margot_tab_lmtp(contrast_t2_smoker_binary,
-                  scale = "RR",
-                  new_name = "Smoker")
-
-tab_contrast_t2_smoker_binary
-
-
-out_tab_contrast_t2_smoker_binary <-
-  lmtp_evalue_tab(tab_contrast_t2_smoker_binary,
-                  scale = c("RR"))
-
-out_tab_contrast_t2_smoker_binary
-
-
-# second contrast
-contrast_t2_smoker_binary_1 <-
-  lmtp_contrast(t2_smoker_binary_1,
-                ref = t2_smoker_binary_null,
-                type = "rr")
-
-
-tab_contrast_t2_smoker_binary_1 <-
-  margot_tab_lmtp(contrast_t2_smoker_binary_1,
-                  scale = "RR",
-                  new_name = "Smoker")
-
-tab_contrast_t2_smoker_binary_1
-
-
-out_tab_contrast_t2_smoker_binary_1 <-
-  lmtp_evalue_tab(tab_contrast_t2_smoker_binary_1,
-                  scale = c("RR"))
-
-out_tab_contrast_t2_smoker_binary_1
-
-
-# # sf health
-# t2_sfhealth_z <- here_read("t2_sfhealth_z")
-# t2_sfhealth_z_null <- here_read("t2_sfhealth_z_null")
-#
-#
-# contrast_t2_sfhealth_z <- lmtp_contrast(t2_sfhealth_z,
-#                                         ref = t2_sfhealth_z_null,
-#                                         type = "additive")
-#
-# tab_contrast_t2_sfhealth_z <-
-#   margot_tab_lmtp(contrast_t2_sfhealth_z,
-#                   scale = "RD",
-#                   new_name = "Short form health")
-#
-#
-# out_tab_contrast_t2_sfhealth_z <-
-#   lmtp_evalue_tab(tab_contrast_t2_sfhealth_z,
-#                   scale = c("RD"))
-#
-# out_tab_contrast_t2_sfhealth_z
-
-
 # sf health, your health
-t2_sfhealth_your_health_z <- here_read("t2_sfhealth_your_health_z")
-t2_sfhealth_your_health_z_1 <- here_read("t2_sfhealth_your_health_z_1")
+t2_partner_sat_relationship_z <- here_read("t2_partner_sat_relationship_z")
+t2_partner_sat_relationship_z_1 <- here_read("t2_partner_sat_relationship_z_1")
 
-t2_sfhealth_your_health_z_null <-
-  here_read("t2_sfhealth_your_health_z_null")
+t2_partner_sat_relationship_z_null <-
+  here_read("t2_partner_sat_relationship_z_null")
 
 # first contrast 
-contrast_t2_sfhealth_your_health_z <-
-  lmtp_contrast(t2_sfhealth_your_health_z,
-                ref = t2_sfhealth_your_health_z_null,
+contrast_t2_partner_sat_relationship_z <-
+  lmtp_contrast(t2_partner_sat_relationship_z,
+                ref = t2_partner_sat_relationship_z_null,
                 type = "additive")
 
-tab_contrast_t2_sfhealth_your_health_z <-
-  margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
+tab_contrast_t2_partner_sat_relationship_z <-
+  margot_tab_lmtp(contrast_t2_partner_sat_relationship_z,
                   scale = "RD",
                   new_name = "Short form health, your health")
 
 
-out_tab_contrast_t2_sfhealth_your_health_z <-
-  lmtp_evalue_tab(tab_contrast_t2_sfhealth_your_health_z,
+out_tab_contrast_t2_partner_sat_relationship_z <-
+  lmtp_evalue_tab(tab_contrast_t2_partner_sat_relationship_z,
                   scale = c("RD"))
 
-out_tab_contrast_t2_sfhealth_your_health_z
+out_tab_contrast_t2_partner_sat_relationship_z
 
 # second contrast
 
-contrast_t2_sfhealth_your_health_z_1 <-
-  lmtp_contrast(t2_sfhealth_your_health_z_1,
-                ref = t2_sfhealth_your_health_z_null,
+contrast_t2_partner_sat_relationship_z_1 <-
+  lmtp_contrast(t2_partner_sat_relationship_z_1,
+                ref = t2_partner_sat_relationship_z_null,
                 type = "additive")
 
 
-tab_contrast_t2_sfhealth_your_health_z_1 <-
-  margot_tab_lmtp(contrast_t2_sfhealth_your_health_z_1,
+tab_contrast_t2_partner_sat_relationship_z_1 <-
+  margot_tab_lmtp(contrast_t2_partner_sat_relationship_z_1,
                   scale = "RD",
                   new_name = "Short form health, your health")
 
 
-out_tab_contrast_t2_sfhealth_your_health_z_1 <-
-  lmtp_evalue_tab(tab_contrast_t2_sfhealth_your_health_z_1,
+out_tab_contrast_t2_partner_sat_relationship_z_1 <-
+  lmtp_evalue_tab(tab_contrast_t2_partner_sat_relationship_z_1,
                   scale = c("RD"))
 
-out_tab_contrast_t2_sfhealth_your_health_z_1
+out_tab_contrast_t2_partner_sat_relationship_z_1
 
 
 
