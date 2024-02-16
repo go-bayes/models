@@ -85,7 +85,7 @@ n_cores <- parallel::detectCores()
 # super learner libraries
 sl_lib <- c("SL.randomForest",
             "SL.ranger"
-            #"SL.xgboost"
+            #"SL.xgboost". # FORESTS SEEM TO WORK BEST
             )
 
 
@@ -93,7 +93,6 @@ sl_lib <- c("SL.randomForest",
 library(SuperLearner)
 library(ranger)
 library(xgboost)
-library(earth)
 
 # boost speed
 SL.xgboost = list(tree_method = 'gpu_hist')
@@ -384,7 +383,7 @@ hist(psycho_dt$aaron_psychopathy)
 hist(psycho_dt$aaron_psychopathy_test)
 
 
-# Extract relevant variables
+# extract relevant variables
 dt_antagonism <- psycho_dt |> select(all_of(antagonism_vars_reversed))
 dt_emotional_stability <- psycho_dt |> select(all_of(emotional_stability_vars_reversed))
 dt_disinhibition<- psycho_dt |> select(all_of(disinhibition_vars_reversed))
@@ -395,7 +394,7 @@ dt_subscale_vars <- psycho_dt |> select(all_of(vars_subscale))
 dt_subscale_vars
 narcissism_vars_reversed
 
-# Check factor structure for each version
+# check factor structure for each version
 performance::check_factorstructure(dt_antagonism)
 performance::check_factorstructure(dt_emotional_stability)
 performance::check_factorstructure(dt_disinhibition)
@@ -481,7 +480,7 @@ model_string_all_vars <- create_lavaan_model(all_vars)
 # model_string_subscale <- create_lavaan_model(vars_version_2)
 
 
-# Print the model string
+# print the model strings
 model_string_antagonism
 model_string_emotional_stability
 model_string_disinhibition
@@ -1527,18 +1526,6 @@ str(df_wide_censored)
 
 A <- "t1_aaron_psychopathy_combined"
 
-
-# spit and shine
-# df_wide_censored <-
-#   prep_coop_all |>
-#   mutate(
-#     t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
-#     t0_eth_cat = as.factor(t0_eth_cat)
-#   ) |>
-#   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
-#   relocate("t1_not_lost", .before = starts_with("t2_"))
-
-
 # save
 here_save(df_wide_censored, "df_wide_censored")
 df_wide_censored <- here_read("df_wide_censored")
@@ -1548,11 +1535,6 @@ df_wide_censored <- here_read("df_wide_censored")
 # arrange data for analysis -----------------------------------------------
 # spit and shine
 
-"t0_not_lost",
-"t1_not_lost",
-"t0_sample_weights",
-"t0_rel_num_l",
-"t1_aaron_psychopathy_combined"
 # spit and shine
 df_clean <- df_wide_censored %>%
   mutate(t2_na_flag = rowSums(is.na(select(
@@ -1607,7 +1589,6 @@ sd( df_clean$t2_sat_relationship_z, na.rm = TRUE)
 sd( df_clean$t2_kessler_latent_depression_z, na.rm = TRUE)
 
 
-df_clean$t1_aaron_psychopathy_combined
 dim(df_clean)
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 dev.off()
@@ -1710,7 +1691,7 @@ t2_partner_sat_relationship_z <- lmtp_tmle(
     # time_vary = NULL,
     outcome_type = "continuous",
     id = "t0_rel_num_l",
-    #weights = df_clean$t0_sample_weights,
+    weights = df_clean$t0_sample_weights,
     learners_trt = sl_lib,
     learners_outcome = sl_lib,
     parallel = n_cores
@@ -1785,7 +1766,7 @@ t2_partner_conflict_in_relationship_z <- lmtp_tmle(
   # time_vary = NULL,
   outcome_type = "continuous",
   id = "t0_rel_num_l",
-  #weights = df_clean$t0_sample_weights,
+  weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib,
   parallel = n_cores
@@ -1809,8 +1790,8 @@ t2_partner_conflict_in_relationship_z_1 <- lmtp_tmle(
   outcome_type = "continuous",
   id = "t0_rel_num_l",
   weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
   parallel = n_cores
 )
 here_save(t2_partner_conflict_in_relationship_z_1, "t2_partner_conflict_in_relationship_z_1")
@@ -1830,8 +1811,8 @@ t2_partner_conflict_in_relationship_z_null <- lmtp_tmle(
   outcome_type = "continuous",
   id = "t0_rel_num_l",
   weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
   parallel = n_cores
 )
 here_save(t2_partner_conflict_in_relationship_z_null, "t2_partner_conflict_in_relationship_z_null")
@@ -2342,7 +2323,7 @@ contrast_t2_partner_conflict_in_relationship_z <-
                 type = "additive")
 
 tab_contrast_t2_partner_conflict_in_relationship_z <-
-  margot_tab_lmtp(contrast_t2_partner_sat_relationship_z,
+  margot_tab_lmtp(contrast_t2_partner_conflict_in_relationship_z,
                   scale = "RD",
                   new_name = "Gain psychopathy: partner conflict in relationship")
 
@@ -2360,7 +2341,7 @@ contrast_t2_partner_conflict_in_relationship_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_partner_conflict_in_relationship_z_1 <-
-  margot_tab_lmtp(contrast_t2_partner_sat_relationship_z_1,
+  margot_tab_lmtp(contrast_t2_partner_conflict_in_relationship_z_1,
                   scale = "RD",
                   new_name = "Loss psychopathy:  partner conflict in relationship")
 
@@ -2520,7 +2501,7 @@ contrast_t2_partner_self_esteem_z <-
 tab_contrast_t2_partner_self_esteem_z <-
   margot_tab_lmtp(contrast_t2_partner_self_esteem_z,
                   scale = "RD",
-                  new_name = "Gain psychopathy: partner self esteem")
+                  new_name = "Gain psychopathy: partner self-esteem")
 
 
 out_tab_contrast_t2_partner_self_esteem_z <-
@@ -2540,7 +2521,7 @@ contrast_t2_partner_self_esteem_z_1 <-
 tab_contrast_t2_partner_self_esteem_z_1<-
   margot_tab_lmtp(contrast_t2_partner_self_esteem_z_1,
                   scale = "RD",
-                  new_name = "Loss psychopathy: partner self esteem")
+                  new_name = "Loss psychopathy: partner self-esteem")
 
 out_tab_contrast_t2_partner_self_esteem_z_1<-
   lmtp_evalue_tab(tab_contrast_t2_partner_self_esteem_z_1,
@@ -2647,6 +2628,7 @@ tab_outcomes_gain <- rbind(
 
 here_save(tab_outcomes_gain,"tab_outcomes_gain")
 tab_outcomes_gain
+
 # make group table
 group_tab_outcomes_gain <- group_tab(tab_outcomes_gain, type = "RD")
 
@@ -2667,7 +2649,7 @@ tab_outcomes_loss <- rbind(
     out_tab_contrast_t2_partner_pwi_z_1,
     out_tab_contrast_t2_partner_lifesat_z_1
   )
-
+tab_outcomes_loss
 here_save(tab_outcomes_loss,"tab_outcomes_loss")
 
 # make group table
@@ -2715,7 +2697,7 @@ ggsave(
   width = 12,
   height = 8,
   units = "in",
-  filename = "plot_group_tab_health.png",
+  filename = "plot_group_tab_gain.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 600
@@ -2725,9 +2707,9 @@ ggsave(
 
 # graph body
 plot_group_tab_loss <- margot_plot(
-  group_tab_loss,
+  group_tab_outcomes_loss,
   type = "RD",
-  title = "Loss effect",
+  title = "Loss +1 Psychopathy: N=1070",
   subtitle = sub_title,
   xlab = "",
   ylab = "",
@@ -2743,7 +2725,7 @@ plot_group_tab_loss <- margot_plot(
   x_lim_lo = -1,
   x_lim_hi =  .5
 )
-
+plot_group_tab_loss
 # save graph
 ggsave(
   plot_group_tab_loss,
