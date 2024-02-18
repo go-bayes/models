@@ -109,7 +109,7 @@ listWrappers()
 ## read data
 dat_final_dyadic <- readRDS("/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/lmtp/24/aaron_psychopathy/dat_final_dyadic")
 
-
+hist(dat_final_dyadic$aaron_emotional_stability)
 
 dat_long <- dat_final_dyadic |> 
   # ungroup
@@ -1467,7 +1467,7 @@ contrast_t2_partner_conflict_in_relationship_z_1 <-
 tab_contrast_t2_partner_conflict_in_relationship_z_1 <-
   margot_tab_lmtp(contrast_t2_partner_conflict_in_relationship_z_1,
                   scale = "RD",
-                  new_name = "Loss psychopathy emotional stability:  partner conflict in relationship")
+                  new_name = "Loss psychopathy emotional stability: partner conflict in relationship")
 
 
 out_tab_contrast_t2_partner_conflict_in_relationship_z_1 <-
@@ -1789,7 +1789,9 @@ group_tab_outcomes_gain <- here_read("group_tab_outcomes_gain")
 # create plots -------------------------------------------------------------
 
 # check N
-N
+N <- here_read(
+  "N_participants"
+)
 sub_title = ""
 
 conflicts_prefer(ggplot2::margin)
@@ -1828,7 +1830,7 @@ ggsave(
   dpi = 600
 )
 
-
+plot_group_tab_gain
 
 # graph body
 plot_group_tab_loss <- margot_plot(
@@ -1867,3 +1869,4 @@ ggsave(
 
 plot_group_tab_loss
 
+A

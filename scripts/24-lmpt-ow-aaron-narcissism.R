@@ -3,9 +3,7 @@
 # joseph bulbulia : joseph.bulbulia@gmail.com
 # outcome-wide-analysis-psychopathy
 
-# aaron's study
-
-push_mods
+# aaron's study # NARCICISM 
 # preliminaries -----------------------------------------------------------
 
 
@@ -302,19 +300,38 @@ dat_long <- dat_final_dyadic |>
     urban = as.numeric(urban),
     # education_level_coarsen = as.integer(education_level_coarsen)
   ) |>
+  select(-religion_church_coarsen, -sample_origin) |> 
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
 
 
+# check dyads
+singleton_dyads <- dat_long %>% 
+  group_by(rel_num_l) %>% 
+  summarise(n_id = n_distinct(id)) %>% 
+  filter(n_id != 2)
+
+final_dat_clean <- dat_long %>% 
+  anti_join(singleton_dyads, by = "rel_num_l")
+
+n_unique(final_dat_clean$id)
+n_unique(final_dat_clean$rel_num_l)
+
+
 # check sample 
-N_participants <-n_unique(dat_long$id) #514 couples
+N_participants <-n_unique(final_dat_clean$id) #514 couples
 N_participants
 
 
 
 # save for paper
 here_save(N_participants, "N_participants")
+
+
+# 1 x person had completely missing information on narciccism
+dat_long<-  final_dat_clean
+
 
 # eyeball distribution
 # table(dat_long$wave)
@@ -372,6 +389,8 @@ N
 # double check path
 push_mods
 
+here_save(N, "N")
+
 # check col names
 colnames(dat)
 
@@ -391,7 +410,7 @@ dt_18 <- dat_long |>
 
 dt_positivity_full <- dt_check_exposure |>
   filter(wave == 1 | wave == 2) |>
-  select(wave, id, aaron_emotional_stability) |> 
+  select(wave, id, aaron_narcissism) |> 
   mutate(aaron_narcissism_round = round(aaron_narcissism, 0))
 
 
@@ -414,7 +433,7 @@ standard_deviation_exposure
 
 
 # 
-# #here_save( standard_deviation_exposure, "standard_deviation_exposure")
+#here_save( standard_deviation_exposure, "standard_deviation_exposure")
 # 
 # ggsave(
 #   standard_deviation_exposure,
@@ -487,7 +506,7 @@ baseline_vars = c(
   "sample_weights",
   "alert_level_combined_lead",
   "rel_num_l"
-)
+) 
 
 # check
 baseline_vars
@@ -517,8 +536,17 @@ outcome_vars = c(
 #colnames(dat_long)
 # function imputes only baseline not outcome
 
+# check
+dat_long |> 
+  filter(wave ==2) |> 
+  count(is.na(aaron_narcissism))           
 
+tst <- dat_long |> 
+  filter(wave ==1)
+  levels(tst$alert_level_combined_lead)   
 
+  table(tst$have_siblings)
+str(dat_long)
 # make data wide and impute baseline missing values -----------------------
 
 # get rid of haven labels
@@ -527,7 +555,10 @@ dat_long <- haven::zap_formats(dat_long)
 dat_long <- haven::zap_label(dat_long)
 dat_long <- haven::zap_widths(dat_long)
 
+# get rid of id level that should have been dropped
+dat_long <- dat_long |> droplevels()
 
+n_unique(dat_long$id)
 # vis missing
 naniar::vis_miss(dat_long)
 
@@ -672,8 +703,7 @@ df_wide_censored <- here_read("df_wide_censored")
 
 
 # define exposure
-
-t1_aaron_emotional_stability
+nzavs_exposure
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
@@ -778,7 +808,7 @@ print(W)
 # check shift
 f
 
-
+f_1
 # make test data (if needed)
 # df_clean_test <- df_clean |>
 #   slice_head(n = 2000)
@@ -922,7 +952,7 @@ t2_partner_conflict_in_relationship_z_1 <- lmtp_tmle(
   parallel = n_cores
 )
 here_save(t2_partner_conflict_in_relationship_z_1, "t2_partner_conflict_in_relationship_z_1")
-t2_partner_conflict_in_relationship_z_1
+
 
 t2_partner_conflict_in_relationship_z_null <- lmtp_tmle(
   data = df_clean,
@@ -942,7 +972,6 @@ t2_partner_conflict_in_relationship_z_null <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-t2_partner_conflict_in_relationship_z_null
 here_save(t2_partner_conflict_in_relationship_z_null, "t2_partner_conflict_in_relationship_z_null")
 
 t2_partner_conflict_in_relationship_z
@@ -1095,19 +1124,6 @@ t2_partner_kessler_latent_anxiety_z_null <- lmtp_tmle(
 here_save(t2_partner_kessler_latent_anxiety_z_null,
           "t2_partner_kessler_latent_anxiety_z_null")
 
-t2_partner_kessler_latent_anxiety_z
-t2_partner_kessler_latent_anxiety_z_null
-t2_partner_kessler_latent_anxiety_z_1
-
-# depression
-
-# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
-# During the last 30 days, how often did.... you feel hopeless?
-# During the last 30 days, how often did.... you feel worthless?
-
-# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
-# During the last 30 days, how often did.... you feel hopeless?
-# During the last 30 days, how often did.... you feel worthless?
 
 t2_partner_kessler_latent_depression_z <- lmtp_tmle(
   data = df_clean,
@@ -1126,7 +1142,6 @@ t2_partner_kessler_latent_depression_z <- lmtp_tmle(
 )
 
 
-t2_partner_kessler_latent_depression_z
 here_save(t2_partner_kessler_latent_depression_z,
           "t2_partner_kessler_latent_depression_z")
 
@@ -1173,13 +1188,6 @@ t2_partner_kessler_latent_depression_z_null <- lmtp_tmle(
 t2_partner_kessler_latent_depression_z_null
 here_save(t2_partner_kessler_latent_depression_z_null,
           "t2_partner_kessler_latent_depression_z_null")
-
-t2_partner_kessler_latent_depression_z
-t2_partner_kessler_latent_depression_z_null
-t2_partner_kessler_latent_depression_z_1
-
-
-
 
 
 # SELF ESTEEM 
@@ -1312,11 +1320,6 @@ t2_partner_pwi_z_null <- lmtp_tmle(
 t2_partner_pwi_z_null
 here_save(t2_partner_pwi_z_null, "t2_partner_pwi_z_null")
 
-t2_partner_pwi_z
-t2_partner_pwi_z_null
-t2_partner_pwi_z_1
-
-
 ## life sat
 # I am satisfied with my life.
 # In most ways my life is close to ideal.
@@ -1380,9 +1383,6 @@ t2_partner_lifesat_z_null <- lmtp_tmle(
 t2_partner_lifesat_z_null
 here_save(t2_partner_lifesat_z_null, "t2_partner_lifesat_z_null")
 
-t2_partner_lifesat_z_1
-t2_partner_lifesat_z
-t2_partner_lifesat_z_null
 # contrasts ---------------------------------------------------------------
 push_mods
 # sat relationships
@@ -1782,6 +1782,9 @@ group_tab_outcomes_loss <- group_tab(tab_outcomes_loss , type = "RD")
 
 # save
 here_save(group_tab_outcomes_loss, "group_tab_outcomes_loss")
+
+
+# RECALL
 group_tab_outcomes_loss <- here_read("group_tab_outcomes_loss")
 group_tab_outcomes_gain <- here_read("group_tab_outcomes_gain")
 
@@ -1790,7 +1793,7 @@ group_tab_outcomes_gain <- here_read("group_tab_outcomes_gain")
 # create plots -------------------------------------------------------------
 
 # check N
-N
+N = 1068
 sub_title = ""
 
 conflicts_prefer(ggplot2::margin)

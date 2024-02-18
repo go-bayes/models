@@ -66,8 +66,9 @@ push_mods
 A <- "t1_aaron_antagonism"
 
 # set exposure variable, can be both the continuous and the coarsened, if needed
-#exposure_var = c("XXXX", "not_lost") #
+exposure_var = c("aaron_antagonism", "not_lost") #
 
+nzavs_exposure = "aaron_antagonism"
 # see second function below
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
@@ -86,8 +87,9 @@ plan(multisession)
 n_cores <- parallel::detectCores()
 
 # super learner libraries
-sl_lib <- c("SL.randomForest",
-            "SL.ranger"#,
+sl_lib <- c(
+            "SL.ranger",
+            "SL.randomForest"
             #  "SL.xgboost" # FORESTS SEEM TO WORK BEST
 )
 SL_folds
@@ -415,9 +417,9 @@ standard_deviation_exposure <-
 
 standard_deviation_exposure
 
-
-
-#here_save( standard_deviation_exposure, "standard_deviation_exposure")
+max(dt_19$aaron_antagonism)
+push_mods
+here_save( standard_deviation_exposure, "standard_deviation_exposure")
 
 ggsave(
   standard_deviation_exposure,
@@ -1804,6 +1806,7 @@ group_tab_outcomes_gain <- here_read("group_tab_outcomes_gain")
 # create plots -------------------------------------------------------------
 
 # check N
+N<-here_read("N_participants")
 N
 sub_title = ""
 

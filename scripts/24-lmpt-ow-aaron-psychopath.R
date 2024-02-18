@@ -182,6 +182,9 @@ dt_init_use <- dt_init |>
                        .names = "aaron_reversed_{.col}"))
 
 
+
+# checks
+
 # create vars
 
 # step 1: make a vector of the original variable names that need to be reversed
@@ -259,6 +262,10 @@ get_reversed_vars <- function(vars_clean, reverse_vars_clean) {
 
 # use function
 antagonism_vars_reversed <- get_reversed_vars(antagonism_vars_clean, clean_reversed_vars)
+
+antagonism_vars_reversed
+
+
 
 #check
 antagonism_vars_reversed
@@ -349,6 +356,16 @@ hist(dat_init_use_2$aaron_psychopathy)
 
 hist(dat_init_use_2$aaron_psychopathy_test)
 
+
+
+hist(dat_init_use_2$aaron_antagonism)
+
+hist(dat_init_use_2$aaron_emotional_stability)
+hist(dat_init_use_2$aaron_disinhibition)
+hist(dat_init_use_2$aaron_narcissism)
+hist(dat_init_use_2$aaron_psychopathy_combined)
+
+
 # psychometric validation -------------------------------------------------
 library(psych)
 library(lavaan)
@@ -356,13 +373,11 @@ library(performance)
 library(knitr)
 library(datawizard)
 
-# Assuming dat_init_use_2 is your dataset and you have two sets of variables for the two constructs
-# Replace 'var1', 'var2', etc., with actual variable names for each construct version
 
-# Version 1 Variables
+# version 1 Variables
 vars_version_1 <-all_vars
 
-# Version 2 Variables
+# version 2 Variables
 vars_subscale <- c('aaron_antagonism', 'aaron_emotional_stability', 'aaron_disinhibition', 'aaron_narcissism')
 
 
@@ -415,6 +430,7 @@ efa_dt_narcissism <- psych::fa(dt_narcissism, nfactors = 1) %>%
 efa_dt_all_vars <- psych::fa(dt_all_vars, nfactors = 4) %>%
   model_parameters(sort = TRUE, threshold = "max")
 efa_dt_all_vars
+
 #efa_dt_subscale_vars <- psych::fa(dt_subscale_vars, nfactors = 3) %>%
   model_parameters(sort = TRUE, threshold = "max")
 
@@ -423,56 +439,51 @@ efa_dt_antagonism
 efa_dt_emotional_stability
 efa_dt_disinhibition
 efa_dt_narcissism
-# efa_dt_all_vars
-# efa_dt_subscale_vars
 
-# Parallel analysis to determine the number of factors
+
+# parallel analysis to determine the number of factors
 n_dt_antagonism <- n_factors(dt_antagonism)
 n_dt_emotional_stability <- n_factors(dt_emotional_stability)
 n_dt_disinhibition <- n_factors(dt_disinhibition)
 n_dt_narcissism <- n_factors(dt_narcissism)
 n_dt_all_vars <- n_factors(dt_all_vars)
 n_dt_subscale_vars <- n_factors(dt_subscale_vars)
-n_dt_all_vars
 
-n_dt_antagonism
 
-# Plot results
+# plot results
 p_factors_antagonism <- plot(n_dt_antagonism) + theme_classic()
 p_factors_emotional_stability <- plot(n_dt_emotional_stability) + theme_classic()
 p_factors_disinhibition <- plot(n_dt_disinhibition) + theme_classic()
 p_factors_narcissism <- plot(n_dt_narcissism) + theme_classic()
 p_factors_antagonism + p_factors_emotional_stability + p_factors_disinhibition + p_factors_narcissism
 
-# Split data for training and testing (for CFA)
+# split data for training and testing (for CFA)
 part_dt_antagonism <- data_partition(dt_antagonism, training_proportion = .7, seed = 1234)
 part_dt_emotional_stability <- data_partition(dt_emotional_stability, training_proportion = .7, seed = 1234)
 part_dt_disinhibition<- data_partition(dt_disinhibition, training_proportion = .7, seed = 1234)
 part_dt_narcissism <- data_partition(dt_narcissism, training_proportion = .7, seed = 1234)
-# part_dt_all_vars <- data_partition(dt_all_vars, training_proportion = .7, seed = 1234)
-# part_dt_subscale_vars <- data_partition(dt_subscale_vars, training_proportion = .7, seed = 1234)
-
-
-
 # Define CFA models based on EFA results
 
+# code for making model to do cfa
 create_lavaan_model <- function(var_list, latent_factor_name = "latent_factor") {
-  # Concatenate variable names with ' + '
+  # concatenate variable names with ' + '
   var_string <- paste(var_list, collapse = " + ")
   
-  # Construct the model string
+  # construct the model string
   model_string <- paste(latent_factor_name, "=~", var_string)
   
   return(model_string)
 }
 
 
-# Create the model string
+# create the model string
 model_string_antagonism <- create_lavaan_model(antagonism_vars_reversed)
 model_string_emotional_stability <- create_lavaan_model(emotional_stability_vars_reversed)
 model_string_disinhibition <- create_lavaan_model(disinhibition_vars_reversed)
 model_string_narcissism <- create_lavaan_model(narcissism_vars_reversed)
 model_string_all_vars <- create_lavaan_model(all_vars)
+
+
 # model_string_subscale <- create_lavaan_model(vars_version_2)
 
 
@@ -482,17 +493,13 @@ model_string_emotional_stability
 model_string_disinhibition
 model_string_narcissism
 model_string_all_vars
-# model_string_subscale
-
 
 model_string_antagonism
 model_string_emotional_stability
 model_string_disinhibition
 model_string_narcissism
-# model_string_all_vars
-# model_string_subscale
 
-# Perform CFA on test data for each version
+# perform CFA on test data for each version
 cfa_antagonism <- suppressWarnings(lavaan::cfa(model_string_antagonism, data = part_dt_antagonism$test))
 
 cfa_emotional_stability <- suppressWarnings(lavaan::cfa(model_string_emotional_stability, data = part_dt_emotional_stability$test))
@@ -505,16 +512,13 @@ cfa_emotional_stability <- suppressWarnings(lavaan::cfa(model_string_emotional_s
 
 cfa_narcissism  <- suppressWarnings(lavaan::cfa(model_string_narcissism, data = part_dt_narcissism $test))
 
-# cfa_all_vars <- suppressWarnings(lavaan::cfa(model_string_all_vars, data = part_dt_all_vars$test))
 
-# cfa_subscale_vars <- suppressWarnings(lavaan::cfa(model_string_subscale, data = part_dt_subscale_vars$test))
-
+# summaries
 
 summary(cfa_antagonism, fit.measures = TRUE)
 summary(cfa_emotional_stability, fit.measures = TRUE)
 summary(cfa_disinhibition, fit.measures = TRUE)
 summary(cfa_narcissism, fit.measures = TRUE)
-# summary(cfa_all_vars, fit.measures = TRUE)
 
 
 
@@ -550,7 +554,8 @@ fit_narcissism <- fitMeasures(cfa_narcissism)
 
 
 # kessler 6 ---------------------------------------------------------------
-# uncomment to get analysis
+# uncomment to get analysis -- showing that K5 is *not* a single latent/ rather
+# anxiety and depression differ
 #
 #
 #
@@ -639,6 +644,12 @@ dt_t <- dat_init_use_2 %>%
 
 # check 
 table(dt_t$rel_num_l)
+
+hist(dt_t$aaron_antagonism)
+hist(dt_t$aaron_emotional_stability)
+hist(dt_t$aaron_narcissism)
+hist(dt_t$aaron_disinhibition)
+hist(dt_t$aaron_psychopathy_combined)
 
 # Checks
 min(dt_t$aaron_antagonism, na.rm=TRUE)
@@ -945,6 +956,7 @@ dat_final_dyadic$wave
 #### SAVE DATA 
 push_mods
 here_save(dat_final_dyadic, "dat_final_dyadic")
+
 
 ## tests
 # dat_final_dyadic <- readRDS("/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/lmtp/24/aaron_psychopathy/dat_final_dyadic")
@@ -2644,6 +2656,7 @@ group_tab_outcomes_gain <- group_tab(tab_outcomes_gain, type = "RD")
 
 group_tab_outcomes_gain
 here_save(group_tab_outcomes_gain,"group_tab_outcomes_gain")
+group_tab_outcomes_gain <- here_read("group_tab_outcomes_gain")
 
 
 
@@ -2674,6 +2687,8 @@ group_tab_outcomes_loss <- here_read("group_tab_outcomes_loss")
 # create plots -------------------------------------------------------------
 
 # check N
+N <- here_read("N_participants")
+N = N * 2
 N
 sub_title = ""
 

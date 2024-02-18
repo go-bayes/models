@@ -1,4 +1,4 @@
-aaron_disinhibition
+#aaron_disinhibition
 #lmpt-ow-aaron-psychopath.R
 # 2024 01 16 
 # joseph bulbulia : joseph.bulbulia@gmail.com
@@ -108,6 +108,13 @@ listWrappers()
 
 ## read data
 dat_final_dyadic <- readRDS("/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/lmtp/24/aaron_psychopathy/dat_final_dyadic")
+
+
+hist(dat_final_dyadic$aaron_antagonism)
+hist(dat_final_dyadic$aaron_disinhibition)
+hist(dat_final_dyadic$aaron_antagonism)
+hist(dat_final_dyadic$aaron_narcissism)
+hist(dat_final_dyadic$aaron_emotional_stability)
 
 
 dat_long <- dat_final_dyadic |> 
@@ -1789,6 +1796,8 @@ group_tab_outcomes_gain <- here_read("group_tab_outcomes_gain")
 # create plots -------------------------------------------------------------
 
 # check N
+
+N <- here_read("N_participants")
 N
 sub_title = ""
 
