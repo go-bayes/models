@@ -101,7 +101,6 @@ n_cores <- parallel::detectCores()
 sl_lib <- c(
             "SL.ranger",
             "SL.randomForest",
-            "SL.xgboost" # FORESTS SEEM TO WORK BEST
 )
 SL_folds
 
