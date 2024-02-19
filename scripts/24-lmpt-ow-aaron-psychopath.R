@@ -8,7 +8,6 @@
 
 # preliminaries -----------------------------------------------------------
 
-
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
@@ -33,7 +32,6 @@ source(
 # )
 
 
-
 ## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE. DO NOT USE THIS PATH
 # nzavs data
 pull_path <-
@@ -55,7 +53,22 @@ push_mods <-
 push_mods
 
 # set exposure here
-#nzavs_exposure <- "XXXX"
+nzavs_exposure <- "aaron_psychopathy_combined"
+
+
+# intervention 
+
+
+# SHIFT INTERVENTION
+#  increase everyone by one point, contrasted with what they would be anyway.
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
+}
+
+# decrease everyone
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
+}
 
 
 # define exposures --------------------------------------------------------
@@ -84,21 +97,24 @@ plan(multisession)
 n_cores <- parallel::detectCores()
 
 # super learner libraries
+
+
 sl_lib <- c(
- # "SL.glmnet",
   "SL.randomForest",
   "SL.ranger"
-  #"SL.xgboost" # FORESTS WORK BEST FOR SMALL DATA
-            )
+  )
+sl_lib
 SL_folds
 
 # superlearner libraries
 library(SuperLearner)
 library(ranger)
 library(randomForest)
-
+#library(extraTrees)
 # check options
 listWrappers()
+
+
 
 #notes on names
 # support_help = rel_support01,
@@ -957,6 +973,8 @@ dat_final_dyadic$wave
 push_mods
 here_save(dat_final_dyadic, "dat_final_dyadic")
 
+dat_final_dyadic <- readRDS("/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/lmtp/24/aaron_psychopathy/dat_final_dyadic")
+
 
 ## tests
 # dat_final_dyadic <- readRDS("/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/lmtp/24/aaron_psychopathy/dat_final_dyadic")
@@ -1080,6 +1098,11 @@ dat_long <- dat_final_dyadic |>
     "kessler_latent_depression",
     "alert_level_combined_lead",
     "rel_num_l",
+    "aaron_antagonism",
+    "aaron_disinhibition",
+    "aaron_emotional_stability",
+    "aaron_narcissism", 
+    "alert_level_combined"
   ) |>
   mutate(
     eth_cat = as.integer(eth_cat),
@@ -1163,8 +1186,6 @@ mutate(
 N_participants <-n_unique(dat_long$id) #514 
 N_participants
 
-N_participants <-n_unique(dat_long$rel_num_l) #514 
-N_participants
 
 
 
@@ -1186,36 +1207,21 @@ min_score
 
 max_score <- max(dt_19$aaron_psychopathy_combined, na.rm = TRUE)
 max_score
-
-sd_exposure <- sd(dt_19$aaron_psychopathy_combined,
-                  na.rm = TRUE)
-sd_exposure
-
-one_point_in_sd_units <- 1/sd_exposure
-one_point_in_sd_units
-
-# half_sd <- sd_exposure / 2
-# half_sd
+# 
+# sd_exposure <- sd(dt_19$aaron_psychopathy_combined,
+#                   na.rm = TRUE)
+# sd_exposure
+# 
+# one_point_in_sd_units <- 1/sd_exposure
+# one_point_in_sd_units
 
 
-# Decrease by one point (raw scores)
-f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
-}
-
-
-
-#  Increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
-
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
-}
 
 # check function logic
+max_score
 max_score - 1
 min_score + 1
-
+min_score
 #check missing
 #naniar::vis_miss(dat_long, warn_large_data = FALSE)
 dev.off()
@@ -1261,7 +1267,7 @@ out <-
   msm::statetable.msm(aaron_psychopathy_combined_round, id, data = dt_positivity_full)
 
 # transition table
-t_tab <- transition_table(out, state_names = NULL)
+t_tab <- transition_table_2(out, state_names = NULL)
 t_tab
 
 here_save(t_tab, "t_tab")
@@ -1273,9 +1279,7 @@ standard_deviation_exposure <-
 
 standard_deviation_exposure
 
-
-
-#here_save( standard_deviation_exposure, "standard_deviation_exposure")
+here_save( standard_deviation_exposure, "standard_deviation_exposure")
 
 ggsave(
   standard_deviation_exposure,
@@ -1353,8 +1357,9 @@ baseline_vars = c(
  # "partner",
   # "parent",  # newly changed - have information in child number
   "political_conservative",
-  "religion_church_coarsen_n",
-  #Please rate how politically liberal versus conservative you see yourself as being.
+ # "religion_church_coarsen_n",
+  "religion_church_coarsen",
+ #Please rate how politically liberal versus conservative you see yourself as being.
   # Sample origin names combined
   "urban",
   "parent",
@@ -1362,7 +1367,8 @@ baseline_vars = c(
   "hours_work_log",
   "sample_weights",
   "alert_level_combined_lead",
-  "rel_num_l"
+  "rel_num_l",
+ "religion_church_coarsen"
 )
 
 # check
@@ -1395,6 +1401,249 @@ outcome_vars = c(
 
 
 
+
+# DEMOGRAPHIC TABLES ------------------------------------------------------
+
+
+# tables ------------------------------------------------------------------
+library(gtsummary)
+
+
+# REAL tables -----------------------
+dat_long$wave
+dt_18 <- dat_long |> 
+  dplyr::filter(wave == 1)
+
+
+# get names
+names_base_tab <- setdiff(baseline_vars, dt_18)
+names_base_sorted <- sort(names_base_tab)
+names_base_final <- c(#nzavs_exposure, 
+                      # "aaron_antagonism",
+                      # "aaron_disinhibition",
+                      # "aaron_emotional_stability",
+                      # "aaron_narcissism", 
+                      # "aaron_psychopathy_combined",
+                      names_base_sorted)
+
+names_base_final
+nrow(dt_18)
+##
+selected_base_cols <- dt_18 %>% select(all_of(names_base_final)) |>  dplyr::select(-sample_weights, -rel_num_l, -alert_level_combined_lead, -alert_level_combined) 
+str(selected_base_cols)
+nrow(selected_base_cols)
+
+colnames(selected_base_cols)
+
+str(selected_base_cols)
+# baseline table
+
+table_demography <- selected_base_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() |> 
+  tbl_summary(
+   # include = -c("Aaron Antagonism", "Aaron Disinhibition", "Aaron Emotional Stability", "Aaron Narcissism", "Aaron Psychopathy Combined"),
+    missing = "no", 
+    percent = "column",
+  #  statistic = list(all_continuous() ~ "{mean} ({sd})")  # Calculate mean and standard deviation for continuous variables
+  ) %>%
+#  add_n() %>% # Add column with total number of non-missing observations
+  modify_header(label = "**Baseline Variables**") %>% # Update the column header
+  bold_labels()
+
+table_demography
+
+here_save(table_demography, "table_demography")
+table_demography <- here_read("table_demography")
+
+
+
+#
+
+# exposure table ----------------------------------------------------------
+dt_18_19 <- dat_long |> 
+  dplyr::filter(wave == 1 | wave == 2) |> 
+  droplevels()
+
+
+selected_exposure_cols <-
+  dt_18_19 %>% select(
+    c(
+      "aaron_antagonism",
+      "aaron_disinhibition",
+      "aaron_emotional_stability",
+      "aaron_narcissism",
+      "aaron_psychopathy_combined",
+      "alert_level_combined",
+      "wave"
+    )
+  ) |>
+  mutate(wave = factor(wave, labels = c("2018", "2019")))
+
+library(gtsummary)
+table_exposures <- selected_exposure_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+#  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Baseline/Outcome Variables**") %>%  # Update the column header
+  bold_labels()
+
+table_exposures
+
+
+# save baseline
+here_save(table_exposures, "table_exposures")
+table_exposures <- here_read("table_exposures")
+
+table_exposures
+
+# table1::table1(~ aaron_antagonism|wave, data = dat_long)
+
+
+
+dt_18_20 <- dat_long |> 
+  dplyr::filter(wave == 1 | wave == 3) |> 
+  droplevels()
+
+names_outcomes_tab <- setdiff(outcome_vars, dt_18_20)
+names_outcomes_sorted <- sort(names_outcomes_tab)
+names_outcomes_final <- names_outcomes_sorted # consistent workflow
+names_outcomes_final
+
+names_outcomes_final
+
+
+### OUTCOMES TABLE
+
+selected_outcome_cols <- dt_18_20 %>% select(all_of(names_outcomes_final), wave, alert_level_combined) |> 
+  mutate(wave = factor(wave, labels = c("2018", "2020")))
+
+str(selected_outcome_cols)
+nrow(selected_outcome_cols)
+
+colnames(selected_outcome_cols)
+
+str(selected_outcome_cols)
+
+table_outcomes <- selected_outcome_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Baseline/Outcome Variables**") %>%  # Update the column header
+  bold_labels()
+
+table_outcomes
+
+
+here_save(table_outcomes, "table_outcomes")
+table_outcomes <- here_read("table_outcomes")
+
+
+### TABLES ATTEMPT 2
+
+# select
+names_demographic_vars <- setdiff(demographic_vars, dt_18)
+
+# sort
+sorted_names_demographic_vars <- sort(demographic_vars)
+
+
+# add exposure
+names_demographic_final <- c(nzavs_exposure, sorted_names_demographic_vars)
+
+
+# fetch data
+selected_sorted_names_demographic_vars <- dt_18 %>% select(all_of(names_demographic_final)) #|>  dplyr::select(-sample_weights) 
+selected_sorted_names_demographic_vars
+# make table with correct names
+table_demographic_vars <- selected_sorted_names_demographic_vars %>%
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(
+    missing = "no",
+    percent = "column",
+    statistic = list(
+      all_continuous() ~ c(
+        "{mean} ({sd})", # Mean and SD
+        "{min}, {max}", # Range (Min, Max)
+        "{p25}, {p75}" # IQR (25th percentile, 75th percentile)
+      )
+    ),
+    type = all_continuous() ~ "continuous2"
+  ) |>
+  modify_header(label = "**Exposure + Demographic Variables**") %>% # update the column header
+  bold_labels() 
+
+# inspect
+table_demographic_vars
+
+# save
+here_save(table_demographic_vars, "table_demographic_vars")
+
+# test
+table_demographic_vars|> 
+  as_kable(format = "markdown", booktabs = TRUE)
+
+
+## Confounding control
+## IF NEEDED 
+# baseline by category: confounding controul
+# confounding_control_vars = c(
+#   "sample_origin",
+#   "political_conservative",
+#   "hours_children_log",
+#   "hours_work_log",
+#   "hours_housework_log",
+#   "hours_exercise_log",
+#   "religion_church_round",
+#   "religion_identification_level"
+# )
+
+
+# names_confounding_control_vars <- setdiff(confounding_control_vars, dt_18)
+
+# sort
+# sorted_names_confounding_control_vars <- sort(names_confounding_control_vars)
+
+# fetch data
+# selected_sorted_names_confounding_control_vars <- dt_18 %>% select(all_of(sorted_names_confounding_control_vars)) #|>  dplyr::select(-sample_weights) 
+
+## make table
+# table_confounding_control_vars <- selected_sorted_names_confounding_control_vars %>%
+#   janitor::clean_names(case = "title") |> 
+#   tbl_summary(#include = c(agreeableness, conscientiousness, extraversion, neuroticism, openness, honesty_humility),
+#     missing = "no", 
+#     percent = "column") |> 
+#   # add_n() %>% # add column with total number of non-missing observations
+#   modify_header(label = "**Confounding Control Variables**") %>% # update the column header
+#   bold_labels() 
+
+# view
+# table_confounding_control_vars
+
+# check
+# table_confounding_control_vars|> 
+# as_kable(format = "markdown", booktabs = TRUE)
+
+
+# save
+# here_save(table_confounding_control_vars, "table_confounding_control_vars")
+
+
+
+
+
 # make data wide and impute baseline missing values -----------------------
 
 
@@ -1405,14 +1654,21 @@ dat_long <- haven::zap_formats(dat_long)
 dat_long <- haven::zap_label(dat_long)
 dat_long <- haven::zap_widths(dat_long)
 
+dat_long_2 <- dat_long |> 
+  select(- c("aaron_antagonism",  # only for tables
+         "aaron_disinhibition",
+         "aaron_emotional_stability",
+         "aaron_narcissism", 
+         "alert_level_combined")) # redundant
 
-naniar::vis_miss(dat_long)
+
+naniar::vis_miss(dat_long_2)
 dat_long$wave
 
-str(dat_long)
+str(dat_long_2)
 
 prep_coop_all <- margot_wide_impute_baseline(
-  dat_long,
+  dat_long_2,
   baseline_vars = baseline_vars,
   exposure_var = exposure_var,
   outcome_vars = outcome_vars
@@ -1440,106 +1696,183 @@ head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
 dev.off()
 
-
-#check must be a dataframe
-str(prep_coop_all)
-nrow(prep_coop_all)
-colnames(prep_coop_all)
-
-prep_coop_all <- as.data.frame(prep_coop_all)
-
-sd( prep_coop_all$t2_sat_relationship, na.rm = TRUE)
-
-## dyads response
-
-library(magrittr)
-prep_coop_all_1 <- prep_coop_all %>%
-  group_by(id, t0_rel_num_l) %>%
-  mutate_all(rev) %>%
-  ungroup() %>%
-  select(-id, -t0_rel_num_l) %>%
-  set_colnames(paste0('partner_', colnames(.)))
-
-prep_coop_all_1
-prep_coop_all_use  <- cbind(prep_coop_all, prep_coop_all_1)
-
-colnames(prep_coop_all_use)
-
-
-#
-n_unique(prep_coop_all_use$t0_rel_num_l)
-
-# spit and shine:
-# load required libraries
+# NEW CODE
 library(dplyr)
-library(stringr)
+library(testthat)
 
-# extract column names
-col_names <- colnames(prep_coop_all_use)
+prep_coop_all$id <- as.character(prep_coop_all$id)
+prep_coop_all$t0_rel_num_l <- as.numeric(prep_coop_all$t0_rel_num_l)  # Ensure this is numeric if not already
 
-# identify columns that start with 'partner_'
-partner_cols <- str_detect(col_names, "^partner_")
+partner_mapping <- prep_coop_all %>%
+  select(id, t0_rel_num_l) %>%
+  arrange(t0_rel_num_l, id) %>%
+  group_by(t0_rel_num_l) %>%
+  mutate(partner_id = lead(id, default = first(id))) %>%
+  ungroup()
 
-# replace and rename columns
-new_col_names <- col_names
+prep_coop_all_with_partners <- prep_coop_all %>%
+  left_join(partner_mapping, by = "id") %>%
+  left_join(prep_coop_all, by = c("partner_id" = "id"), suffix = c("", "_partner")) |> 
+  arrange(t0_rel_num_l) |> 
+  select(-t0_rel_num_l.y)
 
-# rename operation
-new_col_names[partner_cols] <-
-  gsub("partner_(t\\d+)_(.*)", "\\1_partner_\\2", col_names[partner_cols])
-
-# apply new column names to dataframe
-colnames(prep_coop_all_use) <- new_col_names
-
-# check
-colnames(prep_coop_all_use)
-
-# extract column names
-col_names <- colnames(prep_coop_all_use)
-
-# extract time prefix and sort based on it
-sorted_indices <- order(gsub(".*(t\\d+).*", "\\1", col_names))
-
-# get sorted column names
-sorted_col_names <- col_names[sorted_indices]
-
-# use relocate to rearrange the columns
-prep_coop_all_use_1 <-
-  prep_coop_all_use %>% relocate(all_of(sorted_col_names))
-
-# remove
-colnames(prep_coop_all_use_1)
+head(prep_coop_all_with_partners)
+str(prep_coop_all_with_partners)
+# validate
+# Example to check for NA values in partner columns
+na_counts <- sapply(prep_coop_all_with_partners, function(x) sum(is.na(x)))
+na_counts_partner_columns <- na_counts[grep("_partner$", names(na_counts))]
+na_counts_partner_columns
 
 
+# TEST COde
+library(testthat)
+
+
+test_that("Partner columns for j are correctly assigned to i", {
+  # Define the columns to test within the test to ensure visibility
+  columns_to_test <- c("t0_age", "t0_male", "t0_education_level_coarsen")
+  partner_columns_to_test <- paste0(columns_to_test, "_partner")
+  
+  for (col in seq_along(columns_to_test)) {
+    for (row in 1:nrow(prep_coop_all_with_partners)) {
+      # Extract the partner's ID for the current row
+      partner_id <- prep_coop_all_with_partners$partner_id[row]
+      
+      if (!is.na(partner_id) && partner_id != "") {
+        # Find the row corresponding to the partner's ID
+        partner_row_index <- which(prep_coop_all_with_partners$id == partner_id)
+        
+        if (length(partner_row_index) == 1) {  # Ensure exactly one match is found
+          # Compare the original data for the partner with the corresponding partner data for the individual
+          original_value <- prep_coop_all_with_partners[[columns_to_test[col]]][partner_row_index]
+          partner_value <- prep_coop_all_with_partners[[partner_columns_to_test[col]]][row]
+          
+          # Assert that the original value for the partner matches the partner value for the individual
+          expect_equal(original_value, partner_value,
+                       info = paste("Mismatch in", columns_to_test[col], "for row", row, "and partner row", partner_row_index))
+        }
+      }
+    }
+  }
+})
+
+
+# 
+# library(dplyr)
+# library(stringr)
+# 
+# # extract column names
+# col_names <- colnames(prep_coop_all_with_partners)
+# 
+# # identify columns that start with 'partner_'
+# partner_cols <- str_detect(col_names, "_partner")
+# partner_cols
+# # replace and rename columns
+# new_col_names <- col_names
+# 
+# # rename operation
+# new_col_names[partner_cols] <-
+#   gsub("partner_(t\\d+)_(.*)", "\\1_partner_\\2", col_names[partner_cols])
+# 
+# # create backup 
+# 
+# prep_coop_all_with_partners_1 <- prep_coop_all_with_partners
+# 
+# 
+# # apply new column names to dataframe
+# colnames(prep_coop_all_with_partners_1) <- new_col_names
+# 
+# # check
+# colnames(prep_coop_all_use)
+# 
+# # extract column names
+# col_names <- colnames(prep_coop_all_use)
+# 
+# # extract time prefix and sort based on it
+# sorted_indices <- order(gsub(".*(t\\d+).*", "\\1", col_names))
+# 
+# # get sorted column names
+# sorted_col_names <- col_names[sorted_indices]
+# 
+# # use relocate to rearrange the columns
+# prep_coop_all_use_1 <-
+#   prep_coop_all_use %>% relocate(all_of(sorted_col_names))
+# 
+# # remove
+# colnames(prep_coop_all_use_1)
+
+prep_coop_all_with_partners
 # save function -- will save to your "push_mod" directory
-here_save(prep_coop_all_use_1, "prep_coop_all_use_1_backup")
+here_save(prep_coop_all_with_partners, "prep_coop_all_with_partners")
 
 # read function
-prep_coop_all_use_1 <- here_read("prep_coop_all_use_1_backup")
+prep_coop_all_with_partners <- here_read("prep_coop_all_with_partners")
+prep_coop_all_with_partners
 
-colnames(prep_coop_all_use_1)
-naniar::vis_miss(prep_coop_all_use_1, warn_large_data = FALSE)
+colnames(prep_coop_all_with_partners)
+naniar::vis_miss(prep_coop_all_with_partners, warn_large_data = FALSE)
 dev.off()
 
 
+# order columns
+prep_coop_all_with_partners_ordered <- prep_coop_all_with_partners %>%
+  select(
+    id,
+    matches("^t0_"),
+    matches("^t1_"),
+    matches("^t2_"),
+    everything()  # This ensures any columns that don't fit the pattern are still included at the end
+  )
+
+
 
 #check must be a dataframe
-str(prep_coop_all_use_1)
-nrow(prep_coop_all_use_1)
-colnames(prep_coop_all_use_1)
+str(prep_coop_all_with_partners_ordered)
+nrow(prep_coop_all_with_partners_ordered)
+colnames(prep_coop_all_with_partners_ordered)
 
-prep_coop_all_use_1 <- as.data.frame(prep_coop_all_use_1)
+prep_coop_all_with_partners_ordered <- as.data.frame(prep_coop_all_with_partners_ordered)
+
+head(prep_coop_all_with_partners_ordered)
+# Order so that names resemble the previous coding: 
+prep_coop_all_with_partners_ordered$t1_not_lost_partner
+
+
+library(dplyr)
+library(stringr)
+
+# Create a new dataframe to hold the renamed columns
+prep_coop_all_with_renamed_partners <- prep_coop_all_with_partners_ordered %>%
+  rename_with(
+    .fn = function(names) {
+      # Identify columns that end with "_partner"
+      partner_cols <- str_detect(names, "_partner$")
+      
+      # For each partner column, rearrange its parts
+      names[partner_cols] <- str_replace(names[partner_cols], 
+                                         pattern = "^(t[0-9]+)_(.*)_(partner)$", 
+                                         replacement = "\\1_\\3_\\2")
+      
+      names
+    },
+    .cols = everything()  # Apply this function to all columns
+  )
+
+head(prep_coop_all_with_renamed_partners)
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
 df_wide_censored <-
-  prep_coop_all_use_1 |>
+  prep_coop_all_with_renamed_partners |>
   mutate(
     t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
     t0_eth_cat = as.factor(t0_eth_cat)
   ) |>
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
   relocate("t1_not_lost", .before = starts_with("t2_")) |>
-  relocate("t1_partner_not_lost", .before = starts_with("t2_"))
+  relocate("t1_partner_not_lost", .before = starts_with("t2_")) |> 
+  select(-id, -partner_id, -t0_rel_num_l.x_z)
 
 #check
 head(df_wide_censored)
@@ -1639,7 +1972,7 @@ names_base <-
                      -t0_not_lost,
                     - t0_partner_sample_weights_z,
                     - t0_partner_alert_level_combined_lead,
-                     -id) |> colnames()
+                    -t0_rel_num_l.x_z) |> colnames()
 
 names_base
 
@@ -1659,7 +1992,6 @@ A<- "t1_aaron_psychopathy_combined"
 
 C <- c("t1_not_lost")
 
-#L <- list(c("L1"), c("L2"))
 W <- c(paste(names_base, collapse = ", "))
 
 # check
@@ -1668,7 +2000,7 @@ print(W)
 
 # check shift
 f
-
+f_1
 
 # make test data (if needed)
 # df_clean_test <- df_clean |>
@@ -1701,6 +2033,12 @@ C
 A
 n_cores = 10
 sl_lib
+
+A
+W
+# test 
+
+
 t2_partner_sat_relationship_z <- lmtp_tmle(
     data = df_clean,
     trt = A,
@@ -1765,16 +2103,7 @@ t2_partner_sat_relationship_z_null <- lmtp_tmle(
 )
 here_save(t2_partner_sat_relationship_z_null, "t2_partner_sat_relationship_z_null")
 
-t2_partner_sat_relationship_z
-t2_partner_sat_relationship_z_null
-t2_partner_sat_relationship_z_1
-
-
-
 ### CONFLICT
-names_outcomes
-
-
 t2_partner_conflict_in_relationship_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1794,8 +2123,6 @@ t2_partner_conflict_in_relationship_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-
-t2_partner_conflict_in_relationship_z
 here_save(t2_partner_conflict_in_relationship_z, "t2_partner_conflict_in_relationship_z")
 
 t2_partner_conflict_in_relationship_z_1 <- lmtp_tmle(
@@ -1816,9 +2143,7 @@ t2_partner_conflict_in_relationship_z_1 <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-
 here_save(t2_partner_conflict_in_relationship_z_1, "t2_partner_conflict_in_relationship_z_1")
-t2_partner_conflict_in_relationship_z_1
 
 t2_partner_conflict_in_relationship_z_null <- lmtp_tmle(
   data = df_clean,
@@ -1857,7 +2182,6 @@ t2_partner_conflict_in_relationship_z_1
 # During the last 30 days, how often did.... you feel restless or fidgety?
 
 ### KESSLER
-
 
 t2_partner_kessler6_sum_z <- lmtp_tmle(
   data = df_clean,
@@ -1927,8 +2251,6 @@ t2_partner_kessler6_sum_z
 t2_partner_kessler6_sum_z_null
 t2_partner_kessler6_sum_z_1
 
-
-
 ## anxiety
 t2_partner_kessler_latent_anxiety_z <- lmtp_tmle(
   data = df_clean,
@@ -1948,9 +2270,6 @@ t2_partner_kessler_latent_anxiety_z <- lmtp_tmle(
 
 t2_partner_kessler_latent_anxiety_z
 here_save(t2_partner_kessler_latent_anxiety_z, "t2_partner_kessler_latent_anxiety_z")
-
-
-
 
 t2_partner_kessler_latent_anxiety_z_1 <- lmtp_tmle(
   data = df_clean,
@@ -1989,7 +2308,6 @@ t2_partner_kessler_latent_anxiety_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 
-# test
 here_save(t2_partner_kessler_latent_anxiety_z_null,
           "t2_partner_kessler_latent_anxiety_z_null")
 
@@ -2077,9 +2395,6 @@ t2_partner_kessler_latent_depression_z_null
 t2_partner_kessler_latent_depression_z_1
 
 
-
-
-
 # SELF ESTEEM 
 t2_partner_self_esteem_z <- lmtp_tmle(
   data = df_clean,
@@ -2120,9 +2435,6 @@ t2_partner_self_esteem_z_1 <- lmtp_tmle(
 
 t2_partner_self_esteem_z_1
 here_save(t2_partner_self_esteem_z_1, "t2_partner_self_esteem_z_1")
-
-
-
 
 
 t2_partner_self_esteem_z_null <- lmtp_tmle(
@@ -2167,7 +2479,6 @@ t2_partner_pwi_z <- lmtp_tmle(
 
 t2_partner_pwi_z
 here_save(t2_partner_pwi_z, "t2_partner_pwi_z")
-
 
 
 # Your health.
@@ -2338,7 +2649,6 @@ t2_partner_conflict_in_relationship_z_1
 
 
 
-# first contrast 
 contrast_t2_partner_conflict_in_relationship_z <-
   lmtp_contrast(t2_partner_conflict_in_relationship_z,
                 ref = t2_partner_conflict_in_relationship_z_null,
@@ -2423,8 +2733,6 @@ out_tab_contrast_t2_partner_kessler6_sum_z_1
 t2_partner_kessler_latent_depression_z <- here_read("t2_partner_kessler_latent_depression_z")
 t2_partner_kessler_latent_depression_z_null <- here_read("t2_partner_kessler_latent_depression_z_null")
 t2_partner_kessler_latent_depression_z_1 <- here_read("t2_partner_kessler_latent_depression_z_1")
-             
-             
 
 # first contrast
 contrast_t2_partner_kessler_latent_depression_z <-
@@ -2680,15 +2988,21 @@ group_tab_outcomes_loss <- group_tab(tab_outcomes_loss , type = "RD")
 
 # save
 here_save(group_tab_outcomes_loss, "group_tab_outcomes_loss")
+
+
 group_tab_outcomes_loss <- here_read("group_tab_outcomes_loss")
+group_tab_outcomes_gain <- here_read("group_tab_outcomes_gain")
 
+tab_outcomes_loss <- here_read("tab_outcomes_loss")
+tab_outcomes_gain <- here_read("tab_outcomes_gain")
 
+tab_outcomes_gain
+tab_outcomes_loss
 
 # create plots -------------------------------------------------------------
 
 # check N
 N <- here_read("N_participants")
-N = N * 2
 N
 sub_title = ""
 
@@ -2767,4 +3081,14 @@ ggsave(
 
 
 plot_group_tab_loss
+
+
+# post hoc validation
+
+fit <- lm(t2_partner_kessler_latent_anxiety_z ~ 
+            t1_aaron_psychopathy_combined + 
+            t0_partner_aaron_psychopathy_combined_z +  
+            t0_partner_kessler_latent_anxiety_z, data = df_clean)
+
+model_parameters(fit)
 

@@ -56,6 +56,18 @@ push_mods
 #nzavs_exposure <- "XXXX"
 
 
+# SHIFT INTERVENTION
+#  increase everyone by one point, contrasted with what they would be anyway.
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
+}
+
+# decrease everyone
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
+}
+
+
 # define exposures --------------------------------------------------------
 # define exposure
 #A <- "t1_XXXX"
@@ -85,12 +97,23 @@ set.seed(seed)
 # set cores for estimation
 library(future)
 plan(multisession)
-n_cores <- parallel::detectCores()
+n_cores <- parallel::detectCores()-1
 
 # super learner libraries
-sl_lib <- c("SL.randomForest",
+sl_lib <- c(#"SL.randomForest",
             "SL.ranger")
 SL_folds
+
+#  increase everyone by one point, contrasted with what they would be anyway.
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
+}
+
+# decrease everyone
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
+}
+
 
 # superlearner libraries
 library(SuperLearner)
@@ -357,21 +380,6 @@ max_score
 # half_sd <- sd_exposure / 2
 # half_sd
 
-
-# Decrease by one point (raw scores)
-f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
-}
-
-
-
-#  Increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
-
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
-}
-
 # check function logic
 max_score - 1
 min_score + 1
@@ -419,7 +427,7 @@ out <-
   msm::statetable.msm(aaron_narcissism_round, id, data = dt_positivity_full)
 
 # transition table
-t_tab <- transition_table(out, state_names = NULL)
+t_tab <- transition_table_2(out, state_names = NULL)
 t_tab
 
 here_save(t_tab, "t_tab")
@@ -433,7 +441,7 @@ standard_deviation_exposure
 
 
 # 
-#here_save( standard_deviation_exposure, "standard_deviation_exposure")
+here_save( standard_deviation_exposure, "standard_deviation_exposure")
 # 
 # ggsave(
 #   standard_deviation_exposure,
@@ -601,96 +609,138 @@ colnames(prep_coop_all)
 
 prep_coop_all <- as.data.frame(prep_coop_all)
 
-## dyads response
 
-library(magrittr)
-prep_coop_all_1 <- prep_coop_all %>%
-  group_by(id, t0_rel_num_l) %>%
-  mutate_all(rev) %>%
-  ungroup() %>%
-  select(-id, -t0_rel_num_l) %>%
-  set_colnames(paste0('partner_', colnames(.)))
-
-prep_coop_all_1
-prep_coop_all_use  <- cbind(prep_coop_all, prep_coop_all_1)
-
-colnames(prep_coop_all_use)
-
-
-#
-n_unique(prep_coop_all_use$t0_rel_num_l)
-
-# spit and shine:
-# load required libraries
 library(dplyr)
-library(stringr)
+library(testthat)
 
-# extract column names
-col_names <- colnames(prep_coop_all_use)
+prep_coop_all$id <- as.character(prep_coop_all$id)
+prep_coop_all$t0_rel_num_l <- as.numeric(prep_coop_all$t0_rel_num_l)  # Ensure this is numeric if not already
 
-# identify columns that start with 'partner_'
-partner_cols <- str_detect(col_names, "^partner_")
+partner_mapping <- prep_coop_all %>%
+  select(id, t0_rel_num_l) %>%
+  arrange(t0_rel_num_l, id) %>%
+  group_by(t0_rel_num_l) %>%
+  mutate(partner_id = lead(id, default = first(id))) %>%
+  ungroup()
 
-# replace and rename columns
-new_col_names <- col_names
+prep_coop_all_with_partners <- prep_coop_all %>%
+  left_join(partner_mapping, by = "id") %>%
+  left_join(prep_coop_all, by = c("partner_id" = "id"), suffix = c("", "_partner")) |> 
+  arrange(t0_rel_num_l) |> 
+  select(-t0_rel_num_l.y)
 
-# rename operation
-new_col_names[partner_cols] <-
-  gsub("partner_(t\\d+)_(.*)", "\\1_partner_\\2", col_names[partner_cols])
-
-# apply new column names to dataframe
-colnames(prep_coop_all_use) <- new_col_names
-
-# check
-colnames(prep_coop_all_use)
-
-# extract column names
-col_names <- colnames(prep_coop_all_use)
-
-# extract time prefix and sort based on it
-sorted_indices <- order(gsub(".*(t\\d+).*", "\\1", col_names))
-
-# get sorted column names
-sorted_col_names <- col_names[sorted_indices]
-
-# use relocate to rearrange the columns
-prep_coop_all_use_1 <-
-  prep_coop_all_use %>% relocate(all_of(sorted_col_names))
-
-# remove
-colnames(prep_coop_all_use_1)
+head(prep_coop_all_with_partners)
+str(prep_coop_all_with_partners)
+# validate
+# Example to check for NA values in partner columns
+na_counts <- sapply(prep_coop_all_with_partners, function(x) sum(is.na(x)))
+na_counts_partner_columns <- na_counts[grep("_partner$", names(na_counts))]
+na_counts_partner_columns
 
 
+# TEST COde
+library(testthat)
+
+
+test_that("Partner columns for j are correctly assigned to i", {
+  # Define the columns to test within the test to ensure visibility
+  columns_to_test <- c("t0_age", "t0_male", "t0_education_level_coarsen")
+  partner_columns_to_test <- paste0(columns_to_test, "_partner")
+  
+  for (col in seq_along(columns_to_test)) {
+    for (row in 1:nrow(prep_coop_all_with_partners)) {
+      # Extract the partner's ID for the current row
+      partner_id <- prep_coop_all_with_partners$partner_id[row]
+      
+      if (!is.na(partner_id) && partner_id != "") {
+        # Find the row corresponding to the partner's ID
+        partner_row_index <- which(prep_coop_all_with_partners$id == partner_id)
+        
+        if (length(partner_row_index) == 1) {  # Ensure exactly one match is found
+          # Compare the original data for the partner with the corresponding partner data for the individual
+          original_value <- prep_coop_all_with_partners[[columns_to_test[col]]][partner_row_index]
+          partner_value <- prep_coop_all_with_partners[[partner_columns_to_test[col]]][row]
+          
+          # Assert that the original value for the partner matches the partner value for the individual
+          expect_equal(original_value, partner_value,
+                       info = paste("Mismatch in", columns_to_test[col], "for row", row, "and partner row", partner_row_index))
+        }
+      }
+    }
+  }
+})
+
+
+prep_coop_all_with_partners
 # save function -- will save to your "push_mod" directory
-here_save(prep_coop_all_use_1, "prep_coop_all_use_1_backup")
+here_save(prep_coop_all_with_partners, "prep_coop_all_with_partners")
 
 # read function
-prep_coop_all_use_1 <- here_read("prep_coop_all_use_1_backup")
+prep_coop_all_with_partners <- here_read("prep_coop_all_with_partners")
+prep_coop_all_with_partners
 
-colnames(prep_coop_all_use_1)
-naniar::vis_miss(prep_coop_all_use_1, warn_large_data = FALSE)
+colnames(prep_coop_all_with_partners)
+naniar::vis_miss(prep_coop_all_with_partners, warn_large_data = FALSE)
 dev.off()
+
+
+# order columns
+prep_coop_all_with_partners_ordered <- prep_coop_all_with_partners %>%
+  select(
+    id,
+    matches("^t0_"),
+    matches("^t1_"),
+    matches("^t2_"),
+    everything()  # This ensures any columns that don't fit the pattern are still included at the end
+  ) 
 
 
 
 #check must be a dataframe
-str(prep_coop_all_use_1)
-nrow(prep_coop_all_use_1)
-colnames(prep_coop_all_use_1)
+str(prep_coop_all_with_partners_ordered)
+nrow(prep_coop_all_with_partners_ordered)
+colnames(prep_coop_all_with_partners_ordered)
 
-prep_coop_all_use_1 <- as.data.frame(prep_coop_all_use_1)
+prep_coop_all_with_partners_ordered <- as.data.frame(prep_coop_all_with_partners_ordered)
 
+head(prep_coop_all_with_partners_ordered)
+# Order so that names resemble the previous coding: 
+prep_coop_all_with_partners_ordered$t1_not_lost_partner
+
+
+library(dplyr)
+library(stringr)
+
+# Create a new dataframe to hold the renamed columns
+prep_coop_all_with_renamed_partners <- prep_coop_all_with_partners_ordered %>%
+  rename_with(
+    .fn = function(names) {
+      # Identify columns that end with "_partner"
+      partner_cols <- str_detect(names, "_partner$")
+      
+      # For each partner column, rearrange its parts
+      names[partner_cols] <- str_replace(names[partner_cols], 
+                                         pattern = "^(t[0-9]+)_(.*)_(partner)$", 
+                                         replacement = "\\1_\\3_\\2")
+      
+      names
+    },
+    .cols = everything()  # Apply this function to all columns
+  )
+
+head(prep_coop_all_with_renamed_partners)
 # arrange data for analysis -----------------------------------------------
 # spit and shine
 df_wide_censored <-
-  prep_coop_all_use_1 |>
+  prep_coop_all_with_renamed_partners |>
   mutate(
     t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
     t0_eth_cat = as.factor(t0_eth_cat)
   ) |>
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
   relocate("t1_not_lost", .before = starts_with("t2_")) |>
-  relocate("t1_partner_not_lost", .before = starts_with("t2_"))
+  relocate("t1_partner_not_lost", .before = starts_with("t2_")) |> 
+  select(-id, -partner_id)
 
 #check
 head(df_wide_censored)
@@ -778,7 +828,7 @@ names_base <-
                      -t0_not_lost,
                      - t0_partner_sample_weights_z,
                      -t0_partner_alert_level_combined_lead,
-                     -id) |> colnames()
+                     -t0_rel_num_l.x_z) |> colnames()
 
 names_base
 
@@ -907,8 +957,6 @@ t2_partner_sat_relationship_z
 t2_partner_sat_relationship_z_null
 t2_partner_sat_relationship_z_1
 
-
-
 ### CONFLICT
 t2_partner_conflict_in_relationship_z <- lmtp_tmle(
   data = df_clean,
@@ -978,17 +1026,6 @@ t2_partner_conflict_in_relationship_z
 t2_partner_conflict_in_relationship_z_null
 t2_partner_conflict_in_relationship_z_1
 
-
-##
-# names_base_t2_kessler_latent_anxiety_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_kessler_latent_anxiety_z")
-
-# During the last 30 days, how often did.... you feel that everything was an effort?
-# During the last 30 days, how often did.... you feel nervous?
-# During the last 30 days, how often did.... you feel restless or fidgety?
-
 ### KESSLER
 t2_partner_kessler6_sum_z <- lmtp_tmle(
   data = df_clean,
@@ -1057,8 +1094,6 @@ here_save(t2_partner_kessler6_sum_z_null, "t2_partner_kessler6_sum_z_null")
 t2_partner_kessler6_sum_z
 t2_partner_kessler6_sum_z_null
 t2_partner_kessler6_sum_z_1
-
-
 
 ## anxiety
 t2_partner_kessler_latent_anxiety_z <- lmtp_tmle(
@@ -1232,9 +1267,6 @@ t2_partner_self_esteem_z_1
 here_save(t2_partner_self_esteem_z_1, "t2_partner_self_esteem_z_1")
 
 
-
-
-
 t2_partner_self_esteem_z_null <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1257,7 +1289,6 @@ here_save(t2_partner_self_esteem_z_null, "t2_partner_self_esteem_z_null")
 t2_partner_self_esteem_z
 t2_partner_self_esteem_z_1
 t2_partner_self_esteem_z_null
-
 # PWI
 t2_partner_pwi_z <- lmtp_tmle(
   data = df_clean,
@@ -1278,9 +1309,7 @@ t2_partner_pwi_z <- lmtp_tmle(
 t2_partner_pwi_z
 here_save(t2_partner_pwi_z, "t2_partner_pwi_z")
 
-
-
-# Your health.
+# PWI
 t2_partner_pwi_z_1 <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1384,7 +1413,6 @@ t2_partner_lifesat_z_null
 here_save(t2_partner_lifesat_z_null, "t2_partner_lifesat_z_null")
 
 # contrasts ---------------------------------------------------------------
-push_mods
 # sat relationships
 t2_partner_sat_relationship_z <- here_read("t2_partner_sat_relationship_z")
 t2_partner_sat_relationship_z_1 <- here_read("t2_partner_sat_relationship_z_1")
@@ -1867,7 +1895,5 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
-
-
 plot_group_tab_loss
 

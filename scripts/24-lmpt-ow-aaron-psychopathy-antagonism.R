@@ -5,7 +5,7 @@
 
 # aaron's study
 
-
+# ANTAGONISM
 # preliminaries -----------------------------------------------------------
 
 
@@ -58,6 +58,17 @@ push_mods
 #nzavs_exposure <- "XXXX"
 
 
+# SHIFT INTERVENTION
+#  increase everyone by one point, contrasted with what they would be anyway.
+f <- function(data, trt) {
+  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
+}
+
+# decrease everyone
+f_1 <- function(data, trt) {
+  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
+}
+
 # define exposures --------------------------------------------------------
 # define exposure
 #A <- "t1_XXXX"
@@ -89,8 +100,8 @@ n_cores <- parallel::detectCores()
 # super learner libraries
 sl_lib <- c(
             "SL.ranger",
-            "SL.randomForest"
-            #  "SL.xgboost" # FORESTS SEEM TO WORK BEST
+            "SL.randomForest",
+            "SL.xgboost" # FORESTS SEEM TO WORK BEST
 )
 SL_folds
 
@@ -327,9 +338,14 @@ dt_19 <- dat_long |>
 
 here_save_arrow(dt_19, "dt_19")
 
+
+summary(dat_long$aaron_antagonism)
 hist(dat_long$aaron_antagonism)
+
+
 min_score <- min(dt_19$aaron_antagonism, na.rm = TRUE)
 min_score
+summary(dt_19$aaron_antagonism)
 
 max_score <- max(dt_19$aaron_antagonism, na.rm = TRUE)
 max_score
@@ -345,21 +361,24 @@ one_point_in_sd_units
 # half_sd
 
 
-# Decrease by one point (raw scores)
-f <- function(data, trt) {
-  ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
-}
+# Decrease by one point (raw scores) # WRONG
+# f <- function(data, trt) {
+#   ifelse(data[[trt]] >= min_score + 1, data[[trt]] - 1,  min_score)
+# }
+# 
+# 
+# 
+# #  Increase everyone by one point, contrasted with what they would be anyway.
+# # only use this function for raw scores
+# 
+# f_1 <- function(data, trt) {
+#   ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
+# }
 
-
-
-#  Increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
-
-f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - 1, data[[trt]] + 1,  max_score)
-}
 
 # check function logic
+# max score highest in range observed
+# min score lowed in observed range
 max_score - 1
 min_score + 1
 
@@ -405,7 +424,7 @@ out <-
   msm::statetable.msm(aaron_antagonism_round, id, data = dt_positivity_full)
 
 # transition table
-t_tab <- transition_table(out, state_names = NULL)
+t_tab <- transition_table_2(out, state_names = NULL)
 t_tab
 
 here_save(t_tab, "t_tab")
@@ -432,7 +451,6 @@ ggsave(
   limitsize = FALSE,
   dpi = 600
 )
-
 
 
 # generate bar plot
@@ -578,95 +596,147 @@ colnames(prep_coop_all)
 prep_coop_all <- as.data.frame(prep_coop_all)
 
 ## dyads response
+head(prep_coop_all)
+naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
+dev.off()
 
-library(magrittr)
-prep_coop_all_1 <- prep_coop_all %>%
-  group_by(id, t0_rel_num_l) %>%
-  mutate_all(rev) %>%
-  ungroup() %>%
-  select(-id, -t0_rel_num_l) %>%
-  set_colnames(paste0('partner_', colnames(.)))
-
-prep_coop_all_1
-prep_coop_all_use  <- cbind(prep_coop_all, prep_coop_all_1)
-
-colnames(prep_coop_all_use)
+# NEW CODE
 
 
-#
-n_unique(prep_coop_all_use$t0_rel_num_l)
+# new match partner code --------------------------------------------------
 
-# spit and shine:
-# load required libraries
+
 library(dplyr)
-library(stringr)
+library(testthat)
 
-# extract column names
-col_names <- colnames(prep_coop_all_use)
+prep_coop_all$id <- as.character(prep_coop_all$id)
+prep_coop_all$t0_rel_num_l <- as.numeric(prep_coop_all$t0_rel_num_l)  # Ensure this is numeric if not already
 
-# identify columns that start with 'partner_'
-partner_cols <- str_detect(col_names, "^partner_")
+partner_mapping <- prep_coop_all %>%
+  select(id, t0_rel_num_l) %>%
+  arrange(t0_rel_num_l, id) %>%
+  group_by(t0_rel_num_l) %>%
+  mutate(partner_id = lead(id, default = first(id))) %>%
+  ungroup()
 
-# replace and rename columns
-new_col_names <- col_names
+prep_coop_all_with_partners <- prep_coop_all %>%
+  left_join(partner_mapping, by = "id") %>%
+  left_join(prep_coop_all, by = c("partner_id" = "id"), suffix = c("", "_partner")) |> 
+  arrange(t0_rel_num_l) |> 
+  select(-t0_rel_num_l.y)
 
-# rename operation
-new_col_names[partner_cols] <-
-  gsub("partner_(t\\d+)_(.*)", "\\1_partner_\\2", col_names[partner_cols])
-
-# apply new column names to dataframe
-colnames(prep_coop_all_use) <- new_col_names
-
-# check
-colnames(prep_coop_all_use)
-
-# extract column names
-col_names <- colnames(prep_coop_all_use)
-
-# extract time prefix and sort based on it
-sorted_indices <- order(gsub(".*(t\\d+).*", "\\1", col_names))
-
-# get sorted column names
-sorted_col_names <- col_names[sorted_indices]
-
-# use relocate to rearrange the columns
-prep_coop_all_use_1 <-
-  prep_coop_all_use %>% relocate(all_of(sorted_col_names))
-
-# remove
-colnames(prep_coop_all_use_1)
+head(prep_coop_all_with_partners)
+str(prep_coop_all_with_partners)
+# validate
+# Example to check for NA values in partner columns
+na_counts <- sapply(prep_coop_all_with_partners, function(x) sum(is.na(x)))
+na_counts_partner_columns <- na_counts[grep("_partner$", names(na_counts))]
+na_counts_partner_columns
 
 
+# TEST COde
+library(testthat)
+
+
+test_that("Partner columns for j are correctly assigned to i", {
+  # Define the columns to test within the test to ensure visibility
+  columns_to_test <- c("t0_age", "t0_male", "t0_education_level_coarsen")
+  partner_columns_to_test <- paste0(columns_to_test, "_partner")
+  
+  for (col in seq_along(columns_to_test)) {
+    for (row in 1:nrow(prep_coop_all_with_partners)) {
+      # Extract the partner's ID for the current row
+      partner_id <- prep_coop_all_with_partners$partner_id[row]
+      
+      if (!is.na(partner_id) && partner_id != "") {
+        # Find the row corresponding to the partner's ID
+        partner_row_index <- which(prep_coop_all_with_partners$id == partner_id)
+        
+        if (length(partner_row_index) == 1) {  # Ensure exactly one match is found
+          # Compare the original data for the partner with the corresponding partner data for the individual
+          original_value <- prep_coop_all_with_partners[[columns_to_test[col]]][partner_row_index]
+          partner_value <- prep_coop_all_with_partners[[partner_columns_to_test[col]]][row]
+          
+          # Assert that the original value for the partner matches the partner value for the individual
+          expect_equal(original_value, partner_value,
+                       info = paste("Mismatch in", columns_to_test[col], "for row", row, "and partner row", partner_row_index))
+        }
+      }
+    }
+  }
+})
+
+
+prep_coop_all_with_partners
 # save function -- will save to your "push_mod" directory
-here_save(prep_coop_all_use_1, "prep_coop_all_use_1_backup")
+here_save(prep_coop_all_with_partners, "prep_coop_all_with_partners")
 
 # read function
-prep_coop_all_use_1 <- here_read("prep_coop_all_use_1_backup")
+prep_coop_all_with_partners <- here_read("prep_coop_all_with_partners")
+prep_coop_all_with_partners
 
-colnames(prep_coop_all_use_1)
-naniar::vis_miss(prep_coop_all_use_1, warn_large_data = FALSE)
+colnames(prep_coop_all_with_partners)
+naniar::vis_miss(prep_coop_all_with_partners, warn_large_data = FALSE)
 dev.off()
+
+
+# order columns
+prep_coop_all_with_partners_ordered <- prep_coop_all_with_partners %>%
+  select(
+    id,
+    matches("^t0_"),
+    matches("^t1_"),
+    matches("^t2_"),
+    everything()  # This ensures any columns that don't fit the pattern are still included at the end
+  ) 
 
 
 
 #check must be a dataframe
-str(prep_coop_all_use_1)
-nrow(prep_coop_all_use_1)
-colnames(prep_coop_all_use_1)
+str(prep_coop_all_with_partners_ordered)
+nrow(prep_coop_all_with_partners_ordered)
+colnames(prep_coop_all_with_partners_ordered)
 
-prep_coop_all_use_1 <- as.data.frame(prep_coop_all_use_1)
+prep_coop_all_with_partners_ordered <- as.data.frame(prep_coop_all_with_partners_ordered)
 
+head(prep_coop_all_with_partners_ordered)
+# Order so that names resemble the previous coding: 
+prep_coop_all_with_partners_ordered$t1_not_lost_partner
+
+
+library(dplyr)
+library(stringr)
+
+# Create a new dataframe to hold the renamed columns
+prep_coop_all_with_renamed_partners <- prep_coop_all_with_partners_ordered %>%
+  rename_with(
+    .fn = function(names) {
+      # Identify columns that end with "_partner"
+      partner_cols <- str_detect(names, "_partner$")
+      
+      # For each partner column, rearrange its parts
+      names[partner_cols] <- str_replace(names[partner_cols], 
+                                         pattern = "^(t[0-9]+)_(.*)_(partner)$", 
+                                         replacement = "\\1_\\3_\\2")
+      
+      names
+    },
+    .cols = everything()  # Apply this function to all columns
+  )
+
+head(prep_coop_all_with_renamed_partners)
 # arrange data for analysis -----------------------------------------------
 # spit and shine
 df_wide_censored <-
-  prep_coop_all_use_1 |>
+  prep_coop_all_with_renamed_partners |>
   mutate(
     t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
     t0_eth_cat = as.factor(t0_eth_cat)
   ) |>
   relocate("t0_not_lost", .before = starts_with("t1_"))  %>%
   relocate("t1_not_lost", .before = starts_with("t2_")) |>
-  relocate("t1_partner_not_lost", .before = starts_with("t2_"))
+  relocate("t1_partner_not_lost", .before = starts_with("t2_")) |> 
+  select(-id, -partner_id)
 
 #check
 head(df_wide_censored)
@@ -763,8 +833,7 @@ names_base <-
                      -t0_sample_weights,
                      -t0_not_lost,
                      - t0_partner_sample_weights_z,
-                     -t0_partner_alert_level_combined_lead,
-                     -id) |> colnames()
+                     -t0_partner_alert_level_combined_lead, -t0_rel_num_l.x_z) |> colnames()
 
 names_base
 
@@ -792,38 +861,104 @@ print(W)
 
 
 # check shift
+
+# max score highest in range observed
+# min score lowed in observed range
+max_score - 1
+min_score + 1
+
+
+A
+
+C <- c("t1_not_lost")
+
+#L <- list(c("L1"), c("L2"))
+W <- c(paste(names_base, collapse = ", "))
+
+# check
+print(W)
+
+
+# check shift
 f
 
+f_1
 
-# make test data (if needed)
-# df_clean_test <- df_clean |>
-#   slice_head(n = 2000)
+# max score highest in range observed
+# min score lowed in observed range
+max_score - 1
+min_score + 1
+min_score
+sl_lib
 
-# "SL.earth" refers to a wrapper for the 'earth' function from the 'earth' R package in the SuperLearner library. This function implements Multivariate Adaptive Regression Splines (MARS), a non-parametric regression method that extends linear models by allowing for interactions and non-linear relationships between variables.
-# MARS models can handle high-dimensional data well and can be a useful tool for capturing complex patterns in the data. They work by fitting piecewise linear models to the data, which allows for flexible and potentially non-linear relationships between predictors and the outcome.
 
+
+
+t2_partner_sat_relationship_z <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_partner_sat_relationship_z",
+  cens = C,
+  shift = f,
+  mtp = TRUE,
+  folds = SL_folds,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  id = "t0_rel_num_l",
+  # weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+
+
+t2_partner_sat_relationship_z
+here_save(t2_partner_sat_relationship_z, "t2_partner_sat_relationship_z")
+
+t2_partner_sat_relationship_z_1 <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_partner_sat_relationship_z",
+  cens = C,
+  shift = f_1,
+  mtp = TRUE,
+  folds = SL_folds,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  id = "t0_rel_num_l",
+  #weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+here_save(t2_partner_sat_relationship_z_1, "t2_partner_sat_relationship_z_1")
+t2_partner_sat_relationship_z_1
+
+t2_partner_sat_relationship_z_null <- lmtp_tmle(
+  data = df_clean,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_partner_sat_relationship_z",
+  cens = C,
+  shift = NULL,
+  mtp = FALSE,
+  folds = SL_folds,
+  # trim = 0.99, # if needed
+  # time_vary = NULL,
+  outcome_type = "continuous",
+  id = "t0_rel_num_l",
+  # weights = df_clean$t0_sample_weights,
+  learners_trt = sl_lib,
+  learners_outcome = sl_lib,
+  parallel = n_cores
+)
+here_save(t2_partner_sat_relationship_z_null, "t2_partner_sat_relationship_z_null")
 
 # models -----------------------------------------------------------
-
-
-# smoker binary
-#Do you currently smoke?
-
-# select_and_rename_cols <- function(names_base, baseline_vars, outcome) {
-#   # Select columns that match with baseline_vars
-#   selected_cols <- names_base[grepl(paste(baseline_vars, collapse = "|"), names_base)]
-#
-#   # Rename the outcome variable prefix from t2 to t0
-#   outcome_renamed <- gsub("t2_", "t0_", outcome)
-#   # Append the renamed outcome to selected columns
-#   final_cols <- c(selected_cols, outcome_renamed)
-#
-#   return(final_cols)
-# }
-names_outcomes
-
-n_cores = 10
-sl_lib
 
 t2_partner_sat_relationship_z <- lmtp_tmle(
   data = df_clean,
@@ -938,7 +1073,6 @@ t2_partner_conflict_in_relationship_z_1 <- lmtp_tmle(
   parallel = n_cores
 )
 here_save(t2_partner_conflict_in_relationship_z_1, "t2_partner_conflict_in_relationship_z_1")
-t2_partner_conflict_in_relationship_z_1
 
 t2_partner_conflict_in_relationship_z_null <- lmtp_tmle(
   data = df_clean,
@@ -958,23 +1092,8 @@ t2_partner_conflict_in_relationship_z_null <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-t2_partner_conflict_in_relationship_z_null
+
 here_save(t2_partner_conflict_in_relationship_z_null, "t2_partner_conflict_in_relationship_z_null")
-
-t2_partner_conflict_in_relationship_z
-t2_partner_conflict_in_relationship_z_null
-t2_partner_conflict_in_relationship_z_1
-
-
-##
-# names_base_t2_kessler_latent_anxiety_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_kessler_latent_anxiety_z")
-
-# During the last 30 days, how often did.... you feel that everything was an effort?
-# During the last 30 days, how often did.... you feel nervous?
-# During the last 30 days, how often did.... you feel restless or fidgety?
 
 ### KESSLER
 t2_partner_kessler6_sum_z <- lmtp_tmle(
@@ -996,8 +1115,6 @@ t2_partner_kessler6_sum_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-
-t2_partner_kessler6_sum_z
 here_save(t2_partner_kessler6_sum_z, "t2_partner_kessler6_sum_z")
 
 t2_partner_kessler6_sum_z_1 <- lmtp_tmle(
@@ -1019,7 +1136,6 @@ t2_partner_kessler6_sum_z_1 <- lmtp_tmle(
   parallel = n_cores
 )
 here_save(t2_partner_kessler6_sum_z_1, "t2_partner_kessler6_sum_z_1")
-t2_partner_kessler6_sum_z_1
 
 t2_partner_kessler6_sum_z_null <- lmtp_tmle(
   data = df_clean,
@@ -1041,11 +1157,6 @@ t2_partner_kessler6_sum_z_null <- lmtp_tmle(
 )
 here_save(t2_partner_kessler6_sum_z_null, "t2_partner_kessler6_sum_z_null")
 
-t2_partner_kessler6_sum_z
-t2_partner_kessler6_sum_z_null
-t2_partner_kessler6_sum_z_1
-
-
 
 ## anxiety
 t2_partner_kessler_latent_anxiety_z <- lmtp_tmle(
@@ -1064,7 +1175,6 @@ t2_partner_kessler_latent_anxiety_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_partner_kessler_latent_anxiety_z
 here_save(t2_partner_kessler_latent_anxiety_z, "t2_partner_kessler_latent_anxiety_z")
 
 
@@ -1111,20 +1221,6 @@ t2_partner_kessler_latent_anxiety_z_null <- lmtp_tmle(
 here_save(t2_partner_kessler_latent_anxiety_z_null,
           "t2_partner_kessler_latent_anxiety_z_null")
 
-t2_partner_kessler_latent_anxiety_z
-t2_partner_kessler_latent_anxiety_z_null
-t2_partner_kessler_latent_anxiety_z_1
-
-# depression
-
-# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
-# During the last 30 days, how often did.... you feel hopeless?
-# During the last 30 days, how often did.... you feel worthless?
-
-# During the last 30 days, how often did.... you feel so depressed that nothing could cheer you up?
-# During the last 30 days, how often did.... you feel hopeless?
-# During the last 30 days, how often did.... you feel worthless?
-
 t2_partner_kessler_latent_depression_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1141,8 +1237,6 @@ t2_partner_kessler_latent_depression_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-
-t2_partner_kessler_latent_depression_z
 here_save(t2_partner_kessler_latent_depression_z,
           "t2_partner_kessler_latent_depression_z")
 
@@ -1163,8 +1257,6 @@ t2_partner_kessler_latent_depression_z_1 <- lmtp_tmle(
   parallel = n_cores
 )
 
-
-t2_partner_kessler_latent_depression_z_1
 here_save(t2_partner_kessler_latent_depression_z_1,
           "t2_partner_kessler_latent_depression_z_1")
 
@@ -1186,17 +1278,8 @@ t2_partner_kessler_latent_depression_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_partner_kessler_latent_depression_z_null
 here_save(t2_partner_kessler_latent_depression_z_null,
           "t2_partner_kessler_latent_depression_z_null")
-
-t2_partner_kessler_latent_depression_z
-t2_partner_kessler_latent_depression_z_null
-t2_partner_kessler_latent_depression_z_1
-
-
-
-
 
 # SELF ESTEEM 
 t2_partner_self_esteem_z <- lmtp_tmle(
@@ -1214,11 +1297,7 @@ t2_partner_self_esteem_z <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-
-t2_partner_self_esteem_z
 here_save(t2_partner_self_esteem_z, "t2_partner_self_esteem_z")
-
-
 
 t2_partner_self_esteem_z_1 <- lmtp_tmle(
   data = df_clean,
@@ -1236,12 +1315,7 @@ t2_partner_self_esteem_z_1 <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_partner_self_esteem_z_1
 here_save(t2_partner_self_esteem_z_1, "t2_partner_self_esteem_z_1")
-
-
-
-
 
 t2_partner_self_esteem_z_null <- lmtp_tmle(
   data = df_clean,
@@ -1258,13 +1332,7 @@ t2_partner_self_esteem_z_null <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-
-t2_partner_self_esteem_z_null
 here_save(t2_partner_self_esteem_z_null, "t2_partner_self_esteem_z_null")
-
-t2_partner_self_esteem_z
-t2_partner_self_esteem_z_1
-t2_partner_self_esteem_z_null
 
 # PWI
 t2_partner_pwi_z <- lmtp_tmle(
@@ -1283,12 +1351,9 @@ t2_partner_pwi_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_partner_pwi_z
 here_save(t2_partner_pwi_z, "t2_partner_pwi_z")
 
-
-
-# Your health.
+# PWI
 t2_partner_pwi_z_1 <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1304,8 +1369,6 @@ t2_partner_pwi_z_1 <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-
-t2_partner_pwi_z_1
 here_save(t2_partner_pwi_z_1, "t2_partner_pwi_z_1")
 
 t2_partner_pwi_z_null <- lmtp_tmle(
@@ -1323,19 +1386,8 @@ t2_partner_pwi_z_null <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-
-
-t2_partner_pwi_z_null
 here_save(t2_partner_pwi_z_null, "t2_partner_pwi_z_null")
 
-t2_partner_pwi_z
-t2_partner_pwi_z_null
-t2_partner_pwi_z_1
-
-
-## life sat
-# I am satisfied with my life.
-# In most ways my life is close to ideal.
 t2_partner_lifesat_z <- lmtp_tmle(
   data = df_clean,
   trt = A,
@@ -1352,7 +1404,6 @@ t2_partner_lifesat_z <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_partner_lifesat_z
 here_save(t2_partner_lifesat_z, "t2_partner_lifesat_z")
 
 
@@ -1371,8 +1422,6 @@ t2_partner_lifesat_z_1 <- lmtp_tmle(
   learners_outcome = sl_lib,
   parallel = n_cores
 )
-
-t2_partner_lifesat_z_1
 here_save(t2_partner_lifesat_z_1, "t2_partner_lifesat_z_1")
 
 # I am satisfied with my life.
@@ -1393,12 +1442,7 @@ t2_partner_lifesat_z_null <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_partner_lifesat_z_null
 here_save(t2_partner_lifesat_z_null, "t2_partner_lifesat_z_null")
-
-t2_partner_lifesat_z_1
-t2_partner_lifesat_z
-t2_partner_lifesat_z_null
 # contrasts ---------------------------------------------------------------
 
 # sat relationships
@@ -1884,4 +1928,13 @@ ggsave(
 
 
 plot_group_tab_loss
+nzavs_exposure
+fit <- lm(t2_kessler_latent_anxiety_z ~ 
+            t1_aaron_antagonism + 
+            t0_aaron_antagonism_z +
+            t0_partner_aaron_antagonism_z +  
+            t0_partner_kessler_latent_anxiety_z, data = df_clean)
+
+model_parameters(fit)
+
 
