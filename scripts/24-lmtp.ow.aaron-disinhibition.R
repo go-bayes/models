@@ -1770,7 +1770,7 @@ group_tab_outcomes_gain
 here_save(group_tab_outcomes_gain,"group_tab_outcomes_gain")
 
 
-
+push_mods
 
 # bind individual tables
 tab_outcomes_loss <- rbind(
@@ -1840,7 +1840,7 @@ ggsave(
   dpi = 600
 )
 
-
+plot_group_tab_gain
 
 # graph body
 plot_group_tab_loss <- margot_plot(
