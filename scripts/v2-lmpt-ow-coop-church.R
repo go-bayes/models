@@ -9278,26 +9278,29 @@ counterfactual_charity_donate <- contrast_donate_full_raw$vals$shift
 # actual giving 
 estimate_charity_donate <- contrast_donate_full_raw$vals$ref
 
-# nz_adult_population in 2021
+# model estimates for charity under each intervention
+counterfactual_charity_donate = 1822.649
+estimate_charity_donate = 1118.993
+# NZ > 18 year olds in 2022
 nz_adult_population = 3989000
 
-
+# annual factual and counterfactual estimates
 factual_charity_estimate = nz_adult_population * estimate_charity_donate
 counterfactual_factual_charity_estimate = nz_adult_population * counterfactual_charity_donate
 
 # difference
 counterfactual_difference_charity_donate = counterfactual_factual_charity_estimate - factual_charity_estimate
-
 counterfactual_difference_charity_donate
 
-# almost 3 billion NZD 
+# ~ 3 billion NZD 
 # 2,806,882,916
 
-# nz annual budget in 2021
-# nz_annual_budget = 14494000000 * 4
-# nz_annual_budget
-# 
-# counterfactual_difference_charity_donate/ nz_annual_budget
+nz annual budget in 2021
+nz_annual_budget = 14494000000 * 4 # treasury (https://www.treasury.govt.nz/publications/budgets/budget-2021)
+
+# intervention aspercentage of gov't annual budget 
+counterfactual_difference_charity_donate/ nz_annual_budget
+
 # 
 # counterfactual_difference_charity_donate
 # 
