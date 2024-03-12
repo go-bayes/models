@@ -772,8 +772,7 @@ t2_political_conservative_z <- lmtp_sdr(
   # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
-  #  shift = NULL,
+  # k = 1,
   outcome_type = "continuous",
   weights = df_clean$t0_w_gend_age_ethnic,
   learners_trt = "SL.ranger",
@@ -791,10 +790,9 @@ t2_political_conservative_z_null <- lmtp_sdr(
   outcome = "t2_political_conservative_z",
   cens = c("t0_censored", "t1_censored"),
   shift = null_shift,
-  # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
+  # k = 1,
   outcome_type = "continuous",
   weights = df_clean$t0_w_gend_age_ethnic,
   learners_trt =  "SL.ranger",
@@ -826,8 +824,7 @@ t2_pol_wing_z <- lmtp_sdr(
   # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
-  #  shift = NULL,
+  # k = 1,
   outcome_type = "continuous",
   weights = df_clean$t0_w_gend_age_ethnic,
   learners_trt = "SL.ranger",
@@ -845,10 +842,8 @@ t2_pol_wing_z_null <- lmtp_sdr(
   outcome = "t2_pol_wing_z",
   cens = c("t0_censored", "t1_censored"),
   shift = null_shift,
-  # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
   outcome_type = "continuous",
   weights = df_clean$t0_w_gend_age_ethnic,
   learners_trt =  "SL.ranger",
@@ -885,7 +880,7 @@ t2_political_conservative_z_rels <- lmtp_sdr(
   # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
+  # k = 1,
   #  shift = NULL,
   outcome_type = "continuous",
   weights = df_clean_religious_only$t0_w_gend_age_ethnic,
@@ -907,7 +902,7 @@ t2_political_conservative_z_null_rels <- lmtp_sdr(
   # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
+  # k = 1,
   outcome_type = "continuous",
   weights = df_clean_religious_only$t0_w_gend_age_ethnic,
   learners_trt =  "SL.ranger",
@@ -939,8 +934,7 @@ t2_pol_wing_z_rels <- lmtp_sdr(
   # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
-  #  shift = NULL,
+  # k = 1,
   outcome_type = "continuous",
   weights = df_clean_religious_only$t0_w_gend_age_ethnic,
   learners_trt = "SL.ranger",
@@ -958,10 +952,9 @@ t2_pol_wing_z_null_rels <- lmtp_sdr(
   outcome = "t2_pol_wing_z",
   cens = c("t0_censored", "t1_censored"),
   shift = null_shift,
-  # shifted data
   mtp = TRUE,
   folds = 10,
-  k = 1,
+  # k = 1,
   outcome_type = "continuous",
   weights = df_clean_religious_only$t0_w_gend_age_ethnic,
   learners_trt =  "SL.ranger",
