@@ -864,6 +864,120 @@ contrast_t2_pol_wing_z <-
   lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_null, type = "additive")
 contrast_t2_pol_wing_z
 
+###########################################################################
+# only religious  ---------------------------------------------------------
+###########################################################################
+
+df_clean_religious_only <-  df_clean |> 
+  dplyr::filter(t0_religion_religious == 1)
+
+# check rows  n = 17141
+nrow(df_clean_religious_only)
+
+
+t2_political_conservative_z_rels <- lmtp_sdr(
+  data = df_clean_religious_only,
+  trt = A,
+  baseline = names_base,
+  outcome = "t2_political_conservative_z",
+  cens = C,
+  shift = adjust_vars,
+  # shifted data
+  mtp = TRUE,
+  folds = 10,
+  k = 1,
+  #  shift = NULL,
+  outcome_type = "continuous",
+  weights = df_clean_religious_only$t0_w_gend_age_ethnic,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores
+)
+
+
+here_save(t2_political_conservative_z_rels, "t2_political_conservative_z_rels")
+
+t2_political_conservative_z_null_rels <- lmtp_sdr(
+  data = df_clean_religious_only,
+  trt = c("t0_religion_religious", "t1_religion_religious"),
+  baseline = names_base,
+  outcome = "t2_political_conservative_z",
+  cens = c("t0_censored", "t1_censored"),
+  shift = null_shift,
+  # shifted data
+  mtp = TRUE,
+  folds = 10,
+  k = 1,
+  outcome_type = "continuous",
+  weights = df_clean_religious_only$t0_w_gend_age_ethnic,
+  learners_trt =  "SL.ranger",
+  learners_outcome =  "SL.ranger",
+  parallel = n_cores
+)
+
+here_save(t2_political_conservative_z_null_rels,
+          "t2_political_conservative_z_null_rels")
+
+
+
+contrast_t2_political_conservative_z_rels <-
+  lmtp_contrast(t2_political_conservative_z_rels,
+                ref = t2_political_conservative_z_null_rels, type = "additive")
+
+contrast_t2_political_conservative_z_rels
+
+
+
+# model right wing --------------------------------------------------------
+t2_pol_wing_z_rels <- lmtp_sdr(
+  data = df_clean_religious_only,
+  trt = c("t0_religion_religious", "t1_religion_religious"),
+  baseline = names_base,
+  outcome = "t2_political_conservative_z",
+  cens = c("t0_censored", "t1_censored"),
+  shift = adjust_vars,
+  # shifted data
+  mtp = TRUE,
+  folds = 10,
+  k = 1,
+  #  shift = NULL,
+  outcome_type = "continuous",
+  weights = df_clean_religious_only$t0_w_gend_age_ethnic,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores
+)
+
+
+here_save(t2_pol_wing_z_rels, "t2_pol_wing_z_rels")
+
+t2_pol_wing_z_null_rels <- lmtp_sdr(
+  data = df_clean_religious_only,
+  trt = c("t0_religion_religious", "t1_religion_religious"),
+  baseline = names_base,
+  outcome = "t2_pol_wing_z",
+  cens = c("t0_censored", "t1_censored"),
+  shift = null_shift,
+  # shifted data
+  mtp = TRUE,
+  folds = 10,
+  k = 1,
+  outcome_type = "continuous",
+  weights = df_clean_religious_only$t0_w_gend_age_ethnic,
+  learners_trt =  "SL.ranger",
+  learners_outcome =  "SL.ranger",
+  parallel = n_cores
+)
+
+here_save(t2_pol_wing_z_null_rels, "t2_pol_wing_z_null_rels")
+
+
+
+contrast_t2_pol_wing_z_rels <-
+  lmtp_contrast(t2_pol_wing_z_rels, ref = t2_pol_wing_z_null_rels, type = "additive")
+contrast_t2_pol_wing_z_rels
+
+
 
 
 # check associations ------------------------------------------------------
