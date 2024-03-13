@@ -709,6 +709,34 @@ null_shift <- function(data, trt) {
 }
 
 
+# shift comparing dones with always not religious 
+
+# shift all to 1 at baseline, then force maintaining religion
+
+
+contrast_never_religious <- function(data, trt) {
+
+  # dones
+  mtp_base_contrast <- function(data, trt) {
+    ifelse(data[[trt]] == 1, 0, data[[trt]])
+  }
+  
+  if (trt == "t0_religion_religious") {
+    return(mtp_base_contrast(data, trt))
+  }
+  
+  mtp_one_contrast <- function(data, trt) {
+    ifelse(data[[trt]] == 1, 0, data[[trt]])
+  }
+  
+  # Assuming trt is a variable name passed as a string to the function
+  
+  ifelse(trt == "t1_religion_religious",
+         mtp_one_contrast(data, trt),
+         data[[trt]])
+}
+
+
 # Usage
 # new_data <- adjust_religious_variables_base(your_dataframe)
 
@@ -1005,6 +1033,28 @@ here_save(t2_political_conservative_z_null,
 
 
 
+t2_political_conservative_z_contrast <- lmtp_sdr(
+  data = df_clean,
+  trt = c("t0_religion_religious", "t1_religion_religious"),
+  baseline = names_base,
+  outcome = "t2_political_conservative_z",
+  cens = c("t0_censored", "t1_censored"),
+  shift = contrast_never_religious,
+  mtp = TRUE,
+  folds = 10,
+  # k = 1,
+  outcome_type = "continuous",
+  weights = df_clean$t0_w_gend_age_ethnic,
+  learners_trt =  "SL.ranger",
+  learners_outcome =  "SL.ranger",
+  parallel = n_cores
+)
+
+here_save(t2_political_conservative_z_contrast,
+          "t2_political_conservative_z_contrast")
+
+
+
 contrast_t2_political_conservative_z <-
   lmtp_contrast(t2_political_conservative_z,
                 ref = t2_political_conservative_z_null, type = "additive")
@@ -1053,10 +1103,36 @@ t2_pol_wing_z_null <- lmtp_sdr(
 here_save(t2_pol_wing_z_null, "t2_pol_wing_z_null")
 
 
+t2_pol_wing_z_contrast <- lmtp_sdr(
+  data = df_clean,
+  trt = c("t0_religion_religious", "t1_religion_religious"),
+  baseline = names_base,
+  outcome = "t2_pol_wing_z",
+  cens = c("t0_censored", "t1_censored"),
+  shift = contrast_never_religious,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_w_gend_age_ethnic,
+  learners_trt =  "SL.ranger",
+  learners_outcome =  "SL.ranger",
+  parallel = n_cores
+)
+
+here_save(t2_pol_wing_z_contrast, "t2_pol_wing_z_contrast")
+
 
 contrast_t2_pol_wing_z <-
   lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_null, type = "additive")
 contrast_t2_pol_wing_z
+
+
+contrast_t2_pol_wing_contrast <-
+  lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_contrast, type = "additive")
+contrast_t2_pol_wing_contrast
+
+
+
 
 ###########################################################################
 # only religious  ---------------------------------------------------------
