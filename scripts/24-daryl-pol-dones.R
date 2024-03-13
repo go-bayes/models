@@ -88,7 +88,7 @@ ids_2018 <- dat %>%
   pull(id)
 
 # filter the original dataset for these IDs three waves
-dat_long <- dat %>%
+dat_long_full <- dat %>%
   dplyr::filter(id %in% ids_2018 &
                   wave %in% c(2018, 2019, 2020)) %>%
   arrange(id, wave) %>%
@@ -211,7 +211,8 @@ dat_long <- dat %>%
     "hours_charity",
     #,#Hours spent in activities/Hours spent … voluntary/charitable work
     "rural_gch_2018_l",
-    "alert_level_combined_lead"
+    "alert_level_combined_lead",
+    "alert_level_combined"
   ) %>%
   mutate(
     hours_work_log = log(hours_work + 1),
@@ -262,6 +263,9 @@ dat_long <- dat %>%
   ) |>
   droplevels()
 
+# we need the "full" for the descriptive table
+dat_long <- dat_long_full |> select(-alert_level_combined)
+
 
 
 # check n participants ----------------------------------------------------
@@ -297,9 +301,21 @@ out_pos <- msm::statetable.msm(religion_religious,
 
 cats_labels <- c("Not Religious", "Religious")
 
-transition_table  <- transition_table(out_pos, cats_labels)
+transition_table  <- margot::transition_table(out_pos, cats_labels)
 transition_table
 here_save(transition_table, "transition_table")
+
+
+# check baseline missingness ----------------------------------------------
+dt_18_miss <- dat_long |>
+  filter(wave == 2018) |> 
+  select(-alert_level_combined_lead) |> 
+  droplevels()
+
+naniar::miss_case_summary (dt_18_miss)
+
+
+naniar::vis_miss(dt_18_miss, warn_large_data=FALSE)
 
 # set vars -----------------------------------------------------------------
 dat_long_colnames <- colnames(dat_long)
@@ -331,7 +347,6 @@ library(gtsummary)
 dt_18 <- dat_long |> 
   dplyr::filter(wave == 2018) |> droplevels() |> ungroup()
 
-
 # get names
 names_base_tab <- setdiff(baseline_vars, dt_18)
 names_base_sorted <- sort(names_base_tab)
@@ -340,7 +355,9 @@ names_base_final <- c(nzavs_exposure, names_base_sorted)
 names_base_final
 
 ##
-selected_base_cols <- dt_18 %>% select(all_of(names_base_final)) |>  dplyr::select(-w_gend_age_ethnic) 
+selected_base_cols <- dt_18 %>% select(all_of(names_base_final)) |>  
+  dplyr::select(-w_gend_age_ethnic,-religion_religious,
+                -censored, -alert_level_combined_lead,-pol_wing, -political_conservative)
 str(selected_base_cols)
 nrow(selected_base_cols)
 
@@ -371,17 +388,103 @@ table_baseline
 # save baseline
 here_save(table_baseline, "table_baseline")
 
-table_baseline
 
-## all outcomes
+# table exposures
+# exposure table ----------------------------------------------------------
 
-# names_outcomes_tab <- setdiff(outcome_vars, dt_18)
-# names_outcomes_sorted <- sort(names_outcomes_tab)
-# names_outcomes_final <- names_outcomes_sorted # consistent workflow
+dt_18_19 <- dat_long_full |> 
+  dplyr::filter(wave == 2018 | wave == 2019) |> 
+  droplevels()
+
+# Political Orientation
+# Please rate how politically liberal versus conservative you see yourself as being.
+# Please rate how politically left-wing versus right-wing you see yourself as being.
+selected_exposure_cols <-
+  dt_18_19 %>% select(
+    c(
+      "religion_religious",
+      "alert_level_combined",
+      "wave"
+    )
+  ) |>
+  mutate(religious_affiliation = factor(religion_religious, levels = c(0, 1), labels = c("no", "yes"))) %>%
+  select(-religion_religious )
+
+
+str(selected_exposure_cols)
+library(gtsummary)
+table_exposures <- selected_exposure_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+  #  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Baseline/Outcome Variables**") %>%  # Update the column header
+  bold_labels()
+
+table_exposures
+
+
+# save baseline
+here_save(table_exposures, "table_exposures")
+table_exposures <- here_read("table_exposures")
+
+table_exposures
+
+
+
+# outcomes
+dt_18_20 <- dat_long_full |> 
+  dplyr::filter(wave == 2018 | wave == 2020) |> 
+  droplevels()
+
+names_outcomes_tab <- setdiff(outcome_vars, dt_18_20)
+names_outcomes_sorted <- sort(names_outcomes_tab)
+names_outcomes_final <- names_outcomes_sorted # consistent workflow
+names_outcomes_final
+
+names_outcomes_final
+
+
+
 # names_outcomes_final
 # 
-# names_outcomes_final
-# 
+selected_outcome_cols <- dt_18_20 %>% select(all_of(names_outcomes_final), 
+                                               wave) |> 
+  rename(political_right_wing = pol_wing) 
+  
+
+str(selected_outcome_cols)
+nrow(selected_outcome_cols)
+
+colnames(selected_outcome_cols)
+
+str(selected_outcome_cols)
+
+table_outcomes <- selected_outcome_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+#  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Baseline/Outcome Variables**") %>%  # Update the column header
+  bold_labels()
+
+table_outcomes
+
+
+here_save(table_outcomes, "table_outcomes")
+table_outcomes <- here_read("table_outcomes")
+
+
 
 # baseline by category: personality 
 # 
@@ -962,6 +1065,26 @@ df_clean<- here_read("df_clean")
 df_clean_religious_only <-  df_clean |> 
   dplyr::filter(t0_religion_religious == 1)
 
+
+
+
+dt_positivity_att <- dat_long |>
+  filter(wave == 2018 & religion_religious == 1| wave == 2019) |>
+  select(wave, id, religion_religious)
+
+
+# create transition matrix
+out_pos_att <- msm::statetable.msm(religion_religious,
+                               id,
+                               data = dt_positivity_att)
+
+cats_labels <- c("Religious", "Not Religious")
+
+transition_table_att  <- margot::transition_table(out_pos_att)
+transition_table_att
+here_save(transition_table_att, "transition_table_att")
+
+
 # check rows  n = 17141
 n_participants_att <- nrow(df_clean_religious_only)
 
@@ -1070,7 +1193,7 @@ contrast_t2_pol_wing_z_rels
 
 
 # results -----------------------------------------------------------------
-
+push_mods
 # full sample - conservative
 t2_political_conservative_z <- here_read("t2_political_conservative_z")
 t2_political_conservative_z_null <- here_read("t2_political_conservative_z_null")
@@ -1080,7 +1203,8 @@ contrast_t2_political_conservative_z <-
 contrast_t2_political_conservative_z
 
 
-tab_contrast_t2_political_conservative_z <- margot_tab_lmtp(contrast_t2_political_conservative_z, scale = "RD", new_name = "Dissaffiliation Effect: Pol.Conserv.")
+tab_contrast_t2_political_conservative_z <- margot_tab_lmtp(contrast_t2_political_conservative_z, scale = "RD", 
+                                                            new_name = "Dis-affiliation Effect: Pol.Conservative.")
 output_tab_contrast_t2_political_conservative_z <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_z,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_political_conservative_z
 
@@ -1101,7 +1225,7 @@ contrast_t2_pol_wing_z <-
 contrast_t2_pol_wing_z
 
 tab_contrast_t2_pol_wing_z <- margot_tab_lmtp(contrast_t2_pol_wing_z, scale = "RD",
-                                                            new_name = "Dissaffiliation Effect: Right Wing")
+                                                            new_name = "Dis-affiliation Effect: Right Wing")
 output_tab_contrast_t2_pol_wing_z <- lmtp_evalue_tab(tab_contrast_t2_pol_wing_z,  delta = 1, sd = 1, scale = c("RD"))
 
 
@@ -1126,7 +1250,8 @@ t2_political_conservative_z_null_rels <- here_read("t2_political_conservative_z_
 contrast_t2_political_conservative_z_rels <-
   lmtp_contrast(t2_political_conservative_z_rels,
                 ref = t2_political_conservative_z_null_rels, type = "additive")
-tab_contrast_t2_political_conservative_z_rels <- margot_tab_lmtp(contrast_t2_political_conservative_z_rels, scale = "RD", new_name = "Dissaffiliation Effect (ATT): Pol.Conserv.")
+tab_contrast_t2_political_conservative_z_rels <- margot_tab_lmtp(contrast_t2_political_conservative_z_rels, scale = "RD", 
+                                                                 new_name = "Dis-affiliation Effect: Pol.Conservative.")
 output_tab_contrast_t2_political_conservative_z_rels <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_z_rels,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_political_conservative_z_rels
 
@@ -1147,7 +1272,7 @@ contrast_t2_pol_wing_z_rels
 
 
 tab_contrast_t2_pol_wing_z_rels <- margot_tab_lmtp(contrast_t2_pol_wing_z_rels, scale = "RD",
-                                              new_name = "Dissaffiliation Effect (ATT): Right Wing")
+                                              new_name = "Dis-affiliation Effect (ATT): Right Wing")
 output_tab_contrast_t2_pol_wing_z_rels <- lmtp_evalue_tab(tab_contrast_t2_pol_wing_z_rels,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_pol_wing_z_rels
 

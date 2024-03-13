@@ -1462,23 +1462,17 @@ table_demography <- here_read("table_demography")
 
 # exposure table ----------------------------------------------------------
 dt_18_19 <- dat_long |> 
-  dplyr::filter(wave == 1 | wave == 2) |> 
+  dplyr::filter(wave == 2018 | wave == 2019) |> 
   droplevels()
 
 
 selected_exposure_cols <-
   dt_18_19 %>% select(
     c(
-      "aaron_antagonism",
-      "aaron_disinhibition",
-      "aaron_emotional_stability",
-      "aaron_narcissism",
-      "aaron_psychopathy_combined",
-      "alert_level_combined",
+      "religion_religious",
       "wave"
     )
-  ) |>
-  mutate(wave = factor(wave, labels = c("2018", "2019")))
+  ) 
 
 library(gtsummary)
 table_exposures <- selected_exposure_cols %>%
@@ -1490,7 +1484,7 @@ table_exposures <- selected_exposure_cols %>%
     percent = "column",
     # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
   ) %>%
-#  add_n() %>%  # Add column with total number of non-missing observations
+  add_n() %>%  # Add column with total number of non-missing observations
   modify_header(label = "**Baseline/Outcome Variables**") %>%  # Update the column header
   bold_labels()
 
