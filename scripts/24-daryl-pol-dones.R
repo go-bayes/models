@@ -219,14 +219,17 @@ dat_long <- dat %>%
     household_inc_log = log(household_inc + 1),
     hours_charity_log = log(hours_charity + 1),
     hours_exercise_log = log(hours_exercise + 1),
-    hours_children_log = log(hours_children + 1)
+    hours_children_log = log(charity_donate + 1), 
+    charity_donate_log = log(hours_children + 1)
   ) |>
   select(-c(
     hours_work,
     hours_housework,
     household_inc,
     hours_charity,
-    hours_exercise
+    hours_exercise, 
+    hours_children,
+    charity_donate
   )) |>
   mutate(
     #initialize 'censored'
@@ -260,8 +263,18 @@ dat_long <- dat %>%
   droplevels()
 
 
-str(dat$sample_origin_year)
-str(dat_long)
+
+# check n participants ----------------------------------------------------
+
+#community at baseline 
+n_participants <- n_unique(dat_long$id) #32058 # reports hours with 
+
+# check
+n_participants
+
+# save n
+here_save(n_participants, "n_participants")
+          
 # check
 table1::table1(~ religion_religious + censored + sample_frame_opt_in |
                  wave,
@@ -304,6 +317,90 @@ exposure_vars <- c(nzavs_exposure, "censored") #
 # outcome vars
 
 outcome_vars = c("political_conservative", "pol_wing")
+
+
+
+# demographic table -------------------------------------------------------
+
+
+# tables ------------------------------------------------------------------
+library(gtsummary)
+
+
+# REAL tables -----------------------
+dt_18 <- dat_long |> 
+  dplyr::filter(wave == 2018) |> droplevels() |> ungroup()
+
+
+# get names
+names_base_tab <- setdiff(baseline_vars, dt_18)
+names_base_sorted <- sort(names_base_tab)
+names_base_final <- c(nzavs_exposure, names_base_sorted)
+
+names_base_final
+
+##
+selected_base_cols <- dt_18 %>% select(all_of(names_base_final)) |>  dplyr::select(-w_gend_age_ethnic) 
+str(selected_base_cols)
+nrow(selected_base_cols)
+
+colnames(selected_base_cols)
+
+selected_base_cols
+# baseline table
+selected_base_cols
+
+table_baseline <- selected_base_cols |> 
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(
+    missing = "no",
+    percent = "column",
+    statistic = list(
+      all_continuous() ~ c(
+        "{mean} ({sd})", # Mean and SD
+        "{min}, {max}", # Range (Min, Max)
+        "{p25}, {p75}" # IQR (25th percentile, 75th percentile)
+      )
+    ),
+    type = all_continuous() ~ "continuous2"
+  ) |>
+  modify_header(label = "**Exposure + Demographic Variables**") %>% # update the column header
+  bold_labels() 
+
+table_baseline
+# save baseline
+here_save(table_baseline, "table_baseline")
+
+table_baseline
+
+## all outcomes
+
+# names_outcomes_tab <- setdiff(outcome_vars, dt_18)
+# names_outcomes_sorted <- sort(names_outcomes_tab)
+# names_outcomes_final <- names_outcomes_sorted # consistent workflow
+# names_outcomes_final
+# 
+# names_outcomes_final
+# 
+
+# baseline by category: personality 
+# 
+# table_baseline_personality  <- selected_base_cols %>%
+#   janitor::clean_names(case = "title") |> 
+#   tbl_summary(include = c(Agreeableness, Conscientiousness, Extraversion, Neuroticism, Openness, "Honesty Humility"),
+#               missing = "no", 
+#               percent = "column") |> 
+#   #  add_n() %>% # add column with total number of non-missing observations
+#   statistic = list(all_continuous() ~ "{mean} ({sd})") |>  # Calculate mean and standard deviation for continuous variables
+#   modify_header(label = "**Personality Variables**") %>% # update the column header
+#   bold_labels() 
+# 
+# table_baseline_personality
+# # save baseline
+# here_save(table_baseline_personality, "table_baseline_personality")
+# 
+# table_baseline_personality
+
 
 
 
@@ -808,7 +905,6 @@ here_save(t2_political_conservative_z_null,
 contrast_t2_political_conservative_z <-
   lmtp_contrast(t2_political_conservative_z,
                 ref = t2_political_conservative_z_null, type = "additive")
-
 contrast_t2_political_conservative_z
 
 
@@ -862,13 +958,14 @@ contrast_t2_pol_wing_z
 ###########################################################################
 # only religious  ---------------------------------------------------------
 ###########################################################################
-
+df_clean<- here_read("df_clean")
 df_clean_religious_only <-  df_clean |> 
   dplyr::filter(t0_religion_religious == 1)
 
 # check rows  n = 17141
-nrow(df_clean_religious_only)
+n_participants_att <- nrow(df_clean_religious_only)
 
+here_save(n_participants_att, "n_participants_att")
 
 t2_political_conservative_z_rels <- lmtp_sdr(
   data = df_clean_religious_only,
@@ -918,7 +1015,6 @@ here_save(t2_political_conservative_z_null_rels,
 contrast_t2_political_conservative_z_rels <-
   lmtp_contrast(t2_political_conservative_z_rels,
                 ref = t2_political_conservative_z_null_rels, type = "additive")
-
 contrast_t2_political_conservative_z_rels
 
 
@@ -973,10 +1069,123 @@ contrast_t2_pol_wing_z_rels
 
 
 
-# check associations ------------------------------------------------------
-dt_18 <- dat_long |>
-  filter(wave == 2018)
+# results -----------------------------------------------------------------
 
+# full sample - conservative
+t2_political_conservative_z <- here_read("t2_political_conservative_z")
+t2_political_conservative_z_null <- here_read("t2_political_conservative_z_null")
+contrast_t2_political_conservative_z <-
+  lmtp_contrast(t2_political_conservative_z,
+                ref = t2_political_conservative_z_null, type = "additive")
+contrast_t2_political_conservative_z
+
+
+tab_contrast_t2_political_conservative_z <- margot_tab_lmtp(contrast_t2_political_conservative_z, scale = "RD", new_name = "Dissaffiliation Effect: Pol.Conserv.")
+output_tab_contrast_t2_political_conservative_z <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_political_conservative_z
+
+# check
+tab_contrast_t2_political_conservative_z
+output_tab_contrast_t2_political_conservative_z
+
+# save table and output table
+here_save(tab_contrast_t2_political_conservative_z, "tab_contrast_t2_political_conservative_z")
+here_save(output_tab_contrast_t2_political_conservative_z, "output_tab_contrast_t2_political_conservative_z")
+
+
+# full sample - political wing
+t2_pol_wing_z <- here_read("t2_pol_wing_z")
+t2_pol_wing_z_null <- here_read("t2_pol_wing_z_null")
+contrast_t2_pol_wing_z <-
+  lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_null, type = "additive")
+contrast_t2_pol_wing_z
+
+tab_contrast_t2_pol_wing_z <- margot_tab_lmtp(contrast_t2_pol_wing_z, scale = "RD",
+                                                            new_name = "Dissaffiliation Effect: Right Wing")
+output_tab_contrast_t2_pol_wing_z <- lmtp_evalue_tab(tab_contrast_t2_pol_wing_z,  delta = 1, sd = 1, scale = c("RD"))
+
+
+# check
+tab_contrast_t2_pol_wing_z
+output_tab_contrast_t2_pol_wing_z
+# save table and output table
+here_save(tab_contrast_t2_pol_wing_z, "tab_contrast_t2_pol_wing_z")
+here_save(output_tab_contrast_t2_pol_wing_z, "output_tab_contrast_t2_pol_wing_z")
+
+tab_full <- rbind(output_tab_contrast_t2_political_conservative_z, output_tab_contrast_t2_pol_wing_z)
+group_tab_full <- group_tab(tab_full, type = "RD")
+group_tab_full
+
+here_save(tab_full, "tab_full")
+here_save(group_tab_full, "group_tab_full")
+
+# religious at baseline sample 
+# pols
+t2_political_conservative_z_rels <- here_read("t2_political_conservative_z_rels")
+t2_political_conservative_z_null_rels <- here_read("t2_political_conservative_z_null_rels")
+contrast_t2_political_conservative_z_rels <-
+  lmtp_contrast(t2_political_conservative_z_rels,
+                ref = t2_political_conservative_z_null_rels, type = "additive")
+tab_contrast_t2_political_conservative_z_rels <- margot_tab_lmtp(contrast_t2_political_conservative_z_rels, scale = "RD", new_name = "Dissaffiliation Effect (ATT): Pol.Conserv.")
+output_tab_contrast_t2_political_conservative_z_rels <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_z_rels,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_political_conservative_z_rels
+
+# check
+tab_contrast_t2_political_conservative_z_rels
+output_tab_contrast_t2_political_conservative_z_rels
+
+# save table and output table
+here_save(tab_contrast_t2_political_conservative_z_rels, "tab_contrast_t2_political_conservative_z_rels")
+here_save(output_tab_contrast_t2_political_conservative_z_rels, "output_tab_contrast_t2_political_conservative_z_rels")
+
+# wing
+t2_pol_wing_z_rels <- here_read("t2_pol_wing_z_rels")
+t2_pol_wing_z_null_rels <- here_read("t2_pol_wing_z_null_rels")
+contrast_t2_pol_wing_z_rels <-
+  lmtp_contrast(t2_pol_wing_z_rels, ref = t2_pol_wing_z_null_rels, type = "additive")
+contrast_t2_pol_wing_z_rels
+
+
+tab_contrast_t2_pol_wing_z_rels <- margot_tab_lmtp(contrast_t2_pol_wing_z_rels, scale = "RD",
+                                              new_name = "Dissaffiliation Effect (ATT): Right Wing")
+output_tab_contrast_t2_pol_wing_z_rels <- lmtp_evalue_tab(tab_contrast_t2_pol_wing_z_rels,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_pol_wing_z_rels
+
+# check
+tab_contrast_t2_pol_wing_z_rels
+output_tab_contrast_t2_pol_wing_z_rels
+
+# save table and output table
+here_save(tab_contrast_t2_pol_wing_z_rels, "tab_contrast_t2_pol_wing_z_rels")
+here_save(output_tab_contrast_t2_pol_wing_z_rels, "output_tab_contrast_t2_pol_wing_z_rels")
+
+# Graphs 
+
+tab_att <- rbind(output_tab_contrast_t2_political_conservative_z_rels, output_tab_contrast_t2_pol_wing_z_rels)
+group_tab_att <- group_tab(tab_att, type = "RD")
+group_tab_att
+
+here_save(tab_att, "tab_att")
+here_save(group_tab_att, "group_tab_att")
+
+# check associations ------------------------------------------------------
+dt_lm <- dat_long |>
+  mutate(political_conservative_z = scale(political_conservative),
+         pol_wing_z = scale(pol_wing),
+         year = as.numeric((wave))-1
+  ) |> 
+  arrange(id, year) |> droplevels()
+
+library(lme4)
 # check association only
-summary(lm(political_conservative ~ religion_religious, data = dt_18))
-summary(lm(pol_wing ~ religion_religious, data = dt_18))
+fit_conservative <- lm(political_conservative_z ~ religion_religious + year, data = dt_lm)
+fit_conservative
+
+fit_pol_wing <- lm(pol_wing_z ~ religion_religious + year, data = dt_lm)
+
+
+here_save(fit_conservative, "fit_conservative")
+here_save(fit_pol_wing, "fit_pol_wing")
+
+
+
