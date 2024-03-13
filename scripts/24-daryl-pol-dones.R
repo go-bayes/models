@@ -1054,13 +1054,17 @@ here_save(t2_political_conservative_z_contrast,
           "t2_political_conservative_z_contrast")
 
 
+t2_political_conservative_z<- here_read("t2_political_conservative_z")
 
 contrast_t2_political_conservative_z <-
   lmtp_contrast(t2_political_conservative_z,
                 ref = t2_political_conservative_z_null, type = "additive")
 contrast_t2_political_conservative_z
 
-
+contrast_t2_political_conservative_contrast <-
+  lmtp_contrast(t2_political_conservative_z,
+                ref = t2_political_conservative_z_contrast, type = "additive")
+contrast_t2_political_conservative_contrast
 
 # model right wing --------------------------------------------------------
 t2_pol_wing_z <- lmtp_sdr(
@@ -1125,6 +1129,8 @@ here_save(t2_pol_wing_z_contrast, "t2_pol_wing_z_contrast")
 contrast_t2_pol_wing_z <-
   lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_null, type = "additive")
 contrast_t2_pol_wing_z
+
+t2_pol_wing_z<- here_read("t2_pol_wing_z")
 
 
 contrast_t2_pol_wing_contrast <-
@@ -1273,6 +1279,10 @@ push_mods
 # full sample - conservative
 t2_political_conservative_z <- here_read("t2_political_conservative_z")
 t2_political_conservative_z_null <- here_read("t2_political_conservative_z_null")
+t2_political_conservative_z_contrast <- here_read("t2_political_conservative_z_contrast")
+
+
+
 contrast_t2_political_conservative_z <-
   lmtp_contrast(t2_political_conservative_z,
                 ref = t2_political_conservative_z_null, type = "additive")
@@ -1296,6 +1306,10 @@ here_save(output_tab_contrast_t2_political_conservative_z, "output_tab_contrast_
 # full sample - political wing
 t2_pol_wing_z <- here_read("t2_pol_wing_z")
 t2_pol_wing_z_null <- here_read("t2_pol_wing_z_null")
+t2_pol_wing_z_contrast <- here_read("t2_pol_wing_z_contrast")
+
+
+
 contrast_t2_pol_wing_z <-
   lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_null, type = "additive")
 contrast_t2_pol_wing_z
@@ -1368,6 +1382,42 @@ group_tab_att
 
 here_save(tab_att, "tab_att")
 here_save(group_tab_att, "group_tab_att")
+
+
+
+### Second contrast
+
+
+contrast_t2_pol_wing_contrast <-
+  lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_contrast, type = "additive")
+contrast_t2_pol_wing_contrast
+
+tab_contrast_t2_pol_wing_contrast <- margot_tab_lmtp(contrast_t2_pol_wing_contrast, scale = "RD",
+                                                   new_name = "Dis-affiliation Contrast (ATE): Right Wing")
+output_tab_contrast_t2_pol_wing_contrast <- lmtp_evalue_tab(tab_contrast_t2_pol_wing_contrast,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_pol_wing_contrast
+
+
+# pol wing
+contrast_t2_political_conservative_contrast <-
+  lmtp_contrast(t2_political_conservative_z,
+                ref = t2_political_conservative_z_contrast, type = "additive")
+contrast_t2_political_conservative_contrast
+
+
+tab_contrast_t2_political_conservative_contrast <- margot_tab_lmtp(contrast_t2_political_conservative_contrast, scale = "RD",
+                                                     new_name = "Dis-affiliation Contrast (ATE): Right Wing")
+output_tab_contrast_t2_political_conservative_contrast <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_contrast,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_political_conservative_contrast
+
+
+tab_contrast <- rbind(output_tab_contrast_t2_political_conservative_contrast, output_tab_contrast_t2_pol_wing_contrast)
+group_tab_contrast <- group_tab(tab_contrast, type = "RD")
+group_tab_contrast
+
+here_save(tab_contrast, "group_tab_contrast")
+here_save(group_tab_contrast, "group_tab_contrast")
+
 
 # check associations ------------------------------------------------------
 dt_lm <- dat_long |>
