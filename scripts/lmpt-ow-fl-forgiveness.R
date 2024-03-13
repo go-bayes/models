@@ -7,6 +7,7 @@
 
 # preliminaries -----------------------------------------------------------
 
+
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
