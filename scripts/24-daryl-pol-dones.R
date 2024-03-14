@@ -1054,7 +1054,7 @@ here_save(t2_political_conservative_z_contrast,
           "t2_political_conservative_z_contrast")
 
 
-t2_political_conservative_z<- here_read("t2_political_conservative_z")
+# t2_political_conservative_z<- here_read("t2_political_conservative_z")
 
 contrast_t2_political_conservative_z <-
   lmtp_contrast(t2_political_conservative_z,
@@ -1129,8 +1129,6 @@ here_save(t2_pol_wing_z_contrast, "t2_pol_wing_z_contrast")
 contrast_t2_pol_wing_z <-
   lmtp_contrast(t2_pol_wing_z, ref = t2_pol_wing_z_null, type = "additive")
 contrast_t2_pol_wing_z
-
-t2_pol_wing_z<- here_read("t2_pol_wing_z")
 
 
 contrast_t2_pol_wing_contrast <-
@@ -1290,7 +1288,7 @@ contrast_t2_political_conservative_z
 
 
 tab_contrast_t2_political_conservative_z <- margot_tab_lmtp(contrast_t2_political_conservative_z, scale = "RD", 
-                                                            new_name = "Dis-affiliation Effect: Pol.Conservative.")
+                                                            new_name = "Dis-affiliation Effect: Pol.Conservative")
 output_tab_contrast_t2_political_conservative_z <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_z,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_political_conservative_z
 
@@ -1341,7 +1339,7 @@ contrast_t2_political_conservative_z_rels <-
   lmtp_contrast(t2_political_conservative_z_rels,
                 ref = t2_political_conservative_z_null_rels, type = "additive")
 tab_contrast_t2_political_conservative_z_rels <- margot_tab_lmtp(contrast_t2_political_conservative_z_rels, scale = "RD", 
-                                                                 new_name = "Dis-affiliation Effect: Pol.Conservative.")
+                                                                 new_name = "Dis-affiliation Effect: Pol.Conservative")
 output_tab_contrast_t2_political_conservative_z_rels <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_z_rels,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_political_conservative_z_rels
 
@@ -1394,6 +1392,7 @@ contrast_t2_pol_wing_contrast
 
 tab_contrast_t2_pol_wing_contrast <- margot_tab_lmtp(contrast_t2_pol_wing_contrast, scale = "RD",
                                                    new_name = "Dis-affiliation Contrast (ATE): Right Wing")
+tab_contrast_t2_pol_wing_contrast
 output_tab_contrast_t2_pol_wing_contrast <- lmtp_evalue_tab(tab_contrast_t2_pol_wing_contrast,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_pol_wing_contrast
 
@@ -1406,17 +1405,73 @@ contrast_t2_political_conservative_contrast
 
 
 tab_contrast_t2_political_conservative_contrast <- margot_tab_lmtp(contrast_t2_political_conservative_contrast, scale = "RD",
-                                                     new_name = "Dis-affiliation Contrast (ATE): Right Wing")
+                                                     new_name = "Dis-affiliation Contrast (ATE): Pol.Conservative")
+tab_contrast_t2_political_conservative_contrast
 output_tab_contrast_t2_political_conservative_contrast <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_contrast,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_political_conservative_contrast
 
-
+output_tab_contrast_t2_political_conservative_contrast
+output_tab_contrast_t2_pol_wing_contrast
 tab_contrast <- rbind(output_tab_contrast_t2_political_conservative_contrast, output_tab_contrast_t2_pol_wing_contrast)
+tab_contrast
+
 group_tab_contrast <- group_tab(tab_contrast, type = "RD")
 group_tab_contrast
 
-here_save(tab_contrast, "group_tab_contrast")
+
+# margot_interpret_table <- function(df, causal_scale, estimand) {
+#   estimand_description <- dplyr::case_when(
+#     estimand == "PATE" ~ "The Population Average Treatment Effect (PATE) represents the expected difference in outcomes between treatment and control groups for the New Zealand population.",
+#     estimand == "ATE" ~ "The Average Treatment Effect (ATE) represents the expected difference in outcomes between treatment and control groups for the population.",
+#     estimand == "ATT" ~ "Average Treatment Effect (ATT) represents the expected difference in outcomes between treatment and control groups for the treated population.",
+#     TRUE ~ "The specified estimand is not recognized. Please use one of the following: 'PATE', 'ATE', 'ATT'."
+#   )
+#   
+#   interpretation <- df %>%
+#     dplyr::mutate(
+#       causal_contrast = dplyr::case_when(
+#         causal_scale == "causal_difference" ~ round(`E[Y(1)]-E[Y(0)]`, 2),
+#         TRUE ~ NA_real_  # Placeholder, adjust as needed if adding other scales
+#       ),
+#       E_Value = round(E_Value, 2),
+#       E_Val_bound = round(E_Val_bound, 2),
+#       `2.5 %` = round(`2.5 %`, 2),
+#       `97.5 %` = round(`97.5 %`, 2)
+#     ) %>%
+#     dplyr::rowwise() %>%
+#     dplyr::mutate(
+#       strength_of_evidence = dplyr::case_when(
+#         E_Val_bound == 1 ~ "no reliable evidence for causality",
+#         E_Val_bound <= 1 | (`2.5 %` <= 0 & `97.5 %` >= 0) ~ "no reliable evidence for causality",
+#         E_Val_bound > 1 & E_Val_bound < 1.1 ~ "the evidence for causality is weak",
+#         E_Val_bound > 2 ~ "strong evidence for causality",
+#         TRUE ~ "evidence for causality"
+#       ),
+#       outcome_interpretation = if_else(E_Val_bound == 1, 
+#                                        glue::glue("For the outcome '{outcome}', given the lower bound of the E-value equals 1, we find no reliable evidence for causality."),
+#                                        glue::glue(
+#                                          "For the outcome '{outcome}', the {estimand} is {causal_contrast} [{`2.5 %`},{`97.5 %`}]. ",
+#                                          "The E-value for this effect estimate is {E_Value} ",
+#                                          "with a lower bound of {E_Val_bound}. At this bound, an unmeasured confounder associated with both the treatment and outcome by a risk ratio of {E_Val_bound} each could explain away the observed effect; weaker confounding would not. ",
+#                                          "Overall, we find {strength_of_evidence}."
+#                                        )
+#       )
+#     ) %>%
+#     dplyr::ungroup()
+#   
+#   result <- glue::glue(
+#     "\n\n{estimand_description}\n\n{paste(interpretation$outcome_interpretation, collapse = '\n\n')}"
+#   )
+#   return(result)
+# }
+
+margot_interpret_table( group_tab_contrast, "causal_difference", "ATE" )
+
+here_save(tab_contrast, "tab_contrast")
 here_save(group_tab_contrast, "group_tab_contrast")
+
+
+
 
 
 # check associations ------------------------------------------------------
@@ -1439,4 +1494,42 @@ here_save(fit_conservative, "fit_conservative")
 here_save(fit_pol_wing, "fit_pol_wing")
 
 
+df_clean_2 <-df_clean  
+df_clean_2 <- data.frame(lapply(df_clean_2, function(x) {
+  # Check if it's a numeric vector with attributes to remove
+  if (is.numeric(x) && length(attributes(x)) > 1) {
+    # Remove attributes by converting to a vector
+    x <- as.vector(x)
+  }
+  return(x)
+}))
+  
+model_parameters( 
+ fit_wing <-  lm(t2_pol_wing_z ~ t1_religion_religious * t0_religion_religious + as.numeric(t0_pol_wing_z), data = df_clean) 
+  )
+
+model_parameters( 
+  fit_wing <-  lm(t2_pol_wing_z ~ t1_religion_religious * t0_religion_religious, data = df_clean) 
+)
+
+
+plot ( 
+  ggeffects::ggpredict( fit_wing, terms = c("t1_religion_religious", "t0_religion_religious"))
+)
+
+
+
+
+model_parameters( 
+  fit_conservative <-  lm(t2_political_conservative_z ~ t1_religion_religious * t0_religion_religious + as.numeric(t0_pol_wing_z), data = df_clean) 
+)
+
+model_parameters( 
+  fit_conservative <-  lm(t2_political_conservative_z ~ t1_religion_religious * t0_religion_religious, data = df_clean) 
+)
+
+
+plot ( 
+  ggeffects::ggpredict( fit_wing, terms = c("t1_religion_religious", "t0_religion_religious"))
+)
 
