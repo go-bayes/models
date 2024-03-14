@@ -88,6 +88,11 @@ ids_2018 <- dat %>%
   pull(id)
 
 # filter the original dataset for these IDs three waves
+dat <- as.data.frame(dat)
+dat <- haven::zap_formats(dat)
+dat <- haven::zap_label(dat)
+dat <- haven::zap_widths(dat)
+
 dat_long_full <- dat %>%
   dplyr::filter(id %in% ids_2018 &
                   wave %in% c(2018, 2019, 2020)) %>%
@@ -320,12 +325,14 @@ naniar::vis_miss(dt_18_miss, warn_large_data=FALSE)
 # set vars -----------------------------------------------------------------
 dat_long_colnames <- colnames(dat_long)
 
+
 # select vars for baseline
 baseline_vars <- setdiff(dat_long_colnames, c('id', 'wave'))
 
 # sort
 baseline_vars <- sort(baseline_vars)
 
+baseline_vars
 
 # exposure
 exposure_vars <- c(nzavs_exposure, "censored") #
@@ -341,6 +348,7 @@ outcome_vars = c("political_conservative", "pol_wing")
 
 # tables ------------------------------------------------------------------
 library(gtsummary)
+library(gt)
 
 
 # REAL tables -----------------------
@@ -384,7 +392,6 @@ table_baseline <- selected_base_cols |>
   modify_header(label = "**Exposure + Demographic Variables**") %>% # update the column header
   bold_labels() 
 
-table_baseline
 # save baseline
 here_save(table_baseline, "table_baseline")
 
@@ -1339,7 +1346,7 @@ contrast_t2_political_conservative_z_rels <-
   lmtp_contrast(t2_political_conservative_z_rels,
                 ref = t2_political_conservative_z_null_rels, type = "additive")
 tab_contrast_t2_political_conservative_z_rels <- margot_tab_lmtp(contrast_t2_political_conservative_z_rels, scale = "RD", 
-                                                                 new_name = "Dis-affiliation Effect: Pol.Conservative")
+                                                                 new_name = "Dis-affiliation Effect (CATE): Pol.Conservative")
 output_tab_contrast_t2_political_conservative_z_rels <- lmtp_evalue_tab(tab_contrast_t2_political_conservative_z_rels,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_political_conservative_z_rels
 
@@ -1360,7 +1367,7 @@ contrast_t2_pol_wing_z_rels
 
 
 tab_contrast_t2_pol_wing_z_rels <- margot_tab_lmtp(contrast_t2_pol_wing_z_rels, scale = "RD",
-                                              new_name = "Dis-affiliation Effect (ATT): Right Wing")
+                                              new_name = "Dis-affiliation Effect (CATE): Right Wing")
 output_tab_contrast_t2_pol_wing_z_rels <- lmtp_evalue_tab(tab_contrast_t2_pol_wing_z_rels,  delta = 1, sd = 1, scale = c("RD"))
 output_tab_contrast_t2_pol_wing_z_rels
 
