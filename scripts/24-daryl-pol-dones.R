@@ -281,6 +281,7 @@ n_participants <- n_unique(dat_long$id) #32058 # reports hours with
 # check
 n_participants
 
+push_mods
 # save n
 here_save(n_participants, "n_participants")
           
@@ -564,8 +565,8 @@ df_wide_censored <-
   relocate("t1_censored", .before = starts_with("t2_"))
 
 
-
-
+head(df_wide_censored)
+df_wide_censored
 # clean -------------------------------------------------------------------
 library(dplyr)
 str(df_clean)

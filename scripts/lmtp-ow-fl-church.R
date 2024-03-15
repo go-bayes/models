@@ -40,7 +40,7 @@ push_mods
 nzavs_exposure <- "religion_church_round"
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
-SL_folds = 5
+SL_folds = 10
 
 #this will allow you to track progress
 progressr::handlers(global = TRUE)
@@ -54,9 +54,13 @@ plan(multisession)
 n_cores <- parallel::detectCores()
 
 # super learner libraries
-sl_lib <- c("SL.glmnet",
+sl_lib <- c("SL.biglasso",
             "SL.ranger",
             "SL.xgboost")
+
+library(SuperLearner)
+listWrappers(what = "SL")
+
 
 #Improve speed (if needed)
 
