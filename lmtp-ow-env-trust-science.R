@@ -710,6 +710,7 @@ print(W)
 # check shift
 f
 
+
 # model 1
 t2_env_climate_chg_real_z <- lmtp_tmle(
   data = df_clean,

@@ -78,9 +78,10 @@ colnames(dat)
 # get ids
 ids_2018 <- dat |>
   filter(year_measured == 1,
-         wave == 2018 &
-           !is.na("hours_") &
-           !is.na(hours_community)) |> # criteria, no missing
+         wave == 2018 #&
+       #    !is.na("hours_") &
+       #    !is.na(hours_community)
+         ) |> # criteria, no missing
   pull(id)
 
 # filter the original dataset for these IDs three waves
@@ -104,6 +105,7 @@ exposure_vars <-
 # process data
 
 
+table( dat$sample_origin_names_combined )
 
 dat_long_full  <- dat |>
   labelled::remove_val_labels() |>
@@ -116,7 +118,7 @@ dat_long_full  <- dat |>
     "year_measured",
     # "edu",
     "religion_church",
-    # "sample_origin_names_combined",
+    "sample_origin_names_combined",
     "education_level_coarsen",
     # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing)  Combined highschool levels See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
     "male",
@@ -424,11 +426,18 @@ dat_long_full  <- dat |>
     employed = as.numeric(as.character(employed))
   ) |>
   droplevels() |>
-  dplyr::rename(sample_weights = w_gend_age_ethnic) |>
-  dplyr::mutate(sample_origin = sample_origin_names_combined) |>  #shorter name
+  dplyr::rename(sample_weights = w_gend_age_ethnic, 
+                sample_origin =  sample_origin_names_combined) |>
+  dplyr::mutate(
+                family_time_binary = as.integer(ifelse(family_time > 0, 1, 0)),
+                friends_time_binary = as.integer(ifelse(friends_time > 0, 1, 0)),
+                community_time_binary = as.integer(ifelse(community_time > 0, 1, 0)))|>  #shorter name
   dplyr::select(
     -c(
       religion_church,
+      family_time,
+      friends_time,
+      community_time,
       hours_community,
       hours_family,
       hours_friends,
@@ -625,7 +634,7 @@ sd_volunteer <-
 sd_donations
 sd_volunteer
 
-
+dat$
 #
 # baseline_vars = c(
 #   "male",
@@ -727,12 +736,12 @@ dt_18 <- dat_long |>
 dat_long$charity_donate_log
 
 # check association only
-summary(lm(charity_donate_log ~ religion_church_round, data = dt_18))
-summary(lm(hours_charity_log ~ religion_church_round, data = dt_18))
+summary(lm(charity_donate ~ religion_church_round, data = dt_18))
+summary(lm(hours_charity ~ religion_church_round, data = dt_18))
 
 
-summary(lm(charity_donate_log ~ hours_community_sqrt_round, data = dt_18))
-summary(lm(hours_charity_log ~ hours_community_sqrt_round, data = dt_18))
+summary(lm(charity_donate~ hours_community_sqrt_round, data = dt_18))
+summary(lm(hours_charity~ hours_community_sqrt_round, data = dt_18))
 
 
 
@@ -747,21 +756,23 @@ summary(lm(hours_charity_log ~ hours_community_sqrt_round, data = dt_18))
 naniar::vis_miss(dt_18, warn_large_data = F)
 
 # Then, call the function without quotes around `baseline_vars`:
+base_var <- setdiff(baseline_vars, "censored")
+base_var
 fit_church_on_donate <-
   regress_with_covariates(
     dt_18,
-    outcome = "charity_donate_log",
+    outcome = "charity_donate",
     exposure = "religion_church_round",
-    baseline_vars = baseline_vars
+    baseline_vars = base_var
   )
 parameters::model_parameters(fit_church_on_donate)[2,]
 
 fit_church_on_volunteer <-
   regress_with_covariates(
     dt_18,
-    outcome = "hours_charity_log",
+    outcome = "hours_charity",
     exposure = "religion_church_round",
-    baseline_vars = baseline_vars
+    baseline_vars = base_var
   )
 parameters::model_parameters(fit_church_on_volunteer)[2,]
 
@@ -770,9 +781,9 @@ parameters::model_parameters(fit_church_on_volunteer)[2,]
 fit_socialising_on_donate <-
   regress_with_covariates(
     dt_18,
-    outcome = "charity_donate_log",
+    outcome = "charity_donate",
     exposure = "hours_community_sqrt_round",
-    baseline_vars = baseline_vars
+    baseline_vars = base_var
   )
 
 parameters::model_parameters(fit_socialising_on_donate)[2,]
@@ -781,11 +792,11 @@ parameters::model_parameters(fit_socialising_on_donate)[2,]
 fit_socialising_on_volunteer <-
   regress_with_covariates(
     dt_18,
-    outcome = "hours_charity_log",
+    outcome = "hours_charity",
     exposure = "hours_community_sqrt_round",
-    baseline_vars = baseline_vars_2
-  )[2,]
-parameters::model_parameters(fit_church_on_volunteer)[2,]
+    baseline_vars = base_var
+  )
+parameters::model_parameters(fit_socialising_on_volunteer)[2,]
 
 
 here_save(fit_church_on_donate, "fit_church_on_donate")
@@ -840,7 +851,7 @@ library(gtsummary)
 
 
 # select vars for baseline
-baseline_vars <- setdiff(dat_long_colnames, c('id', 'wave'))
+baseline_vars <- setdiff(dat_long_colnames, c(outcome_vars, 'id', 'wave'))
 
 # sort
 baseline_vars <- sort(baseline_vars)
@@ -947,6 +958,10 @@ source(
   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
 )
 
+dt_19<- dat_long |> 
+  filter(wave == 2019) |> 
+  select(c(religion_church_round, hours_community_sqrt_round)) 
+
 graph_density_of_exposure <-
   coloured_histogram_shift_range(
     dt_19,
@@ -973,21 +988,16 @@ ggsave(
 
 
 
-    # histogram socialising
-    # dt_positivity_full_socialising <- dat_long|>
-    #   filter(wave == 2018 | wave == 2019) |>
-    #   select(wave, id, hours_community_sqrt_round, sample_weights) |>
-    #   mutate(hours_community_sqrt_round = round(hours_community_sqrt_round,digits = 0))
+# histogram socialising
+# dt_positivity_full_socialising <- dat_long|>
+#   filter(wave == 2018 | wave == 2019) |>
+#   select(wave, id, hours_community_sqrt_round, sample_weights) |>
+#   mutate(hours_community_sqrt_round = round(hours_community_sqrt_round,digits = 0))
 
-dt_19_social  <-
-  dat_long |>
-  mutate(wave = as.numeric(wave)) |>
-  filter(year_measured == 1 & wave == 2)
+dt_19$hours_community_sqrt_round
     
-    
-graph_density_of_exposure_socialising <-
-  coloured_histogram_shift_range(
-    dt_19_social,
+graph_density_of_exposure_socialising <- coloured_histogram_shift_range(
+    dt_19,
     col_name = "hours_community_sqrt_round",
     binwidth = .25,
     range_highlight = c(0, 1.9),
@@ -1012,20 +1022,22 @@ ggsave(
   dpi = 600
 )
 
-    # impute baseline ---------------------------------------------------------
+# impute baseline ---------------------------------------------------------
 baseline_vars
 
 # impute baseline data (we use censoring for the outcomes)
 #colnames(dat_long)
 # function imputes only baseline not outcome
+
+devtools::install_github("go-bayes/margot", )
 prep_coop_all <-
- margot_wide_impute_baseline(
+ margot::margot_wide_impute_baseline(
     dat_long,
     baseline_vars = baseline_vars,
     exposure_var = exposure_var,
     outcome_vars = outcome_vars
   )
-
+yola
  # check mi model
 outlist <-
   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
@@ -1056,28 +1068,27 @@ nrow(prep_coop_all)
 
 # spit shine --------------------------------------------------------------
 
+df_wide_censored <-
+  prep_coop_all |>
+  mutate(
+    t0_eth_cat = as.factor(t0_eth_cat),
+    t0_education_level_coarsen = as.factor(t0_education_level_coarsen)
+  ) |>
+  relocate("t0_censored", .before = starts_with("t1_")) |>
+  relocate("t1_censored", .before = starts_with("t2_")) |> 
+  relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
+  relocate("t0_censored", .before = starts_with("t1_"))  |>
+  relocate("t1_censored", .before = starts_with("t2_"))
 
-df_clean <- df_wide_censored %>%
-  # step 1: adjust t0_censored based on NA in t1_ columns
-  mutate(t0_censored = ifelse(rowSums(is.na(
-    select(., starts_with("t1_"))
-  )) > 0, 0, t0_censored)) %>%
-  # step 2: adjust t1_censored based on NA in t2_ columns
-  mutate(t1_censored = ifelse(rowSums(is.na(
-    select(., starts_with("t2_"))
-  )) > 0, 0, t1_censored)) %>%
-  # step 3: if t0_censored is 0, set all t1_ and t2_ columns to NA
-  mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
-         across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) %>%
-  # step 4: if t1_censored is 0, set all t2_ columns to NA
-  mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .))) |>
-  # standardise variables
-  # mutate(across(
-  #   .cols = where(is.numeric),
-  #   .fns = ~ scale(.),
-  #   .names = "{.col}_z"
-  # )) %>%
-  # select variables
+# cehck
+naniar::vis_miss(df_wide_censored, warn_large_data = FALSE)
+
+
+df_clean <- df_wide_censored|>
+ # create binary outcomes
+  mutate(
+    t0_eth_cat = as.factor(t0_eth_cat)) |> 
+# select variables
   dplyr::mutate(
     across(
       where(is.numeric) &
@@ -1087,20 +1098,16 @@ df_clean <- df_wide_censored %>%
         !t0_hours_friends_sqrt_round &
         !t0_hours_community_sqrt_round &
         !t0_sample_weights &
-        !t1_religion_church_round,
-        # !t2_charity_donate &!t2_family_time_binary &!t2_friends_time_binary &!t2_community_time_binary &!t2_gratitude,
-        #&
-        #t2_hours_charity,
+        !t1_religion_church_round & 
+        !t2_charity_donate &
+        !t2_family_time_binary &
+        !t2_friends_time_binary &
+        !t2_community_time_binary &
+        !t2_hours_charity,
         ~ scale(.x),
       .names = "{col}_z"
     )
-  ) |>
-  mutate(
-    t0_eth_cat = as.factor(t0_eth_cat),
-    t2_family_time_binary = as.integer(ifelse(t2_family_time > 0, 1, 0)),
-    t2_friends_time_binary = as.integer(ifelse(t2_friends_time > 0, 1, 0)),
-    t2_community_time_binary = as.integer(ifelse(t2_community_time > 0, 1, 0))
-  ) |>
+  )|>
   select(
     where(is.factor),
     t0_censored,
@@ -1117,24 +1124,129 @@ df_clean <- df_wide_censored %>%
     t2_community_time_binary,
     ends_with("_z")
   ) |>
-  # make religious numeric
-
-  # get order in shape it is needed
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
   relocate("t0_censored", .before = starts_with("t1_"))  |>
   relocate("t1_censored", .before = starts_with("t2_")) |> 
   data.frame()
 
-push_mods
-# save data
-here_save(df_clean, "df_clean")
+
+
+extended_select_and_transform <- function(df, names_base, baseline_vars, outcome, exposures, censored_vars) {
+  # Utilize select_and_rename_cols to select and rename columns
+  final_cols <- select_and_rename_cols(names_base, baseline_vars, outcome)
+  
+  # Append exposure and censored variables to the list
+  final_cols <- c(final_cols, exposures, censored_vars)
+  
+  # Filter the dataframe based on the final_cols, then apply transformations
+  df_filtered <- df %>%
+    select(all_of(final_cols)) %>%
+    mutate(
+      t0_censored = ifelse(rowSums(is.na(select(., starts_with("t1_")))) > 0, 0, t0_censored),
+      t1_censored = ifelse(rowSums(is.na(select(., starts_with("t2_")))) > 0, 0, t1_censored)
+    ) %>%
+    mutate(
+      across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
+      across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
+      across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .))
+    ) %>%
+    relocate(starts_with("t0_"), .before = starts_with("t1_")) %>%
+    relocate(t0_censored, .before = starts_with("t1_")) %>%
+    relocate(t1_censored, .before = starts_with("t2_"))
+  
+  return(df_filtered)
+}
+
 
 # visualis missingness
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 
+push_mods
+# save data
+here_save(df_clean, "df_clean")
+
+names_base <-
+  df_clean |> select(starts_with("t0"),
+                     -t0_sample_weights,
+                     -t0_censored) |> colnames()
+
+
+exposure_var
+
+# get names
+
+# get names of baseline vars
+names_base_tab <- setdiff(baseline_vars, dat_long)
+names_base_tab
+
+# remove baseline vars
+names_base_tab_without_outcomes <- setdiff(baseline_vars, outcome_vars)
+
+
+# obtain baseline + exposure 
+names_base_with_exposure <- c(names_base_tab_without_outcomes, "religion_church_round", "censored")
+
+# select unique vars
+names_base_with_exposure <- unique(names_base_with_exposure)
+
+# for easy of inspection
+
+names_base_with_exposure <- sort(names_base_with_exposure)
+
+# view
+names_base_with_exposure
+
+# ##
+# selected_base_cols <- dt_18 %>% select(all_of(names_base_with_exposure)) #|>  dplyr::select(-sample_weights) 
+# str(selected_base_cols)
+# nrow(selected_base_cols)
+
+selected_base_cols
+
+
+names_base_t2_smoker_binary <-
+  select_and_rename_cols(names_base = names_base,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_warmth_muslims_z")
+
+
+
+
+extended_select_and_transform <- function(df, names_base, baseline_vars, outcome, exposures, censored_vars) {
+  # Utilize select_and_rename_cols to select and rename columns
+  final_cols <- select_and_rename_cols(names_base, baseline_vars, outcome)
+  
+  # Append exposure and censored variables to the list
+  final_cols <- c(final_cols, exposures, censored_vars)
+  
+  # Filter the dataframe based on the final_cols, then apply transformations
+  df_filtered <- df %>%
+    select(all_of(final_cols)) %>%
+    mutate(
+      t0_censored = ifelse(rowSums(is.na(select(., starts_with("t1_")))) > 0, 0, t0_censored),
+      t1_censored = ifelse(rowSums(is.na(select(., starts_with("t2_")))) > 0, 0, t1_censored)
+    ) %>%
+    mutate(
+      across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
+      across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
+      across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .))
+    ) %>%
+    relocate(starts_with("t0_"), .before = starts_with("t1_")) %>%
+    relocate(t0_censored, .before = starts_with("t1_")) %>%
+    relocate(t1_censored, .before = starts_with("t2_"))
+  
+  return(df_filtered)
+}
+
+
+
+
+
+
 # read data --  start here if previous work already done
 df_clean <- here_read("df_clean")
 
+str(df_clean)
 
 
 # spit and shine
