@@ -550,7 +550,7 @@ prep_coop_all <- here_read("prep_coop_all")
 
 head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
-dev.off()
+`dev.off()
 
 # prepare for models
 
