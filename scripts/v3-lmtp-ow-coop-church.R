@@ -1487,7 +1487,6 @@ here_save(t2_hours_charity_z_zero, "t2_hours_charity_z_zero")
 
 
 #check
-lmtp_contrast(t2_m_hours_charity_z_gain, ref = m_hours_charity_z_lose, type = "additive")
 lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
 
 
@@ -1547,6 +1546,7 @@ t2_charity_donate_z_zero <- lmtp_tmle(
 
 here_save(t2_charity_donate_z_zero, "t2_charity_donate_z_zero")
 
+lmtp_contrast(t2_charity_donate_z_gain, ref = t2_charity_donate_z_zero, type = "additive")
 
 
 #############################
@@ -1670,7 +1670,7 @@ t2_belong_z_zero <- lmtp_tmle(
   parallel = n_cores - 1
 )
 
-here_save(t2_belong_z_lose, "t2_belong_z_lose")
+here_save(t2_belong_z_zero, "t2_belong_z_zero")
 
 
 
