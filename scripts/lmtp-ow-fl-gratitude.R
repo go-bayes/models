@@ -1257,12 +1257,6 @@ df_clean_test <- df_clean |>
 # }
 
 
-names_base_t2_smoker_binary <-
-  select_and_rename_cols(names_base = names_base,
-                         baseline_vars = baseline_vars,
-                         outcome = "t2_smoker_binary")
-names_base_t2_smoker_binary
-
 timing_info <- system.time({
   t2_smoker_binary <- lmtp_tmle(
     data = df_clean,

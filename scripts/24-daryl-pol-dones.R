@@ -281,7 +281,6 @@ n_participants <- n_unique(dat_long$id) #32058 # reports hours with
 # check
 n_participants
 
-push_mods
 # save n
 here_save(n_participants, "n_participants")
           
@@ -601,22 +600,7 @@ df_clean <- df_wide_censored %>%
     .names = "{.col}_z"
   )) %>%
   # select variables
-  select(
-    where(is.factor),
-    t0_censored,
-    t0_w_gend_age_ethnic,
-    t0_religion_religious,
-    t1_censored,
-    t1_religion_religious,
-    t2_political_conservative,
-    t2_pol_wing,
-    ends_with("_z"),
-    -t0_w_gend_age_ethnic_z,
-    -t0_religion_religious_z,
-    -t1_religion_religious_z,
-    -t0_censored_z,
-    -t1_censored_z
-  ) %>%
+  
   # make religious numeric
   mutate(
     t0_religion_religious = as.numeric(t0_religion_religious),
