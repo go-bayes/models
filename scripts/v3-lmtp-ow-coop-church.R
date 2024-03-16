@@ -1123,7 +1123,6 @@ df_clean <- df_wide_censored %>%
   mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
          across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) %>%
   mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .)))|>
-  
 # select variables
   dplyr::mutate(
     across(
@@ -1142,7 +1141,7 @@ df_clean <- df_wide_censored %>%
         !t1_religion_church_round &
         !t1_hours_community_round &
         !t1_censored &
-        !t2_charity_donate &
+       # !t2_charity_donate &
         !t2_family_time_binary &
         !t2_friends_time_binary &
         !t2_community_time_binary &
@@ -1154,22 +1153,33 @@ df_clean <- df_wide_censored %>%
       .names = "{.col}_z"
     )
   ) |>
-  select(-t0_charity_donate,
-         -t0_hours_charity) |> 
-  # select(
-  #   where(is.factor),
-  #   t0_censored,
-  #   t0_sample_weights,
-  #   t0_religion_church_round,
-  #   t1_censored,
-  #   t1_religion_church_round,
-  #   # t2_charity_donate,
-  #   # t2_hours_charity,
-  #   t2_family_time_binary,
-  #   t2_friends_time_binary,
-  #   t2_community_time_binary,
-  #   ends_with("_z")
-  # ) |>
+  # select(-t0_charity_donate,
+  #        -t0_hours_charity) |> 
+  select(
+    where(is.factor),
+    t0_hours_community_round,
+    t0_family_time_binary,
+    t0_friends_time_binary,
+    t0_community_time_binary,
+    t0_family_money_binary,
+    t0_friends_money_binary,
+    t0_community_money_binary,
+    t0_sample_weights,
+    t0_religion_church_round,
+    t0_censored,
+    t1_religion_church_round,
+    t1_hours_community_round,
+    t1_censored,
+    # t2_charity_donate,
+    # t2_hours_charity,
+    t2_family_time_binary,
+    t2_friends_time_binary,
+    t2_community_time_binary,
+    t2_family_money_binary,
+    t2_friends_money_binary,
+    t2_community_money_binary,
+    ends_with("_z")
+   ) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
   relocate("t0_censored", .before = starts_with("t1_"))  |>
   relocate("t1_censored", .before = starts_with("t2_"))
@@ -1182,6 +1192,8 @@ here_save(df_clean, "df_clean")
 # read data --  start here if previous work already done
 df_clean <- here_read("df_clean")
 
+colnames(df_clean)
+str(df_clean)
 # names of vars for modelling
 
 
@@ -1286,7 +1298,7 @@ gain_A <- function(data, trt) {
     ifelse(data[[trt]] > 0, 0, data[[trt]])
   }
   
-  # Assuming trt is a variable name passed as a string to the function
+  #  trt is a variable name passed as a string to the function
   
   ifelse(trt == "t1_religion_religious",
          mtp_one_contrast(data, trt),
@@ -1308,7 +1320,7 @@ lose_A <- function(data, trt) {
     ifelse(data[[trt]] <= 4, 4,  data[[trt]])
   }
   
-  # Assuming trt is a variable name passed as a string to the function
+  #  trt is a variable name passed as a string to the function
   
   ifelse(trt == "t1_religion_religious",
          mtp_one_contrast(data, trt),
@@ -1329,15 +1341,12 @@ zero_A <- function(data, trt) {
     ifelse(data[[trt]] > 0, 0, data[[trt]])
   }
   
-  # Assuming trt is a variable name passed as a string to the function
+  #  trt is a variable name passed as a string to the function
   
   ifelse(trt == "t1_religion_religious",
          mtp_one_contrast(data, trt),
          data[[trt]])
 }
-
-
-
 
 
 # BONUS: progressr progress bars!
@@ -1349,13 +1358,16 @@ n_cores <-
   parallel::detectCores()
 
 
-# charity models ----------------------------------------------------------
+# church: charity models ----------------------------------------------------------
 
 A
 C
 
 
 library("ranger")
+
+
+# test data 
 df_clean_slice <- df_clean |>
   slice_head(n = 1000) |>
   as.data.frame()
@@ -1364,6 +1376,7 @@ colnames(df_clean_slice)
 library(SuperLearner)
 library(xgboost)
 library(ranger)
+library(biglasso)
 # model charitable giving in population
 # measure time taken to run the model
 # 
@@ -1373,11 +1386,16 @@ library(ranger)
 #                          outcome = "t2_hours_charity_z")
 # 
 # names_base_t2_hours_charity_z
-
-"SL.ranger"
 m_hours_charity_z_test
-gain_A
-A
+
+# sl_lib <- c("SL.glmnet",
+#             "SL.ranger", #
+#             "SL.xgboost") #
+library(randomForest)
+
+sl_lib <- c("SL.biglasso",
+            "SL.ranger", #
+            "SL.xgboost") #
 
 timing_info <-
   system.time({
@@ -1392,15 +1410,13 @@ timing_info <-
       folds = 10,
       outcome_type = "continuous",
       weights = df_clean_slice$t0_sample_weights,
-      learners_trt = "SL.ranger",
-      learners_outcome = "SL.ranger",
+      learners_trt = "SL.xgboost",  # ranger much faster
+      learners_outcome = "SL.xgboost",
       parallel = n_cores
     )
   })
-sl_lib_ranger
-m_hours_charity_z_test
-timing_info
 
+m_hours_charity_z_test
 
 # print timing info
 print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
@@ -1410,7 +1426,7 @@ m_hours_charity
 
 
 
-m_hours_charity_z_gain <- lmtp_tmle(
+t2_m_hours_charity_z_gain <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
   baseline = names_base,
   shift = gain_A,
@@ -1425,13 +1441,36 @@ m_hours_charity_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(m_hours_charity_z_gain, "m_hours_charity_z_gain")
+here_save(t2_m_hours_charity_z_gain, "t2_m_hours_charity_z_gain")
 
 
-m_hours_charity_z_lose <- lmtp_tmle(
+
+# t2_m_hours_charity_z_lose <- lmtp_tmle(
+#   outcome = "t2_hours_charity_z",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = SL.ranger,
+#   learners_outcome = SL.ranger,
+#   parallel = n_cores - 1
+# )
+# 
+# here_save(t2_m_hours_charity_z_lose, "t2_m_hours_charity_z_lose")
+# t2_m_hours_charity_z_lose
+# here_save(t2_m_hours_charity_z_lose, "t2_m_hours_charity_z_lose")
+
+
+
+t2_hours_charity_z_zero <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
   baseline = names_base,
-  shift = lose_A,
+  shift = zero_A,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1439,16 +1478,59 @@ m_hours_charity_z_lose <- lmtp_tmle(
   folds = 10,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib_ranger,
-  learners_outcome = sl_lib_ranger,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
   parallel = n_cores - 1
 )
 
-here_save(m_hours_charity_z_lose, "m_hours_charity_z_lose")
-m_hours_charity_z_lose
+here_save(t2_hours_charity_z_zero, "t2_hours_charity_z_zero")
 
-m_hours_charity_z_zero <- lmtp_tmle(
-  outcome = "t2_hours_charity_z",
+
+#check
+lmtp_contrast(t2_m_hours_charity_z_gain, ref = m_hours_charity_z_lose, type = "additive")
+lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
+
+
+# church donations --------------------------------------------------------
+t2_charity_donate_z_gain <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_charity_donate_z_gain, "t2_charity_donate_z_gain")
+t2_charity_donate_z_gain
+# 
+# t2_charity_donate_z_lose <- lmtp_tmle(
+#   outcome = "t2_charity_donate_z",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib_ranger,
+#   learners_outcome = sl_lib_ranger,
+#   parallel = n_cores - 1
+# )
+# 
+# here_save(t2_charity_donate_z_lose, "t2_charity_donate_z_lose")
+# t2_charity_donate_z_lose
+
+t2_charity_donate_z_zero <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1463,29 +1545,200 @@ m_hours_charity_z_zero <- lmtp_tmle(
   parallel = n_cores - 1
 )
 
-here_save(m_hours_charity_z_zero, "m_hours_charity_z_zero")
+here_save(t2_charity_donate_z_zero, "t2_charity_donate_z_zero")
+
+
+
+#############################
+# church subjective support -----------------------------------------------
+#############################
+
+
+
+# church soc support ------------------------------------------------------
+
+
+t2_support_z_gain <- lmtp_tmle(
+  outcome = "t2_support_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_support_z_gain, "t2_support_z_gain")
+
+# 
+# t2_support_z_lose <- lmtp_tmle(
+#   outcome = "t2_support_z",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib_ranger,
+#   learners_outcome = sl_lib_ranger,
+#   parallel = n_cores - 1
+# )
+# 
+# here_save(t2_support_z_lose, "t2_support_z_lose")
+# t2_support_z_lose
+
+t2_support_z_zero <- lmtp_tmle(
+  outcome = "t2_support_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores - 1
+)
+
+here_save(t2_support_z_zero, "t2_support_z_zero")
+
+
+# church soc belong -------------------------------------------------------
+
+
+t2_belong_z_gain <- lmtp_tmle(
+  outcome = "t2_belong_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_belong_z_gain, "t2_belong_z_gain")
+
+# 
+# t2_belong_z_lose <- lmtp_tmle(
+#   outcome = "t2_belong_z",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib_ranger,
+#   learners_outcome = sl_lib_ranger,
+#   parallel = n_cores - 1
+# )
+# 
+# here_save(t2_belong_z_lose, "t2_belong_z_lose")
+# t2_belong_z_lose
+
+t2_belong_z_zero <- lmtp_tmle(
+  outcome = "t2_belong_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores - 1
+)
+
+here_save(t2_belong_z_lose, "t2_belong_z_lose")
 
 
 
 
-
-# revealed support --------------------------------------------------------
-
-!t2_charity_donate &
-  !t2_family_time_binary &
-  !t2_friends_time_binary &
-  !t2_community_time_binary &
-  !t2_family_money_binary&
-  !t2_friends_money_binary &
-  !t2_community_money_binary,
+# church neighbourhood ----------------------------------------------------
 
 
 
-# family time help received -----------------------------------------------
+t2_neighbourhood_community_z_gain <- lmtp_tmle(
+  outcome = "t2_neighbourhood_community_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_neighbourhood_community_z_gain, "t2_neighbourhood_community_z_gain")
+
+# 
+# t2_neighbourhood_community_z_lose <- lmtp_tmle(
+#   outcome = "t2_neighbourhood_community_z",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = sl_lib_ranger,
+#   learners_outcome = sl_lib_ranger,
+#   parallel = n_cores - 1
+# )
+
+# here_save(t2_neighbourhood_community_z_lose, "t2_neighbourhood_community_z_lose")
+# t2_neighbourhood_community_z_lose
+
+t2_neighbourhood_community_z_lose_zero <- lmtp_tmle(
+  outcome = "t2_neighbourhood_community_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores - 1
+)
+
+here_save(t2_neighbourhood_community_z_lose_zero, "t2_neighbourhood_community_z_lose_zero")
 
 
 
-m_t2_family_time_binary_gain <- lmtp_tmle(
+# church: family time help received -----------------------------------------------
+
+t2_family_time_binary_gain <- lmtp_tmle(
   outcome = "t2_family_time_binary",
   baseline = names_base,
   shift = gain_A,
@@ -1501,32 +1754,32 @@ m_t2_family_time_binary_gain <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_family_time_binary_gain, "m_t2_family_time_binary_gain")
-m_t2_family_time_binary_gain
+here_save(t2_family_time_binary_gain, "t2_family_time_binary_gain")
+t2_family_time_binary_gain
+
+# 
+# t2_family_time_binary_lose <- lmtp_tmle(
+#   outcome = "t2_family_time_binary",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "binomial",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = "SL.ranger",
+#   learners_outcome = "SL.ranger",
+#   parallel = n_cores-1
+# )
+# 
+# here_save(t2_family_time_binary_lose, "t2_family_time_binary_lose")
+# t2_family_time_binary_lose
 
 
-m_t2_family_time_binary_lose <- lmtp_tmle(
-  outcome = "t2_family_time_binary",
-  baseline = names_base,
-  shift = lose_A,
-  data = df_clean,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
-  parallel = n_cores-1
-)
 
-here_save(m_t2_family_time_binary_lose, "m_t2_family_time_binary_lose")
-m_t2_family_time_binary_lose
-
-
-
-m_t2_family_time_binary_zero <- lmtp_tmle(
+t2_family_time_binary_zero <- lmtp_tmle(
   outcome = "t2_family_time_binary",
   baseline = names_base,
   shift = zero_A,
@@ -1542,14 +1795,14 @@ m_t2_family_time_binary_zero <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_family_time_binary_zero, "m_t2_family_time_binary_zero")
-m_t2_family_time_binary_zero
+here_save(t2_family_time_binary_zero, "t2_family_time_binary_zero")
+t2_family_time_binary_zero
 
 
 
-# friends help time received ----------------------------------------------
+# church: friends help time received ----------------------------------------------
 
-m_t2_friends_time_binary_gain <- lmtp_tmle(
+t2_friends_time_binary_gain <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
   baseline = names_base,
   shift = gain_A,
@@ -1565,32 +1818,32 @@ m_t2_friends_time_binary_gain <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_friends_time_binary_gain, "m_t2_friends_time_binary_gain")
-m_t2_friends_time_binary_gain
+here_save(t2_friends_time_binary_gain, "t2_friends_time_binary_gain")
+t2_friends_time_binary_gain
+# 
+# 
+# t2_friends_time_binary_lose <- lmtp_tmle(
+#   outcome = "t2_friends_time_binary",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "binomial",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = "SL.ranger",
+#   learners_outcome = "SL.ranger",
+#   parallel = n_cores-1
+# )
+# 
+# here_save(t2_friends_time_binary_lose, "t2_friends_time_binary_lose")
+# t2_friends_time_binary_lose
 
 
-m_t2_friends_time_binary_lose <- lmtp_tmle(
-  outcome = "t2_friends_time_binary",
-  baseline = names_base,
-  shift = lose_A,
-  data = df_clean,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
-  parallel = n_cores-1
-)
 
-here_save(m_t2_friends_time_binary_lose, "m_t2_friends_time_binary_lose")
-t2_friends_time_binary_lose
-
-
-
-m_t2_friends_time_binary_zero <- lmtp_tmle(
+t2_friends_time_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
   baseline = names_base,
   shift = zero_A,
@@ -1606,15 +1859,14 @@ m_t2_friends_time_binary_zero <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_friends_time_binary_zero, "m_t2_friends_time_binary_zero")
-m_t2_friends_time_binary_zero
+here_save(t2_friends_time_binary_zero, "t2_friends_time_binary_zero")
+t2_friends_time_binary_zero
 
 
 
 
-# community time help received --------------------------------------------
-t2_community_time_binary
-m_t2_community_time_binary_gain <- lmtp_tmle(
+# church: community time help received --------------------------------------------
+t2_community_time_binary_gain <- lmtp_tmle(
   outcome = "t2_community_time_binary",
   baseline = names_base,
   shift = gain_A,
@@ -1630,32 +1882,32 @@ m_t2_community_time_binary_gain <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_community_time_binary_gain, "m_t2_community_time_binary_gain")
-m_t2_community_time_binary_gain
+here_save(t2_community_time_binary_gain, "t2_community_time_binary_gain")
+t2_community_time_binary_gain
+
+# 
+# t2_community_time_binary_lose <- lmtp_tmle(
+#   outcome = "t2_community_time_binary",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "binomial",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = "SL.ranger",
+#   learners_outcome = "SL.ranger",
+#   parallel = n_cores-1
+# )
+# 
+# here_save(t2_community_time_binary_lose, "t2_community_time_binary_lose")
+# t2_community_time_binary_lose
+# 
 
 
-m_t2_community_time_binary_lose <- lmtp_tmle(
-  outcome = "t2_community_time_binary",
-  baseline = names_base,
-  shift = lose_A,
-  data = df_clean,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
-  parallel = n_cores-1
-)
-
-here_save(m_t2_community_time_binary_lose, "m_t2_community_time_binary_lose")
-m_t2_community_time_binary_lose
-
-
-
-m_t2_community_time_binary_zero <- lmtp_tmle(
+t2_community_time_binary_zero <- lmtp_tmle(
   outcome = "t2_community_time_binary",
   baseline = names_base,
   shift = zero_A,
@@ -1671,23 +1923,19 @@ m_t2_community_time_binary_zero <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_community_time_binary_zero, "m_t2_community_time_binary_zero")
-m_t2_community_time_binary_zero
-
-
-
-
+here_save(t2_community_time_binary_zero, "t2_community_time_binary_zero")
+t2_community_time_binary_zero
 
 
 
 # money -------------------------------------------------------------------
 
 
-# friends money received --------------------------------------------------
+# church_friends money received --------------------------------------------------
 
 
 
-m_t2_family_money_binary_gain <- lmtp_tmle(
+t2_family_money_binary_gain <- lmtp_tmle(
   outcome = "t2_family_money_binary",
   baseline = names_base,
   shift = gain_A,
@@ -1703,32 +1951,32 @@ m_t2_family_money_binary_gain <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_family_money_binary_gain, "m_t2_family_money_binary_gain")
-m_t2_family_money_binary_gain
+here_save(t2_family_money_binary_gain, "t2_family_money_binary_gain")
+t2_family_money_binary_gain
+# 
+# 
+# t2_family_money_binary_lose <- lmtp_tmle(
+#   outcome = "t2_family_money_binary",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "binomial",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = "SL.ranger",
+#   learners_outcome = "SL.ranger",
+#   parallel = n_cores-1
+# )
+
+# here_save(t2_family_money_binary_lose, "t2_family_money_binary_lose")
+# t2_family_money_binary_lose
 
 
-m_t2_family_money_binary_lose <- lmtp_tmle(
-  outcome = "t2_family_money_binary",
-  baseline = names_base,
-  shift = lose_A,
-  data = df_clean,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
-  parallel = n_cores-1
-)
 
-here_save(m_t2_family_money_binary_lose, "m_t2_family_money_binary_lose")
-m_t2_family_money_binary_lose
-
-
-
-m_t2_family_money_binary_zero <- lmtp_tmle(
+t2_family_money_binary_zero <- lmtp_tmle(
   outcome = "t2_family_money_binary",
   baseline = names_base,
   shift = zero_A,
@@ -1744,14 +1992,14 @@ m_t2_family_money_binary_zero <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_family_money_binary_zero, "m_t2_family_money_binary_zero")
-m_t2_family_money_binary_zero
+here_save(t2_family_money_binary_zero, "t2_family_money_binary_zero")
+t2_family_money_binary_zero
 
 
 
-# friends help time received ----------------------------------------------
+# church: friends help money received ----------------------------------------------
 
-m_t2_friends_money_binary_gain <- lmtp_tmle(
+t2_friends_money_binary_gain <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
   baseline = names_base,
   shift = gain_A,
@@ -1767,32 +2015,32 @@ m_t2_friends_money_binary_gain <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_friends_money_binary_gain, "m_t2_friends_money_binary_gain")
-m_t2_friends_money_binary_gain
+here_save(t2_friends_money_binary_gain, "t2_friends_money_binary_gain")
+t2_friends_money_binary_gain
+# 
+# 
+# t2_friends_money_binary_lose <- lmtp_tmle(
+#   outcome = "t2_friends_money_binary",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "binomial",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = "SL.ranger",
+#   learners_outcome = "SL.ranger",
+#   parallel = n_cores-1
+# )
+# 
+# here_save(t2_friends_money_binary_lose, "t2_friends_money_binary_lose")
+# t2_friends_money_binary_lose
 
 
-m_t2_friends_money_binary_lose <- lmtp_tmle(
-  outcome = "t2_friends_money_binary",
-  baseline = names_base,
-  shift = lose_A,
-  data = df_clean,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
-  parallel = n_cores-1
-)
 
-here_save(m_t2_friends_money_binary_lose, "m_t2_friends_money_binary_lose")
-m_t2_friends_money_binary_lose
-
-
-
-m_t2_friends_money_binary_zero <- lmtp_tmle(
+t2_friends_money_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
   baseline = names_base,
   shift = zero_A,
@@ -1808,16 +2056,15 @@ m_t2_friends_money_binary_zero <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_friends_money_binary_zero, "m_t2_friends_money_binary_zero")
-m_t2_friends_money_binary_zero
+here_save(t2_friends_money_binary_zero, "t2_friends_money_binary_zero")
+t2_friends_money_binary_zero
 
 
 
 
-# community time help received --------------------------------------------
-t2_community_time_binary
-m_t2_community_time_binary_gain <- lmtp_tmle(
-  outcome = "t2_community_time_binary",
+# church: community money help received --------------------------------------------
+t2_community_money_binary_gain <- lmtp_tmle(
+  outcome = "t2_community_money_binary",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1832,33 +2079,33 @@ m_t2_community_time_binary_gain <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_community_time_binary_gain, "m_t2_community_time_binary_gain")
-m_t2_community_time_binary_gain
+here_save(t2_community_money_binary_gain, "t2_community_money_binary_gain")
+t2_community_money_binary_gain
+
+# 
+# t2_community_money_binary_lose <- lmtp_tmle(
+#   outcome = "t2_community_money_binary",
+#   baseline = names_base,
+#   shift = lose_A,
+#   data = df_clean,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "binomial",
+#   weights = df_clean$t0_sample_weights,
+#   learners_trt = "SL.ranger",
+#   learners_outcome = "SL.ranger",
+#   parallel = n_cores-1
+# )
+# 
+# here_save(t2_community_money_binary_lose, "t2_community_money_binary_lose")
+# t2_community_money_binary_lose
+# 
 
 
-m_t2_community_time_binary_lose <- lmtp_tmle(
-  outcome = "t2_community_time_binary",
-  baseline = names_base,
-  shift = lose_A,
-  data = df_clean,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
-  learners_trt = "SL.ranger",
-  learners_outcome = "SL.ranger",
-  parallel = n_cores-1
-)
-
-here_save(m_t2_community_time_binary_lose, "m_t2_community_time_binary_lose")
-m_t2_community_time_binary_lose
-
-
-
-m_t2_community_time_binary_zero <- lmtp_tmle(
-  outcome = "t2_community_time_binary",
+t2_community_money_binary_zero <- lmtp_tmle(
+  outcome = "t2_community_money_binary",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1873,18 +2120,9 @@ m_t2_community_time_binary_zero <- lmtp_tmle(
   parallel = n_cores-1
 )
 
-here_save(m_t2_community_time_binary_zero, "m_t2_community_time_binary_zero")
-m_t2_community_time_binary_zero
+here_save(t2_community_money_binary_zero, "t2_community_money_binary_zero")
+t2_community_money_binary_zero
 
 
-
-
-
-
-# family money received ---------------------------------------------------
-
-
-
-# community money received ------------------------------------------------
 
 
