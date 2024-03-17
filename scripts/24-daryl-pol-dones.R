@@ -859,7 +859,7 @@ diff_cols
 
 
 # remove attributes:
-df_clean <- data.frame(lapply(df_clean, function(x) {
+df_remove_attributes <- data.frame(lapply(df_clean, function(x) {
   # Check if it's a numeric vector with attributes to remove
   if (is.numeric(x) && length(attributes(x)) > 1) {
     # Remove attributes by converting to a vector
