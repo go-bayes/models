@@ -463,8 +463,9 @@ dat_long_colnames
 # set baseline exposure and outcomes --------------------------------------
 
 exposure_var = c("religion_church_round",
-                 "censored",
-                 "hours_community_round") #
+                 "censored"#,
+                # "hours_community_round"
+                ) #
 
 
 # set outcomes for prosocial domain
@@ -505,7 +506,7 @@ baseline_vars <-
           c("id","wave"))
           
 # c(outcome_vars, 'id', 'wave'))
-
+baseline_vars
 baseline_vars <- sort(baseline_vars)
 
 baseline_vars
@@ -636,6 +637,7 @@ sd_donations <-
 sd_volunteer <-
   sd(dt_outcome$hours_charity, na.rm = TRUE)
 
+
 # save for manuscript
 here_save(sd_donations, "sd_donations")
 here_save(sd_volunteer, "sd_volunteer")
@@ -650,7 +652,7 @@ sd_volunteer <-
 sd_donations
 sd_volunteer
 
-dat$#
+#dat#
   # baseline_vars = c(
   #   "male",
   #   "age",
@@ -826,30 +828,24 @@ library(gtsummary)
 
 
 # get names
+base_var <-
+  setdiff(baseline_vars, c("censored", "sample_weights"))
+base_var
 
-names_base_sorted <- sort(base_var)
-names_base_final <-
-  c("religion_church_round",
-    "hours_community_round",
-    names_base_sorted)
 
-names_base_final
-
-##
+# prepare df
 selected_base_cols <-
-  dt_18 |> select(all_of(names_base_final)) #|>  dplyr::select(-sample_weights)
-str(selected_base_cols)
-nrow(selected_base_cols)
+  dt_18 |> select(all_of(base_var)) #
 
+
+#check
 colnames(selected_base_cols)
 
+#chck
 selected_base_cols
 # baseline table
+
 library(gtsummary)
-
-
-
-
 
 table_baseline <- selected_base_cols |> 
   janitor::clean_names(case = "title") |> 
@@ -874,6 +870,119 @@ table_baseline
 # save baseline
 here_save(table_baseline, "table_baseline")
     
+# 
+
+# table exposure ----------------------------------------------------------
+
+# get first and second wave
+dt_18_19 <- dat_long_full |> 
+  dplyr::filter(wave == 2018 | wave == 2019) |> 
+  droplevels()
+
+# get vars.
+selected_exposure_cols <-
+  dt_18_19 %>% select(
+    c(
+      "religion_church_round",
+      "alert_level_combined",
+      "wave"
+    )
+  )
+
+# check
+str(selected_exposure_cols)
+
+
+library(gtsummary)
+
+table_exposures <- selected_exposure_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+  #  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Exposure Variables by Wave**") %>%  # Update the column header
+  bold_labels()
+
+table_exposures
+
+
+# save baseline
+here_save(table_exposures, "table_exposures")
+table_exposures <- here_read("table_exposures")
+
+table_exposures
+
+
+# outcome table -----------------------------------------------------------
+dt_18_20 <- dat_long_full |> 
+  dplyr::filter(wave == 2018 | wave == 2020) |> 
+  droplevels()
+
+names_outcomes_tab <- setdiff(outcome_vars, dt_18_20)
+names_outcomes_sorted <- sort(names_outcomes_tab)
+names_outcomes_final <- names_outcomes_sorted # consistent workflow
+
+names_outcomes_final
+
+names_outcomes_final
+
+
+
+# names_outcomes_final
+# better names
+selected_outcome_cols <-
+  dt_18_20 %>% select(all_of(names_outcomes_final),
+                      wave) |>
+  mutate(Volunteers_binary = factor(ifelse(hours_charity > 0, "yes", "no"),
+                                    levels = c("no", "yes"))) |> 
+  rename(
+    Social_belonging = belong,
+    Annual_charity = charity_donate,
+    Volunteering_hours = hours_charity,
+    Community_gives_money = community_money_binary,
+    Community_gives_time = community_time_binary,
+    Family_gives_money = family_money_binary,
+    Family_gives_time = family_time_binary,
+    Friends_give_money = friends_money_binary,
+    Friends_give_time = friends_time_binary,
+    Social_support = support,
+    Sense_neighbourhood_community = neighbourhood_community
+  )
+
+# order names correctly
+selected_outcome_cols <- selected_outcome_cols %>%
+  select(sort(names(selected_outcome_cols)))
+
+# checks
+str(selected_outcome_cols)
+colnames(selected_outcome_cols)
+
+table_outcomes <- selected_outcome_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+  #  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Outcome Variables by Wave**") %>%  # Update the column header
+  bold_labels()
+
+table_outcomes
+
+
+here_save(table_outcomes, "table_outcomes")
+table_outcomes <- here_read("table_outcomes")
+
+
+
 
 ## all outcomes
 
@@ -951,6 +1060,7 @@ source("/Users/joseph/GIT/templates/functions/funs.R")
 source(
   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
 )
+devtools::install_github("go-bayes/margot")
 
 dt_19 <- dat_long |>
   filter(wave == 2019) |>
@@ -1421,8 +1531,7 @@ m_hours_charity_z_test
 # print timing info
 print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
 m_hours_charity
-# here_save(m_hours_charity, "m_hours_charity")
-#
+
 
 
 
@@ -1443,7 +1552,7 @@ t2_m_hours_charity_z_gain <- lmtp_tmle(
 )         
 here_save(t2_m_hours_charity_z_gain, "t2_m_hours_charity_z_gain")
 
-
+here_read("t2_m_hours_charity_z_gain")
 
 # t2_m_hours_charity_z_lose <- lmtp_tmle(
 #   outcome = "t2_hours_charity_z",
@@ -1487,6 +1596,8 @@ here_save(t2_hours_charity_z_zero, "t2_hours_charity_z_zero")
 
 
 #check
+here_read("t2_m_hours_charity_z_gain")
+here_read("t2_hours_charity_z_zero")
 lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
 
 
@@ -1508,6 +1619,8 @@ t2_charity_donate_z_gain <- lmtp_tmle(
 )         
 here_save(t2_charity_donate_z_gain, "t2_charity_donate_z_gain")
 t2_charity_donate_z_gain
+
+
 # 
 # t2_charity_donate_z_lose <- lmtp_tmle(
 #   outcome = "t2_charity_donate_z",
@@ -1613,6 +1726,25 @@ t2_support_z_zero <- lmtp_tmle(
 
 here_save(t2_support_z_zero, "t2_support_z_zero")
 
+here_read("t2_m_hours_charity_z_gain")
+here_read("t2_hours_charity_z_zero")
+here_read( "t2_charity_donate_z_gain")
+here_read("t2_charity_donate_z_zero")
+here_read("t2_support_z_gain")
+here_read("t2_support_z_zero")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
 
 # church soc belong -------------------------------------------------------
 
@@ -1674,6 +1806,26 @@ here_save(t2_belong_z_zero, "t2_belong_z_zero")
 
 
 
+here_read("t2_m_hours_charity_z_gain")
+here_read("t2_hours_charity_z_zero")
+here_read( "t2_charity_donate_z_gain")
+here_read("t2_charity_donate_z_zero")
+here_read("t2_support_z_gain")
+here_read("t2_support_z_zero")
+here_read("t2_belong_z_gain")
+here_read("t2_belong_z_zero")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+here_read("")
+lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
+
 
 # church neighbourhood ----------------------------------------------------
 
@@ -1716,6 +1868,8 @@ here_save(t2_neighbourhood_community_z_gain, "t2_neighbourhood_community_z_gain"
 # here_save(t2_neighbourhood_community_z_lose, "t2_neighbourhood_community_z_lose")
 # t2_neighbourhood_community_z_lose
 
+
+## FIX THIS
 t2_neighbourhood_community_z_lose_zero <- lmtp_tmle(
   outcome = "t2_neighbourhood_community_z",
   baseline = names_base,
@@ -1733,6 +1887,8 @@ t2_neighbourhood_community_z_lose_zero <- lmtp_tmle(
 )
 
 here_save(t2_neighbourhood_community_z_lose_zero, "t2_neighbourhood_community_z_lose_zero")
+
+
 
 
 
@@ -1797,6 +1953,7 @@ t2_family_time_binary_zero <- lmtp_tmle(
 
 here_save(t2_family_time_binary_zero, "t2_family_time_binary_zero")
 t2_family_time_binary_zero
+
 
 
 
@@ -1927,7 +2084,6 @@ here_save(t2_community_time_binary_zero, "t2_community_time_binary_zero")
 t2_community_time_binary_zero
 
 
-
 # money -------------------------------------------------------------------
 
 
@@ -1997,6 +2153,7 @@ t2_family_money_binary_zero
 
 
 
+
 # church: friends help money received ----------------------------------------------
 
 t2_friends_money_binary_gain <- lmtp_tmle(
@@ -2057,7 +2214,7 @@ t2_friends_money_binary_zero <- lmtp_tmle(
 )
 
 here_save(t2_friends_money_binary_zero, "t2_friends_money_binary_zero")
-t2_friends_money_binary_zero
+
 
 
 
@@ -2125,4 +2282,199 @@ t2_community_money_binary_zero
 
 
 
+
+# results -----------------------------------------------------------------
+
+
+t2_hours_charity_z_gain <- here_read("t2_m_hours_charity_z_gain") # note spelling 
+t2_hours_charity_z_zero <- here_read("t2_hours_charity_z_zero")
+t2_charity_donate_z_gain<- here_read( "t2_charity_donate_z_gain")
+t2_charity_donate_z_zero <- here_read("t2_charity_donate_z_zero")
+t2_support_z_gain<- here_read("t2_support_z_gain")
+t2_support_z_zero<- here_read("t2_support_z_zero")
+t2_belong_z_gain<- here_read("t2_belong_z_gain")
+t2_belong_z_zero<- here_read("t2_belong_z_zero")
+t2_neighbourhood_community_z_gain<- here_read("t2_neighbourhood_community_z_gain")
+t2_neighbourhood_community_z_zero<- here_read("t2_neighbourhood_community_z_lose_zero")
+t2_family_time_binary_gain<- here_read("t2_family_time_binary_gain")
+t2_family_time_binary_zero<- here_read("t2_family_time_binary_zero")
+t2_friends_time_binary_gain<- here_read("t2_friends_time_binary_gain")
+t2_friends_time_binary_zero<- here_read("t2_friends_time_binary_zero")
+t2_community_time_binary_gain<- here_read("t2_community_time_binary_gain")
+t2_community_time_binary_zero<- here_read("t2_community_time_binary_zero")
+t2_family_money_binary_gain<- here_read("t2_family_money_binary_gain")
+t2_family_money_binary_zero<- here_read("t2_family_money_binary_zero")
+t2_friends_money_binary_gain<- here_read("t2_friends_money_binary_gain")
+t2_friends_money_binary_zero<- here_read("t2_friends_money_binary_zero")
+t2_community_money_binary_gain<- here_read("t2_community_money_binary_gain")
+t2_community_money_binary_zero<- here_read("t2_community_money_binary_zero")
+
+
+contrast_hours_charity_z <-
+  lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
+
+
+tab_contrast_hours_charity_z <- margot_tab_lmtp(
+  contrast_hours_charity_z,
+  scale = "RD",
+  new_name = "hours volunteer: church"
+)
+
+tab_contrast_hours_charity_z
+
+
+contrast_charity_donate_z <-
+  lmtp_contrast(t2_charity_donate_z_gain , ref =  t2_charity_donate_z_zero, type = "additive")
+
+
+tab_contrast_charity_donate_z <- margot_tab_lmtp(
+  contrast_charity_donate_z,
+  scale = "RD",
+  new_name = "charity donations: church"
+)
+
+tab_contrast_charity_donate_z
+
+
+
+contrast_support_z <-
+  lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_zero, type = "additive")
+
+tab_contrast_support_z <- margot_tab_lmtp(
+  contrast_support_z,
+  scale = "RD",
+  new_name = "church: social suport"
+)
+
+
+tab_contrast_support_z
+
+
+contrast_belong_z <-
+  lmtp_contrast(t2_belong_z_gain, ref =  t2_belong_z_zero, type = "additive")
+
+
+
+
+tab_contrast_belong_z <- margot_tab_lmtp(
+  contrast_belong_z,
+  scale = "RD",
+  new_name = "church: social belonging"
+)
+
+tab_contrast_belong_z
+
+contrast_neighbourhood_community_z <-
+  lmtp_contrast(t2_neighbourhood_community_z_gain ,
+                ref = t2_neighbourhood_community_z_zero ,
+                type = "additive")
+
+tab_contrast_neighbourhood_community_z <- margot_tab_lmtp(
+  contrast_neighbourhood_community_z,
+  scale = "RD",
+  new_name = "church: neighbourhood community"
+)
+
+tab_contrast_neighbourhood_community_z
+
+contrast_family_time_binary <-
+  lmtp_contrast(t2_family_time_binary_gain, ref =  t2_family_time_binary_zero, type = "rr")
+
+
+tab_contrast_family_time_binary <- margot_tab_lmtp(
+  contrast_family_time_binary,
+  scale = "RR",
+  new_name = "church: family gives time"
+)
+
+tab_contrast_family_time_binary
+
+
+contrast_friends_time <-
+  lmtp_contrast(t2_friends_time_binary_gain , ref =  t2_friends_time_binary_zero, type = "rr")
+
+tab_contrast_friends_time <- margot_tab_lmtp(
+  contrast_friends_time,
+  scale = "RR",
+  new_name = "church: friends gives time"
+)
+
+tab_contrast_friends_time
+
+
+contrast_community_time <-
+  lmtp_contrast(t2_community_time_binary_gain,
+                ref =  t2_community_time_binary_zero,
+                type = "rr")
+
+
+tab_contrast_community_time <- margot_tab_lmtp(
+  contrast_community_time,
+  scale = "RR",
+  new_name = "church: community gives time"
+)
+
+tab_contrast_community_time
+
+
+contrast_family_money <-
+  lmtp_contrast(t2_family_money_binary_gain , ref =  t2_family_money_binary_zero, type = "rr")
+
+tab_contrast_family_money <- margot_tab_lmtp(
+  contrast_family_money,
+  scale = "RR",
+  new_name = "church: family gives money"
+)
+tab_contrast_family_money
+
+
+contrast_friends_money <-
+  lmtp_contrast(t2_friends_money_binary_gain,
+                ref =  t2_friends_money_binary_zero,
+                type = "rr")
+
+
+
+tab_contrast_friends_money <- margot_tab_lmtp(
+  contrast_friends_money,
+  scale = "RR",
+  new_name = "church: friends gives money"
+)
+
+tab_contrast_friends_money
+
+
+contrast_community_money <-
+  lmtp_contrast(t2_community_money_binary_gain,
+                ref = t2_community_money_binary_zero ,
+                type = "rr")
+
+tab_contrast_community_money <- margot_tab_lmtp(
+  contrast_community_money,
+  scale = "RR",
+  new_name = "church: community gives money"
+)
+
+tab_contrast_community_money
+
+
+
+
+
+
+
+
+# Margot tab error 
+# Warning message:
+#   There was 1 warning in `dplyr::mutate()`.
+# ℹ In argument: `across(where(is.numeric), round, digits = 2)`.
+# Caused by warning:
+#   ! The `...` argument of `across()` is deprecated as of dplyr 1.1.0.
+# Supply arguments directly to `.fns` through an anonymous function instead.
+# 
+# # Previously
+# across(a:b, mean, na.rm = TRUE)
+# 
+# # Now
+# across(a:b, \(x) mean(x, na.rm = TRUE))
 
