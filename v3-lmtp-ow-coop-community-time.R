@@ -39,7 +39,7 @@ dat <- arrow::read_parquet("/Users/joseph/Library/CloudStorage/Dropbox-v-project
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-church-coop"
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-coop-community"
 )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
@@ -47,7 +47,7 @@ push_mods
 
 
 # set exposure here
-nzavs_exposure <- "religion_church_round"
+nzavs_exposure <- "hours_community_round"
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 10
@@ -132,7 +132,7 @@ dat_long_full <- dat |>
     # 0 = no, 1 = yes
     "political_conservative",
     #Please rate how politically liberal versus conservative you see yourself as being.
-#    "pol_wing",
+    #    "pol_wing",
     # Please rate how politically left-wing versus right-wing you see yourself as being.
     "sample_frame_opt_in",
     "urban",
@@ -327,11 +327,11 @@ dat_long_full <- dat |>
     "alert_level_combined"
   ) |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
+  mutate(hours_community_round = round(ifelse(hours_community >= 10, 10, hours_community), 0)) |>
   mutate(
     #initialize 'censored'
     censored = ifelse(lead(year_measured) == 1, 1, 0),
-
+    
     # modify 'censored' based on the condition; no need to check for NA here as 'censored' is already defined in the previous step
     censored =  ifelse(is.na(censored) &
                          year_measured == 1, 1, censored)
@@ -349,7 +349,7 @@ dat_long_full <- dat |>
   ) |>
   select(-year_measured) |>
   mutate(# eth_cat = as.integer(eth_cat),
-  urban = as.numeric(urban)) |>
+    urban = as.numeric(urban)) |>
   ungroup() |>
   dplyr::mutate(
     friends_money = ifelse(friends_money < 0, 0, friends_money),
@@ -360,11 +360,11 @@ dat_long_full <- dat |>
     #  hours_charity_log = log(hours_charity + 1),
     hours_exercise_log = log(hours_exercise + 1),
     hours_children_log = log(hours_children + 1),
-   # total_siblings_log = log(total_siblings + 1),
-   # hours_community_log = log(hours_community + 1),
+    # total_siblings_log = log(total_siblings + 1),
+    # hours_community_log = log(hours_community + 1),
     hours_friends_log  = log(hours_friends + 1),
     hours_family_log = log(hours_family + 1)#,
-  #  children_num_log = log(children_num + 1)
+    #  children_num_log = log(children_num + 1)
   ) |>
   dplyr::select(
     -c(
@@ -456,15 +456,14 @@ table(dat_long$censored)
 dat_long_colnames <- colnames(dat_long)
 
 dat_long_colnames <- sort(dat_long_colnames)
- 
+
 dat_long_colnames
 
 # set baseline exposure and outcomes --------------------------------------
-
-exposure_var = c("religion_church_round",
-                 "censored"#,
-                # "hours_community_round"
-                ) #
+nzavs_exposure
+exposure_var = c("hours_community_round",
+                 "censored"
+) 
 
 
 # set outcomes for prosocial domain
@@ -503,7 +502,7 @@ dat_long_colnames <- colnames(dat_long)
 baseline_vars <-
   setdiff(dat_long_colnames,
           c("id","wave"))
-          
+
 # c(outcome_vars, 'id', 'wave'))
 baseline_vars
 baseline_vars <- sort(baseline_vars)
@@ -532,53 +531,13 @@ push_mods
 colnames(dat)
 
 # assess positivity
-dat_long$wave
-
-dt_positivity_full <- dat_long |>
-  filter(wave == 2018 | wave == 2019) |>
-  select(wave, id, religion_church_round, sample_weights) |>
-  mutate(religion_church_shift = ifelse(religion_church_round >= 4, 1, 0))
-
-
-
-# create transition matrix
-out <-
-  msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
-
-out_church_2 <-
-  msm::statetable.msm(religion_church_shift, id, data = dt_positivity_full)
-
-out
-out_church_2
-
-t_tab_2_labels <- c("< weekly", ">= weekly")
-# transition table
-
-transition_table  <- margot::transition_table(out)
-transition_table
-# for import later
-here_save(transition_table, "transition_table")
-
-transition_table_out_church_2 <-
-  margot::transition_table(out_church_2,
-                           state_names = t_tab_2_labels)
-
-transition_table_out_church_2
-
-# for import later
-here_save(transition_table_out_church_2,
-          "transition_table_out_church_2")
-transition_table_out_church_2 <-
-  here_read("transition_table_out_church_2")
-
-# Transition hours
 dt_positivity_full_socialising <-
   dat_long |>
   filter(wave == 2018 |
            wave == 2019) |>
   select(wave, id, hours_community_round, sample_weights) |>
   mutate(hours_community_round_shift = ifelse(hours_community_round >=
-                                                     1, 1, 0))
+                                                1, 1, 0))
 
 
 # create transition matrix
@@ -611,8 +570,6 @@ transition_table_socialising_shift  <-
 transition_table_socialising_shift
 here_save(transition_table_socialising_shift,
           "transition_table_socialising_shift")
-
-
 # double check path
 push_mods
 
@@ -657,17 +614,17 @@ sd_donations
 sd_volunteer
 
 #dat#
-  # baseline_vars = c(
-  #   "male",
-  #   "age",
-  #   "education_level_coarsen",
-  #   "eth_cat",
-  #   "sample_origin",
-  #   "nz_dep2018",
-  #   "nzsei13",
-  #   "total_siblings_factor",
-  #   "born_nz",
-  #   "hlth_disability",
+# baseline_vars = c(
+#   "male",
+#   "age",
+#   "education_level_coarsen",
+#   "eth_cat",
+#   "sample_origin",
+#   "nz_dep2018",
+#   "nzsei13",
+#   "total_siblings_factor",
+#   "born_nz",
+#   "hlth_disability",
 #   "hlth_bmi",
 #   "kessler6_sum",
 #   "sfhealth",
@@ -759,29 +716,11 @@ dt_18_miss <- dt_18 |> select(-alert_level_combined_lead)
 naniar::vis_miss(dt_18_miss, warn_large_data = F)
 
 
-# base_vars set above
-fit_church_on_donate <-
-  regress_with_covariates(
-    dt_18,
-    outcome = "charity_donate",
-    exposure = "religion_church_round",
-    baseline_vars = base_var
-  )
-parameters::model_parameters(fit_church_on_donate)[2, ]
-
-fit_church_on_volunteer <-
-  regress_with_covariates(
-    dt_18,
-    outcome = "hours_charity",
-    exposure = "religion_church_round",
-    baseline_vars = base_var
-  )
-parameters::model_parameters(fit_church_on_volunteer)[2, ]
 
 
 # Then, call the function without quotes around `baseline_vars`:
 fit_socialising_on_donate <-
-  regress_with_covariates(
+  margot::regress_with_covariates(
     dt_18,
     outcome = "charity_donate",
     exposure = "hours_community_round",
@@ -792,7 +731,7 @@ parameters::model_parameters(fit_socialising_on_donate)[2, ]
 
 
 fit_socialising_on_volunteer <-
-  regress_with_covariates(
+  margot::regress_with_covariates(
     dt_18,
     outcome = "hours_charity",
     exposure = "hours_community_round",
@@ -800,8 +739,27 @@ fit_socialising_on_volunteer <-
   )
 parameters::model_parameters(fit_socialising_on_volunteer)[2, ]
 
+fit_socialising_on_community_time <-
+  margot::regress_with_covariates(
+    dt_18,
+    outcome = "community_time_binary",
+    exposure = "hours_community_round",
+    baseline_vars = base_var,
+    family = "binomial"
+  )
+parameters::model_parameters(fit_socialising_on_community_time, ci_method="wald")[2, ]
 
-here_save(fit_church_on_donate, "fit_church_on_donate")
+
+fit_socialising_on_community_money <-
+  margot::regress_with_covariates(
+    dt_18,
+    outcome = "community_money_binary",
+    exposure = "hours_community_round",
+    baseline_vars = base_var,
+    family = "binomial"
+  )
+parameters::model_parameters(fit_socialising_on_community_money, ci_method="wald")[2, ]
+here_save(fit_socialising_on_community_money, "fit_socialising_on_community_money")
 fit_church_on_donate <-
   here_read("fit_church_on_donate")
 
@@ -827,14 +785,6 @@ library(gtsummary)
 
 
 # table baseline ----------------------------------------------------------
-
-
-
-# get names
-base_var <-
-  setdiff(baseline_vars, c("censored", "sample_weights"))
-base_var
-
 
 # prepare df
 selected_base_cols <-
@@ -867,12 +817,12 @@ table_baseline <- selected_base_cols |>
   modify_header(label = "**Exposure + Demographic Variables**") |> # update the column header
   bold_labels() 
 
-    
-    
+
+
 table_baseline
 # save baseline
 here_save(table_baseline, "table_baseline")
-    
+
 # 
 
 # table exposure ----------------------------------------------------------
@@ -881,12 +831,12 @@ here_save(table_baseline, "table_baseline")
 dt_18_19 <- dat_long_full |> 
   dplyr::filter(wave == 2018 | wave == 2019) |> 
   droplevels()
-
+nzavs_exposure
 # get vars.
 selected_exposure_cols <-
   dt_18_19 %>% select(
-    c(
-      "religion_church_round",
+    c(!!sym(nzavs_exposure),
+      "hours_community_round",
       "alert_level_combined",
       "wave"
     )
@@ -902,11 +852,18 @@ table_exposures <- selected_exposure_cols %>%
   janitor::clean_names(case = "title") %>% 
   labelled::to_factor() %>%  # ensure consistent use of pipe operator
   tbl_summary(
-    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
-    missing = "always", 
+    by = "Wave",
+    missing = "ifany",
     percent = "column",
-    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
-  ) %>%
+    statistic = list(
+      all_continuous() ~ c(
+        "{mean} ({sd})", # Mean and SD
+        "{min}, {max}", # Range (Min, Max)
+        "{p25}, {p75}" # IQR (25th percentile, 75th percentile)
+      )
+    ),
+    type = all_continuous() ~ "continuous2"
+  ) |>
   #  add_n() %>%  # Add column with total number of non-missing observations
   modify_header(label = "**Exposure Variables by Wave**") %>%  # Update the column header
   bold_labels()
@@ -969,11 +926,18 @@ table_outcomes <- selected_outcome_cols %>%
   janitor::clean_names(case = "title") %>% 
   labelled::to_factor() %>%  # ensure consistent use of pipe operator
   tbl_summary(
-    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
-    missing = "always", 
+    by = "Wave",
+    missing = "ifany",
     percent = "column",
-    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
-  ) %>%
+    statistic = list(
+      all_continuous() ~ c(
+        "{mean} ({sd})", # Mean and SD
+        "{min}, {max}", # Range (Min, Max)
+        "{p25}, {p75}" # IQR (25th percentile, 75th percentile)
+      )
+    ),
+    type = all_continuous() ~ "continuous2"
+  ) |>
   #  add_n() %>%  # Add column with total number of non-missing observations
   modify_header(label = "**Outcome Variables by Wave**") %>%  # Update the column header
   bold_labels()
@@ -987,18 +951,6 @@ table_outcomes <- here_read("table_outcomes")
 
 
 
-## all outcomes
-
-names_outcomes_tab <- setdiff(outcome_vars, dt_18)
-names_outcomes_sorted <- sort(names_outcomes_tab)
-names_outcomes_final <-
-  names_outcomes_sorted # consistent workflow
-names_outcomes_final
-
-names_outcomes_final
-
-
-
 # histogram exposure ------------------------------------------------------
 
 dt_19 <- dat_long |> 
@@ -1007,13 +959,17 @@ dt_19 <- dat_long |>
 library(ggplot2)
 library(dplyr)
 
+
 #
 # # generate bar plot
+!!sym(nzavs_exposure)
+nzavs_exposure
+
 graph_density_of_exposure_up <- margot::coloured_histogram_shift(
   dt_19,
-  col_name = "religion_church_round",
-  binwidth = 1, 
-  range_highlight = c(0,4)
+  col_name = "hours_community_round",
+  binwidth = .5, 
+  range_highlight = c(0,.9)
 )
 graph_density_of_exposure_up
 
@@ -1022,18 +978,18 @@ graph_density_of_exposure_down <- margot::coloured_histogram_shift(
   dt_19,
   shift = "down",
   col_name = "religion_church_round",
-  binwidth = 1, 
-  range_highlight = c(1,8)
+  binwidth = .5, 
+  range_highlight = c(1,10)
 )
 graph_density_of_exposure_up
 
+here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
+here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
+
 graph_density_of_exposure_down
-
-
-#
 # graph_density_of_exposure
 #
-# here_save(graph_density_of_exposure, "graph_density_of_exposure")
+#here_save(graph_density_of_exposure, "graph_density_of_exposure")
 ggsave(
   graph_density_of_exposure_up,
   path = here::here(here::here(push_mods, "figs")),
@@ -1043,7 +999,7 @@ ggsave(
   filename = "graph_density_of_exposure_up.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 400
 )
 
 ggsave(
@@ -1052,10 +1008,10 @@ ggsave(
   width = 12,
   height = 8,
   units = "in",
-  filename = "graph_density_of_exposure_down.jpg",
+  filename = "graph_density_of_exposure_up.jpg",
   device = 'jpeg',
   limitsize = FALSE,
-  dpi = 600
+  dpi = 400
 )
 
 
@@ -1068,69 +1024,13 @@ source("/Users/joseph/GIT/templates/functions/funs.R")
 source(
   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
 )
-devtools::install_github("go-bayes/margot")
+#devtools::install_github("go-bayes/margot")
 
 dt_19 <- dat_long |>
   filter(wave == 2019) |>
   select(c(religion_church_round, hours_community_round))
 
 library(margot)
-
-
-graph_density_of_exposure <-
-  coloured_histogram_shift_range(
-    dt_19,
-    col_name = "religion_church_round",
-    binwidth = 1,
-    range_highlight = c(0, 3.9),
-    shift = "up"
-  )
-
-graph_density_of_exposure
-
-
-ggsave(
-  graph_density_of_exposure,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "graph_density_of_exposure.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-# 
-# 
-# table(dt_18$censored)
-# graph_density_of_exposure_socialising <-
-#   coloured_histogram_shift_range(
-#     dt_19,
-#     col_name = "hours_community_round",
-#     binwidth = .25,
-#     range_highlight = c(0, 1),
-#     shift = "up"
-#   )
-# 
-# graph_density_of_exposure_socialising
-# 
-# here_save(graph_density_of_exposure_socialising,
-#           "graph_density_of_exposure_socialising")
-# 
-# 
-# ggsave(
-#   graph_density_of_exposure_socialising,
-#   path = here::here(here::here(push_mods, "figs")),
-#   width = 12,
-#   height = 8,
-#   units = "in",
-#   filename = "graph_density_of_exposure_socialising.jpg",
-#   device = 'jpeg',
-#   limitsize = FALSE,
-#   dpi = 600
-# )
-
 
 # impute baseline ---------------------------------------------------------
 # impute baseline data (we use censoring for the outcomes)
@@ -1148,7 +1048,6 @@ my_data_filtered <- haven::zap_label(dat_long_df)
 my_data_filtered <- haven::zap_widths(dat_long_df)
 
 dat_long_df <- data.frame(dat_long)
-
 
 prep_coop_all <-
   margot_wide_impute_baseline(
@@ -1172,7 +1071,7 @@ head(prep_coop_all$loggedEvents, 10)
 
 # 
 # Warning messages:
-#   1: Number of logged events: 190 
+#   1: Number of logged events: 5 
 # 2: Using an external vector in selections was deprecated in tidyselect 1.1.0.
 # ℹ Please use `all_of()` or `any_of()` instead.
 # # Was:
@@ -1263,7 +1162,7 @@ df_clean <- df_wide_censored %>%
         !t0_religion_church_round &
         !t0_hours_community_round &
         #  !t0_charity_donate & !t0_sample_weights &
-        !t1_religion_church_round &
+      #  !t1_religion_church_round &
         !t1_hours_community_round &
         !t1_censored &
         # !t2_charity_donate &!t2_volunteers_binary &
@@ -1293,7 +1192,7 @@ df_clean <- df_wide_censored %>%
     t0_sample_weights,
     t0_religion_church_round,
     t0_censored,
-    t1_religion_church_round,
+    #t1_religion_church_round,
     t1_hours_community_round,
     t1_censored,
     # t2_charity_donate,
@@ -1340,7 +1239,7 @@ names_outcomes <-
 
 names_outcomes
 
-    
+
 # 
 # 
 # 
@@ -1406,7 +1305,8 @@ names_outcomes
 
 #### SET VARIABLE NAMES
 #  model
-A <- c("t0_religion_church_round", "t1_religion_church_round")
+nzavs_exposure
+A <- c("t0_hours_community_round", "t1_hours_community_round")
 C <- c("t0_censored", "t1_censored")
 
 #L <- list(c("L1"), c("L2"))
@@ -1415,28 +1315,31 @@ names_base
 W
 # check
 print(W)
-    
+
 
 
 gain_A <- function(data, trt) {
   mtp_base <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
+    ifelse(data[[trt]] > 0, 0,  data[[trt]])
   }
   
-  if (trt == "t0_religion_church_round") {
+  if (trt == "t0_hours_community_round") {
     return(mtp_base(data, trt))
   }
   
   mtp_one_contrast <- function(data, trt) {
-    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+    ifelse(data[[trt]] < 1, 1, data[[trt]])
   }
   
   #  trt is a variable name passed as a string to the function
   
-  ifelse(trt == "t1_religion_religious",
+  ifelse(trt == "t1_hours_community_round",
          mtp_one_contrast(data, trt),
          data[[trt]])
 }
+
+
+
 
 
 zero_A <- function(data, trt) {
@@ -1444,7 +1347,7 @@ zero_A <- function(data, trt) {
     ifelse(data[[trt]] > 0, 0, data[[trt]])
   }
   
-  if (trt == "t0_religion_church_round") {
+  if (trt == "t0_hours_community_round") {
     return(mtp_base(data, trt))
   }
   
@@ -1454,7 +1357,7 @@ zero_A <- function(data, trt) {
   
   #  trt is a variable name passed as a string to the function
   
-  ifelse(trt == "t1_religion_religious",
+  ifelse(trt == "t1_hours_community_round",
          mtp_one_contrast(data, trt),
          data[[trt]])
 }
@@ -1473,7 +1376,6 @@ n_cores <-
 
 
 library("ranger")
-conflicts_prefer(randomForest::margin)
 
 
 # test data
@@ -1483,8 +1385,8 @@ df_clean_slice <- df_clean |>
 colnames(df_clean_slice)
 
 library(SuperLearner)
-library(xgboost)
-library(ranger)
+# library(xgboost)
+# library(ranger)
 # model charitable giving in population
 # measure time taken to run the model
 #
@@ -1522,6 +1424,7 @@ m_hours_charity_z_test <- lmtp_tmle(
   parallel = n_cores
 )
 
+m_hours_charity_z_test
 
 
 m_hours_charity_z_test_2 <- lmtp_tmle(
@@ -1545,14 +1448,9 @@ m_hours_charity_z_test_2
 
 
 
-# print timing info
-print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
-m_hours_charity
+# models ------------------------------------------------------------------
 
-
-
-
-t2_m_hours_charity_z_gain <- lmtp_tmle(
+t2_hours_charity_z_gain <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
   baseline = names_base,
   shift = gain_A,
@@ -1567,30 +1465,7 @@ t2_m_hours_charity_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores - 1
 )
-here_save(t2_m_hours_charity_z_gain, "t2_m_hours_charity_z_gain")
-
-here_read("t2_m_hours_charity_z_gain")
-
-# t2_m_hours_charity_z_lose <- lmtp_tmle(
-#   outcome = "t2_hours_charity_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = SL.ranger,
-#   learners_outcome = SL.ranger,
-#   parallel = n_cores - 1
-# )
-#
-# here_save(t2_m_hours_charity_z_lose, "t2_m_hours_charity_z_lose")
-# t2_m_hours_charity_z_lose
-# here_save(t2_m_hours_charity_z_lose, "t2_m_hours_charity_z_lose")
-
+here_save(t2_hours_charity_z_gain, "t2_hours_charity_z_gain")
 
 
 t2_hours_charity_z_zero <- lmtp_tmle(
@@ -1610,14 +1485,6 @@ t2_hours_charity_z_zero <- lmtp_tmle(
 )
 
 here_save(t2_hours_charity_z_zero, "t2_hours_charity_z_zero")
-
-
-#check
-here_read("t2_m_hours_charity_z_gain")
-here_read("t2_hours_charity_z_zero")
-lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
-
-
 
 
 t2_volunteers_binary_gain <- lmtp_tmle(
@@ -1658,11 +1525,6 @@ t2_volunteers_binary_zero <- lmtp_tmle(
 here_save(t2_volunteers_binary_zero, "t2_volunteers_binary_zero")
 
 
-#check
-here_read("t2_m_hours_charity_z_gain")
-here_read("t2_hours_charity_z_zero")
-lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
-
 # church donations --------------------------------------------------------
 t2_charity_donate_z_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
@@ -1680,27 +1542,7 @@ t2_charity_donate_z_gain <- lmtp_tmle(
   parallel = n_cores - 1
 )
 here_save(t2_charity_donate_z_gain, "t2_charity_donate_z_gain")
-t2_charity_donate_z_gain
 
-# 
-# t2_charity_donate_z_lose <- lmtp_tmle(
-#   outcome = "t2_charity_donate_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
-# 
-# here_save(t2_charity_donate_z_lose, "t2_charity_donate_z_lose")
-# t2_charity_donate_z_lose
 
 t2_charity_donate_z_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
@@ -1719,8 +1561,6 @@ t2_charity_donate_z_zero <- lmtp_tmle(
 )
 
 here_save(t2_charity_donate_z_zero, "t2_charity_donate_z_zero")
-
-lmtp_contrast(t2_charity_donate_z_gain, ref = t2_charity_donate_z_zero, type = "additive")
 
 
 #############################
@@ -1749,25 +1589,6 @@ t2_support_z_gain <- lmtp_tmle(
 )
 here_save(t2_support_z_gain, "t2_support_z_gain")
 
-#
-# t2_support_z_lose <- lmtp_tmle(
-#   outcome = "t2_support_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
-#
-# here_save(t2_support_z_lose, "t2_support_z_lose")
-# t2_support_z_lose
 
 t2_support_z_zero <- lmtp_tmle(
   outcome = "t2_support_z",
@@ -1787,28 +1608,7 @@ t2_support_z_zero <- lmtp_tmle(
 
 here_save(t2_support_z_zero, "t2_support_z_zero")
 
-here_read("t2_m_hours_charity_z_gain")
-here_read("t2_hours_charity_z_zero")
-here_read("t2_charity_donate_z_gain")
-here_read("t2_charity_donate_z_zero")
-here_read("t2_support_z_gain")
-here_read("t2_support_z_zero")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
-
 # church soc belong -------------------------------------------------------
-
 
 t2_belong_z_gain <- lmtp_tmle(
   outcome = "t2_belong_z",
@@ -1827,25 +1627,6 @@ t2_belong_z_gain <- lmtp_tmle(
 )
 here_save(t2_belong_z_gain, "t2_belong_z_gain")
 
-#
-# t2_belong_z_lose <- lmtp_tmle(
-#   outcome = "t2_belong_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
-#
-# here_save(t2_belong_z_lose, "t2_belong_z_lose")
-# t2_belong_z_lose
 
 t2_belong_z_zero <- lmtp_tmle(
   outcome = "t2_belong_z",
@@ -1866,31 +1647,7 @@ t2_belong_z_zero <- lmtp_tmle(
 here_save(t2_belong_z_zero, "t2_belong_z_zero")
 
 
-
-here_read("t2_m_hours_charity_z_gain")
-here_read("t2_hours_charity_z_zero")
-here_read("t2_charity_donate_z_gain")
-here_read("t2_charity_donate_z_zero")
-here_read("t2_support_z_gain")
-here_read("t2_support_z_zero")
-here_read("t2_belong_z_gain")
-here_read("t2_belong_z_zero")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-here_read("")
-lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
-
-
 # church neighbourhood ----------------------------------------------------
-
-
 
 t2_neighbourhood_community_z_gain <- lmtp_tmle(
   outcome = "t2_neighbourhood_community_z",
@@ -1910,29 +1667,8 @@ t2_neighbourhood_community_z_gain <- lmtp_tmle(
 here_save(t2_neighbourhood_community_z_gain,
           "t2_neighbourhood_community_z_gain")
 
-#
-# t2_neighbourhood_community_z_lose <- lmtp_tmle(
-#   outcome = "t2_neighbourhood_community_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
-
-# here_save(t2_neighbourhood_community_z_lose, "t2_neighbourhood_community_z_lose")
-# t2_neighbourhood_community_z_lose
-
-
 ## FIX THIS
-t2_neighbourhood_community_z_lose_zero <- lmtp_tmle(
+t2_neighbourhood_community_z_zero <- lmtp_tmle(
   outcome = "t2_neighbourhood_community_z",
   baseline = names_base,
   shift = zero_A,
@@ -1949,12 +1685,9 @@ t2_neighbourhood_community_z_lose_zero <- lmtp_tmle(
 )
 
 here_save(
-  t2_neighbourhood_community_z_lose_zero,
-  "t2_neighbourhood_community_z_lose_zero"
+  t2_neighbourhood_community_z_zero,
+  "t2_neighbourhood_community_z_zero"
 )
-
-
-
 
 
 # church: family time help received -----------------------------------------------
@@ -1976,29 +1709,6 @@ t2_family_time_binary_gain <- lmtp_tmle(
 )
 
 here_save(t2_family_time_binary_gain, "t2_family_time_binary_gain")
-t2_family_time_binary_gain
-
-#
-# t2_family_time_binary_lose <- lmtp_tmle(
-#   outcome = "t2_family_time_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-#
-# here_save(t2_family_time_binary_lose, "t2_family_time_binary_lose")
-# t2_family_time_binary_lose
-
-
 
 t2_family_time_binary_zero <- lmtp_tmle(
   outcome = "t2_family_time_binary",
@@ -2017,9 +1727,6 @@ t2_family_time_binary_zero <- lmtp_tmle(
 )
 
 here_save(t2_family_time_binary_zero, "t2_family_time_binary_zero")
-t2_family_time_binary_zero
-
-
 
 
 # church: friends help time received ----------------------------------------------
@@ -2041,28 +1748,6 @@ t2_friends_time_binary_gain <- lmtp_tmle(
 )
 
 here_save(t2_friends_time_binary_gain, "t2_friends_time_binary_gain")
-t2_friends_time_binary_gain
-#
-#
-# t2_friends_time_binary_lose <- lmtp_tmle(
-#   outcome = "t2_friends_time_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-#
-# here_save(t2_friends_time_binary_lose, "t2_friends_time_binary_lose")
-# t2_friends_time_binary_lose
-
 
 
 t2_friends_time_binary_zero <- lmtp_tmle(
@@ -2082,8 +1767,6 @@ t2_friends_time_binary_zero <- lmtp_tmle(
 )
 
 here_save(t2_friends_time_binary_zero, "t2_friends_time_binary_zero")
-t2_friends_time_binary_zero
-
 
 
 
@@ -2106,28 +1789,6 @@ t2_community_time_binary_gain <- lmtp_tmle(
 
 here_save(t2_community_time_binary_gain,
           "t2_community_time_binary_gain")
-t2_community_time_binary_gain
-
-#
-# t2_community_time_binary_lose <- lmtp_tmle(
-#   outcome = "t2_community_time_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-#
-# here_save(t2_community_time_binary_lose, "t2_community_time_binary_lose")
-# t2_community_time_binary_lose
-# 
 
 
 t2_community_time_binary_zero <- lmtp_tmle(
@@ -2148,16 +1809,11 @@ t2_community_time_binary_zero <- lmtp_tmle(
 
 here_save(t2_community_time_binary_zero,
           "t2_community_time_binary_zero")
-t2_community_time_binary_zero
-
 
 # money -------------------------------------------------------------------
 
 
 # church_friends money received --------------------------------------------------
-
-
-
 t2_family_money_binary_gain <- lmtp_tmle(
   outcome = "t2_family_money_binary",
   baseline = names_base,
@@ -2175,28 +1831,6 @@ t2_family_money_binary_gain <- lmtp_tmle(
 )
 
 here_save(t2_family_money_binary_gain, "t2_family_money_binary_gain")
-t2_family_money_binary_gain
-# 
-# 
-# t2_family_money_binary_lose <- lmtp_tmle(
-#   outcome = "t2_family_money_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-
-# here_save(t2_family_money_binary_lose, "t2_family_money_binary_lose")
-# t2_family_money_binary_lose
-
 
 
 t2_family_money_binary_zero <- lmtp_tmle(
@@ -2216,10 +1850,6 @@ t2_family_money_binary_zero <- lmtp_tmle(
 )
 
 here_save(t2_family_money_binary_zero, "t2_family_money_binary_zero")
-t2_family_money_binary_zero
-
-
-
 
 # church: friends help money received ----------------------------------------------
 
@@ -2241,30 +1871,6 @@ t2_friends_money_binary_gain <- lmtp_tmle(
 
 here_save(t2_friends_money_binary_gain,
           "t2_friends_money_binary_gain")
-t2_friends_money_binary_gain
-# 
-# 
-# t2_friends_money_binary_lose <- lmtp_tmle(
-#   outcome = "t2_friends_money_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-# 
-# here_save(t2_friends_money_binary_lose, "t2_friends_money_binary_lose")
-# t2_friends_money_binary_lose
-
-
-
 
 t2_friends_money_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
@@ -2286,8 +1892,6 @@ here_save(t2_friends_money_binary_zero,
           "t2_friends_money_binary_zero")
 
 
-
-
 # church: community money help received --------------------------------------------
 t2_community_money_binary_gain <- lmtp_tmle(
   outcome = "t2_community_money_binary",
@@ -2307,30 +1911,6 @@ t2_community_money_binary_gain <- lmtp_tmle(
 
 here_save(t2_community_money_binary_gain,
           "t2_community_money_binary_gain")
-t2_community_money_binary_gain
-
-# 
-# t2_community_money_binary_lose <- lmtp_tmle(
-#   outcome = "t2_community_money_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-# 
-# here_save(t2_community_money_binary_lose, "t2_community_money_binary_lose")
-# t2_community_money_binary_lose
-# 
-
-
 
 t2_community_money_binary_zero <- lmtp_tmle(
   outcome = "t2_community_money_binary",
@@ -2350,7 +1930,7 @@ t2_community_money_binary_zero <- lmtp_tmle(
 
 here_save(t2_community_money_binary_zero,
           "t2_community_money_binary_zero")
-t2_community_money_binary_zero
+
 
 
 # results -----------------------------------------------------------------
@@ -2358,7 +1938,7 @@ t2_community_money_binary_zero
 t2_volunteers_binary_gain <- here_read("t2_volunteers_binary_gain")
 t2_volunteers_binary_zero <- here_read("t2_volunteers_binary_zero")
 t2_hours_charity_z_gain <-
-  here_read("t2_m_hours_charity_z_gain") # note spelling
+  here_read("t2_hours_charity_z_gain") # note spelling
 t2_hours_charity_z_zero <- here_read("t2_hours_charity_z_zero")
 t2_charity_donate_z_gain <- here_read("t2_charity_donate_z_gain")
 t2_charity_donate_z_zero <- here_read("t2_charity_donate_z_zero")
@@ -2369,7 +1949,7 @@ t2_belong_z_zero <- here_read("t2_belong_z_zero")
 t2_neighbourhood_community_z_gain <-
   here_read("t2_neighbourhood_community_z_gain")
 t2_neighbourhood_community_z_zero <-
-  here_read("t2_neighbourhood_community_z_lose_zero")
+  here_read("t2_neighbourhood_community_z_zero")
 t2_family_time_binary_gain <-
   here_read("t2_family_time_binary_gain")
 t2_family_time_binary_zero <-
@@ -2686,7 +2266,7 @@ output_tab_contrast_community_money<- lmtp_evalue_tab(tab_contrast_community_mon
 
 
 tab_all_prosocial <- rbind( output_tab_contrast_charity_donate_z,
-output_tab_contrast_hours_charity_z)
+                            output_tab_contrast_hours_charity_z)
 group_tab_all_prosocial <- group_tab(tab_all_prosocial, type = "RD")
 
 here_save(tab_all_prosocial, "tab_all_prosocial")
@@ -2860,3 +2440,21 @@ plot_group_tab_all_received_money <- margot_plot(
 
 plot_group_tab_all_received_money
 
+
+
+
+
+
+### GET 
+
+transition_table_socialising_shift <- here_read("transition_table_socialising_shift")
+transition_table_socialising<- here_read( "transition_table_socialising")
+n_participants <- here_read("n_participants")
+
+table_baseline <- here_save("table_baseline")
+table_exposures <- here_save("table_exposures")
+table_outcomes <- here_save("table_outcomes")
+                                          
+
+graph_density_of_exposure_down<- here_read("graph_density_of_exposure_down")
+graph_density_of_exposure_up<- here_read("graph_density_of_exposure_up")
