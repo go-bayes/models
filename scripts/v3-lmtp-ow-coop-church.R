@@ -5,6 +5,12 @@
 ### ALWAYS RESTART R IN A FRESH SESSION ####
 
 
+
+###### THIS VERSION IS FOR THE ARCHIVE -- IT INVESTIGATES LOSS OF RELIGION (DONES) ON CHARITY COMPARED WITH ALWAYS DONE
+
+### THIS WAS A MISTAKE 
+
+
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
@@ -1417,8 +1423,30 @@ W
 print(W)
     
 
-
+### THIS FUNCTION IS WRONGLY LABELLED THIS LOOKS AT LOSS
 gain_A <- function(data, trt) {
+  mtp_base <- function(data, trt) {
+    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+  }
+  
+  if (trt == "t0_religion_church_round") {
+    return(mtp_base(data, trt))
+  }
+  
+  mtp_one_contrast <- function(data, trt) {
+    ifelse(data[[trt]] > 0, 0, data[[trt]])
+  }
+  
+  #  trt is a variable name passed as a string to the function
+  
+  ifelse(trt == "t1_religion_religious",
+         mtp_one_contrast(data, trt),
+         data[[trt]])
+}
+
+
+
+lose_A <- function(data, trt) {
   mtp_base <- function(data, trt) {
     ifelse(data[[trt]] > 0, 0, data[[trt]])
   }
@@ -2813,31 +2841,6 @@ plot_group_tab_all_perceived_support <- margot_plot(
 
 plot_group_tab_all_perceived_support
 
-
-
-plot_group_tab_all_received_time <- margot_plot(
-  group_tab_contrast_received_time,
-  type = "RR",
-  title = "Religious service effect on time received",
-  subtitle = "Contrast: weekly vs. none ",
-  xlab = "",
-  ylab = "",
-  estimate_scale = 1,
-  base_size = 14,
-  text_size = 4.5,
-  point_size = 2.5,
-  title_size = 20,
-  subtitle_size = 14,
-  legend_text_size = 10,
-  legend_title_size = 10,
-  x_offset = -5,
-  x_lim_lo = -5,
-  x_lim_hi =  15.5
-)
-
-plot_group_tab_all_received_time
-
-
 plot_group_tab_all_received_money <- margot_plot(
   group_tab_all_received_money,
   type = "RR",
@@ -2846,15 +2849,15 @@ plot_group_tab_all_received_money <- margot_plot(
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 14,
+  base_size = 11,
   text_size = 4.5,
   point_size = 2.5,
   title_size = 20,
   subtitle_size = 14,
-  legend_text_size = 10,
+  legend_text_size = 8,
   legend_title_size = 10,
-  x_offset = -5,
-  x_lim_lo = -5,
+  x_offset = -3,
+  x_lim_lo = -3,
   x_lim_hi =  15.5
 )
 
