@@ -559,65 +559,15 @@ transition_table
 # for import later
 here_save(transition_table, "transition_table")
 
-transition_table_out_church_2 <-
+transition_table_binary <-
   margot::transition_table(out_church_2,
                            state_names = t_tab_2_labels)
 
-transition_table_out_church_2
+transition_table_binary
 
 # for import later
-here_save(transition_table_out_church_2,
-          "transition_table_out_church_2")
-transition_table_out_church_2 <-
-  here_read("transition_table_out_church_2")
-
-# Transition hours
-dt_positivity_full_socialising <-
-  dat_long |>
-  filter(wave == 2018 |
-           wave == 2019) |>
-  select(wave, id, hours_community_round, sample_weights) |>
-  mutate(hours_community_round_shift = ifelse(hours_community_round >=
-                                                1, 1, 0))
-
-
-# create transition matrix
-out_social <-
-  msm::statetable.msm(hours_community_round, id, data = dt_positivity_full_socialising)
-
-out_social
-
-#t_tab_cats_labels <- c("No Cats", "Cats")
-# transition table
-transition_table_socialising  <-
-  margot::transition_table(out_social)
-transition_table_socialising
-here_save(transition_table_socialising,
-          "transition_table_socialising")
-
-out_shift_social <-
-  msm::statetable.msm(hours_community_round_shift, id, data = dt_positivity_full_socialising)
-
-out_shift_social
-
-t_tab_2_social_labels <-
-  c("< 1 weekly hours", ">= 1 weekly hours")
-# transition table
-
-transition_table_socialising_shift  <-
-  margot::transition_table(out_shift_social,
-                           state_names = t_tab_2_social_labels)
-
-transition_table_socialising_shift
-here_save(transition_table_socialising_shift,
-          "transition_table_socialising_shift")
-
-
-# double check path
-push_mods
-
-# check col names
-colnames(dat)
+here_save(transition_table_binary,
+          "transition_table_binary")
 
 
 # sd values ---------------------------------------------------------------
@@ -656,85 +606,12 @@ sd_volunteer <-
 sd_donations
 sd_volunteer
 
-#dat#
-# baseline_vars = c(
-#   "male",
-#   "age",
-#   "education_level_coarsen",
-#   "eth_cat",
-#   "sample_origin",
-#   "nz_dep2018",
-#   "nzsei13",
-#   "total_siblings_factor",
-#   "born_nz",
-#   "hlth_disability",
-#   "hlth_bmi",
-#   "kessler6_sum",
-#   "sfhealth",
-#   "hours_family_sqrt_round",
-#   "hours_friends_sqrt_round",
-#   "hours_community_sqrt_round",
-#   "household_inc_log",
-#   "partner",
-#   "political_conservative",
-#   "urban",
-#   "children_num",
-#   "hours_children_log",
-#   "hours_work_log",
-#   "hours_housework_log",
-#   "hours_exercise_log",
-#   "agreeableness",
-#   "conscientiousness",
-#   "extraversion",
-#   "honesty_humility",
-#   "openness",
-#   "neuroticism",
-#   "modesty",
-#   "religion_church_round",
-#   "sample_weights",
-#   "alert_level_combined_lead"
-# )
-# check
 baseline_vars
 
 # check
 baseline_vars
 #
-# # set exposure variable, can be both the continuous and the coarsened, if needed
-# exposure_var = c("religion_church_round",
-#                  "censored",
-#                  "hours_community_round") #
-#
-#
-# # set outcomes for prosocial domain
-# outcome_vars = c(
-#   "hours_charity",
-#   "charity_donate",
-#   "warm_asians",
-#   "warm_chinese",
-#   "warm_immigrants",
-#   "warm_indians",
-#   "warm_elderly",
-#   "warm_maori",
-#   "warm_mental_illness",
-#   "warm_muslims",
-#   "warm_nz_euro",
-#   "warm_overweight",
-#   "warm_pacific",
-#   "warm_refugees",
-#   "family_time_binary",
-#   "friends_time_binary",
-#   "community_time_binary",
-#   "support",
-#   "perc_gend_discrim",
-#   "perc_religious_discrim",
-#   "perc_discrim"
-# )
-
-
 # check associations only -------------------------------------------------
-
-
 
 dt_18 <- dat_long|>
   filter(wave == 2018) 
@@ -831,7 +708,6 @@ table_baseline <- selected_base_cols |>
 table_baseline
 # save baseline
 here_save(table_baseline, "table_baseline")
-
 # 
 
 # table exposure ----------------------------------------------------------
@@ -875,7 +751,6 @@ table_exposures
 
 # save baseline
 here_save(table_exposures, "table_exposures")
-table_exposures <- here_read("table_exposures")
 
 table_exposures
 
@@ -943,21 +818,6 @@ table_outcomes
 here_save(table_outcomes, "table_outcomes")
 table_outcomes <- here_read("table_outcomes")
 
-
-
-
-## all outcomes
-
-names_outcomes_tab <- setdiff(outcome_vars, dt_18)
-names_outcomes_sorted <- sort(names_outcomes_tab)
-names_outcomes_final <-
-  names_outcomes_sorted # consistent workflow
-names_outcomes_final
-
-names_outcomes_final
-
-
-
 # histogram exposure ------------------------------------------------------
 
 dt_19 <- dat_long |> 
@@ -988,7 +848,8 @@ graph_density_of_exposure_up
 
 graph_density_of_exposure_down
 
-
+here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
+here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
 #
 # graph_density_of_exposure
 #
@@ -1291,12 +1152,17 @@ names_base <-
 
 names_base
 
+here_save(names_base, "names_base")
+names_base <- here_read("names_base")
 
+push_mods
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
 
 names_outcomes
 
+here_save(names_outcomes, "names_outcomes")
+names_outcomes <- here_read("names_outcomes")
 
 
 #### SET VARIABLE NAMES
@@ -1311,54 +1177,56 @@ W
 # check
 print(W)
 
+# 
+# 
+# gain_A <- function(data, trt) {
+#   # make zero at baseline
+#   mtp_base_A <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
+#   
+#   if (trt == "t0_religion_church_round") {
+#     return(mtp_base_A(data, trt))
+#   }
+#   
+#   # shift to at least 4 at time 1
+#   mtp_one_contrast_A <- function(data, trt) {
+#     ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+#   }
+#   
+#   #  trt is a variable name passed as a string to the function
+#   
+#   ifelse(trt == "t1_religion_religious",
+#          mtp_one_contrast_A(data, trt),
+#          data[[trt]])
+# }
+# 
+# zero_A <- function(data, trt) {
+#   
+#   # make zero at baseline
+#   mtp_base_zero <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
+#   
+#   if (trt == "t0_religion_church_round") {
+#     return(mtp_base_zero(data, trt))
+#   }
+#   
+#   
+#   # keep zero at exposure wave
+#   
+#   mtp_one_contrast_zero <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
 
 
-gain_A <- function(data, trt) {
-  # make zero at baseline
-  mtp_base_A <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base_A(data, trt))
-  }
-  
-  # shift to at least 4 at time 1
-  mtp_one_contrast_A <- function(data, trt) {
-    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast_A(data, trt),
-         data[[trt]])
+
+gain_A <- function(data, trt){
+  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
 }
 
-
-zero_A <- function(data, trt) {
-  
-  # make zero at baseline
-  mtp_base_zero <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base_zero(data, trt))
-  }
-  
-  
-  # keep zero at exposure wave
-  
-  mtp_one_contrast_zero <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast_zero(data, trt),
-         data[[trt]])
+zero_A <- function(data, trt){
+  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
 }
 
 
@@ -1385,28 +1253,15 @@ colnames(df_clean_slice)
 
 library(SuperLearner)
 library(xgboost)
-library(ranger)
-# model charitable giving in population
-# measure time taken to run the model
-#
-# names_base_t2_hours_charity_z <-
-#   select_and_rename_cols(names_base = use_names,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_hours_charity_z")
-#
-# names_base_t2_hours_charity_z
-# m_hours_charity_z_test
-# 
-# sl_lib <- c("SL.glmnet",
-#             "SL.ranger", #
-#             "SL.xgboost") #
-# library(randomForest)
-# 
+
 
 
 #names_t2_hours_charity_z<- select_and_rename_cols(names_base = names_base, baseline_vars = base_var, outcom = "t2_hours_charity_z")
-zero_A
-t2_charity_donate_z_test <- lmtp_tmle(
+
+# summary( lm( t2_charity_donate_z ~ t1_religion_church_round  + 
+#                t0_charity_donate_z + t0_religion_church_round, df_clean ) )
+
+t2_charity_donate_z_test_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
   shift = zero_A,
@@ -1424,11 +1279,9 @@ t2_charity_donate_z_test <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_charity_donate_z_test
+t2_charity_donate_z_test_zero
 
-gain_A
-
-t2_charity_donate_z_test_2 <- lmtp_tmle(
+t2_charity_donate_z_test_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
   shift = gain_A,
@@ -1446,12 +1299,17 @@ t2_charity_donate_z_test_2 <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_charity_donate_z_test_2
+t2_charity_donate_z_test_gain
+lmtp_contrast(t2_charity_donate_z_test_gain, ref = t2_charity_donate_z_test_zero, type = "additive")
 
 
 
 
 
+# models ------------------------------------------------------------------
+
+library("ranger")
+library(SuperLearner)
 
 t2_hours_charity_z_gain <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
@@ -1468,7 +1326,8 @@ t2_hours_charity_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores - 1
 )
-here_save(t2_hours_charity_z, "t2_hours_charity_z")
+t2_hours_charity_z_gain
+here_save(t2_hours_charity_z_gain, "t2_hours_charity_z_gain")
 
 
 t2_hours_charity_z_zero <- lmtp_tmle(
@@ -1528,7 +1387,6 @@ t2_volunteers_binary_zero <- lmtp_tmle(
 here_save(t2_volunteers_binary_zero, "t2_volunteers_binary_zero")
 
 
-#check
 
 # church donations --------------------------------------------------------
 t2_charity_donate_z_gain <- lmtp_tmle(
@@ -1676,7 +1534,6 @@ t2_neighbourhood_community_z_gain <- lmtp_tmle(
 here_save(t2_neighbourhood_community_z_gain,
           "t2_neighbourhood_community_z_gain")
 
-## FIX THIS
 t2_neighbourhood_community_z_zero <- lmtp_tmle(
   outcome = "t2_neighbourhood_community_z",
   baseline = names_base,
@@ -2302,23 +2159,6 @@ group_tab_all_received_money <- here_read( "group_tab_all_received_money")
 tab_contrast_received_time <- here_read( "tab_contrast_received_time")
 group_tab_contrast_received_time <- here_read( "group_tab_contrast_received_time")
 
-tab_all_prosocial
-group_tab_all_prosocial_rr
-
-tab_all_prosocial_rr
-group_tab_all_prosocial_rr
-
-tab_all_perceived_support
-group_tab_all_perceived_support
-
-tab_all_received_money
-group_tab_all_received_money
-
-tab_contrast_received_time
-group_tab_contrast_received_time
-
-
-group_tab_all_prosocial_rr
 # graphs ------------------------------------------------------------------
 conflicts_prefer(ggplot2::margin)
 plot_group_tab_all_prosocial_rr <- margot_plot(
@@ -2412,3 +2252,18 @@ plot_group_tab_all_received_money <- margot_plot(
 
 plot_group_tab_all_received_money
 
+
+
+### TO read
+transition_table_binary <-
+  here_read("transition_table_binary")
+
+
+
+
+graph_density_of_exposure_up <- here_read("graph_density_of_exposure_up")
+graph_density_of_exposure_down <- here_read("graph_density_of_exposure_down")
+
+table_exposures <- here_read("table_exposures")
+table_baseline <- here_read("table_baseline")
+table_outcomes <- here_read("table_outcomes")

@@ -1316,51 +1316,62 @@ W
 # check
 print(W)
 
+# 
+# 
+# gain_A <- function(data, trt) {
+#   mtp_base <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0,  data[[trt]])
+#   }
+#   
+#   if (trt == "t0_hours_community_round") {
+#     return(mtp_base(data, trt))
+#   }
+#   
+#   mtp_one_contrast <- function(data, trt) {
+#     ifelse(data[[trt]] < 1, 1, data[[trt]])
+#   }
+#   
+#   #  trt is a variable name passed as a string to the function
+#   
+#   ifelse(trt == "t1_hours_community_round",
+#          mtp_one_contrast(data, trt),
+#          data[[trt]])
+# }
+# 
+# 
+# 
+# 
+# 
+# zero_A <- function(data, trt) {
+#   mtp_base <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
+#   
+#   if (trt == "t0_hours_community_round") {
+#     return(mtp_base(data, trt))
+#   }
+#   
+#   mtp_one_contrast <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
+#   
+#   #  trt is a variable name passed as a string to the function
+#   
+#   ifelse(trt == "t1_hours_community_round",
+#          mtp_one_contrast(data, trt),
+#          data[[trt]])
+# }
 
 
-gain_A <- function(data, trt) {
-  mtp_base <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0,  data[[trt]])
-  }
-  
-  if (trt == "t0_hours_community_round") {
-    return(mtp_base(data, trt))
-  }
-  
-  mtp_one_contrast <- function(data, trt) {
-    ifelse(data[[trt]] < 1, 1, data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_hours_community_round",
-         mtp_one_contrast(data, trt),
-         data[[trt]])
+gain_A <- function(data, trt){
+  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
+}
+
+zero_A <- function(data, trt){
+  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
 }
 
 
-
-
-
-zero_A <- function(data, trt) {
-  mtp_base <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  if (trt == "t0_hours_community_round") {
-    return(mtp_base(data, trt))
-  }
-  
-  mtp_one_contrast <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_hours_community_round",
-         mtp_one_contrast(data, trt),
-         data[[trt]])
-}
 
 
 # BONUS: progressr progress bars!

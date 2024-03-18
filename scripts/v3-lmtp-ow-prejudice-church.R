@@ -462,11 +462,29 @@ dat_long_colnames <- sort(dat_long_colnames)
 
 dat_long_colnames
 
+# baseline vars -----------------------------------------------------------
+
+
+dat_long <- dat_long_full |>
+  select(-alert_level_combined)
+
+str(dat_long)
+# check
+table(dat_long$censored)
+
+# select vars for baseline
+dat_long_colnames <- colnames(dat_long)
+
+dat_long_colnames <- sort(dat_long_colnames)
+
+dat_long_colnames
+
 # set baseline exposure and outcomes --------------------------------------
 
 exposure_var = c("religion_church_round",
-                 "censored",
-                 "hours_community_round") #
+                 "censored"#,
+                 # "hours_community_round"
+) #
 
 
 # set outcomes for prosocial domain
@@ -531,13 +549,13 @@ dt_positivity_full <- dat_long |>
 out <-
   msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
 
-out_church_2 <-
+out_binary <-
   msm::statetable.msm(religion_church_shift, id, data = dt_positivity_full)
 
 out
-out_church_2
+out_binary
 
-t_tab_2_labels <- c("< weekly", ">= weekly")
+t_tab_binary_labels <- c("< weekly", ">= weekly")
 # transition table
 
 transition_table  <- margot::transition_table(out)
@@ -545,57 +563,17 @@ transition_table
 # for import later
 here_save(transition_table, "transition_table")
 
-transition_table_out_church_2 <-
+transition_table_out_binary <-
   margot::transition_table(out_church_2,
-                           state_names = t_tab_2_labels)
+                           state_names = t_tab_binary_labels)
 
-transition_table_out_church_2
+transition_table_out_binary
 
 # for import later
-here_save(transition_table_out_church_2,
-          "transition_table_out_church_2")
-transition_table_out_church_2 <-
-  here_read("transition_table_out_church_2")
-
-# Transition hours
-dt_positivity_full_socialising <-
-  dat_long |>
-  filter(wave == 2018 |
-           wave == 2019) |>
-  select(wave, id, hours_community_round, sample_weights) |>
-  mutate(hours_community_round_shift = ifelse(hours_community_round >=
-                                                1, 1, 0))
-
-# create transition matrix
-out_social <-
-  msm::statetable.msm(hours_community_round, id, data = dt_positivity_full_socialising)
-
-out_social
-
-#t_tab_cats_labels <- c("No Cats", "Cats")
-# transition table
-transition_table_socialising  <-
-  margot::transition_table(out_social)
-transition_table_socialising
-here_save(transition_table_socialising,
-          "transition_table_socialising")
-
-out_shift_social <-
-  msm::statetable.msm(hours_community_round_shift, id, data = dt_positivity_full_socialising)
-
-out_shift_social
-
-t_tab_2_social_labels <-
-  c("< 1 weekly hours", ">= 1 weekly hours")
-# transition table
-
-transition_table_socialising_shift  <-
-  margot::transition_table(out_shift_social,
-                           state_names = t_tab_2_social_labels)
-
-transition_table_socialising_shift
-here_save(transition_table_socialising_shift,
-          "transition_table_socialising_shift")
+here_save(transition_table_binary,
+          "transition_table_out_binary")
+transition_table_out_binary <-
+  here_read("transition_table_out_binary")
 
 
 # double check path
@@ -640,80 +618,10 @@ sd_volunteer <-
 sd_donations
 sd_volunteer
 
-  # baseline_vars = c(
-  #   "male",
-  #   "age",
-  #   "education_level_coarsen",
-  #   "eth_cat",
-  #   "sample_origin",
-  #   "nz_dep2018",
-  #   "nzsei13",
-  #   "total_siblings_factor",
-  #   "born_nz",
-  #   "hlth_disability",
-#   "hlth_bmi",
-#   "kessler6_sum",
-#   "sfhealth",
-#   "hours_family_sqrt_round",
-#   "hours_friends_sqrt_round",
-#   "hours_community_sqrt_round",
-#   "household_inc_log",
-#   "partner",
-#   "political_conservative",
-#   "urban",
-#   "children_num",
-#   "hours_children_log",
-#   "hours_work_log",
-#   "hours_housework_log",
-#   "hours_exercise_log",
-#   "agreeableness",
-#   "conscientiousness",
-#   "extraversion",
-#   "honesty_humility",
-#   "openness",
-#   "neuroticism",
-#   "modesty",
-#   "religion_church_round",
-#   "sample_weights",
-#   "alert_level_combined_lead"
-# )
-# check
 baseline_vars
 
 # check
 baseline_vars
-#
-# # set exposure variable, can be both the continuous and the coarsened, if needed
-# exposure_var = c("religion_church_round",
-#                  "censored",
-#                  "hours_community_round") #
-#
-#
-# # set outcomes for prosocial domain
-# outcome_vars = c(
-#   "hours_charity",
-#   "charity_donate",
-#   "warm_asians",
-#   "warm_chinese",
-#   "warm_immigrants",
-#   "warm_indians",
-#   "warm_elderly",
-#   "warm_maori",
-#   "warm_mental_illness",
-#   "warm_muslims",
-#   "warm_nz_euro",
-#   "warm_overweight",
-#   "warm_pacific",
-#   "warm_refugees",
-#   "family_time_binary",
-#   "friends_time_binary",
-#   "community_time_binary",
-#   "support",
-#   "perc_gend_discrim",
-#   "perc_religious_discrim",
-#   "perc_discrim"
-# )
-
 
 # check associations only -------------------------------------------------
 
@@ -1070,27 +978,11 @@ df_clean <- df_wide_censored %>%
     across(
       .cols = where(is.numeric) &
         !t0_censored &
-        !t0_family_time_binary&
-        !t0_friends_time_binary &
-        !t0_community_time_binary &
-        !t0_family_money_binary&
-        !t0_friends_money_binary &
-        !t0_community_money_binary &
         !t0_religion_church_round &
-        !t0_hours_community_round &
         #  !t0_charity_donate & 
         !t0_sample_weights & 
         !t1_religion_church_round &
-        !t1_hours_community_round &
-        !t1_censored &
-        # !t2_charity_donate &
-        !t2_family_time_binary &
-        !t2_friends_time_binary &
-        !t2_community_time_binary &
-        !t2_family_money_binary&
-        !t2_friends_money_binary &
-        !t2_community_money_binary,
-      #  !t2_hours_charity,
+        !t1_censored,
       .fns = ~ scale(.),
       .names = "{.col}_z"
     )
@@ -1099,35 +991,16 @@ df_clean <- df_wide_censored %>%
   #        -t0_hours_charity) |> 
   select(
     where(is.factor),
-    t0_hours_community_round,
-    t0_family_time_binary,
-    t0_friends_time_binary,
-    t0_community_time_binary,
-    t0_family_money_binary,
-    t0_friends_money_binary,
-    t0_community_money_binary,
     t0_sample_weights,
     t0_religion_church_round,
     t0_censored,
     t1_religion_church_round,
-    t1_hours_community_round,
     t1_censored,
-    # t2_charity_donate,
-    # t2_hours_charity,
-    t2_family_time_binary,
-    t2_friends_time_binary,
-    t2_community_time_binary,
-    t2_family_money_binary,
-    t2_friends_money_binary,
-    t2_community_money_binary,
     ends_with("_z")
   ) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
   relocate("t0_censored", .before = starts_with("t1_"))  |>
   relocate("t1_censored", .before = starts_with("t2_"))
-
-
-
 
 
 here_save(df_clean, "df_clean")
@@ -1146,72 +1019,14 @@ names_base <-
 
 names_base
 
+here_save(names_base, "names_base")
+names_base <- here_read("names_base")
+
+
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
 
 names_outcomes
-
-
-# 
-# 
-# 
-# filter_variables <-
-#   function(names_base,
-#            names_outcomes,
-#            prefixes = c("t0_", "t2_")) {
-#     # Check if prefixes vector has exactly 2 elements
-#     if (length(prefixes) != 2) {
-#       stop("The 'prefixes' argument must contain exactly 2 elements.")
-#     }
-#     
-#     # Extract base part of the variable names by removing prefixes
-#     base_stripped <-
-#       sub(paste0("^", prefixes[1]), "", names_base)
-#     outcomes_stripped <-
-#       sub(paste0("^", prefixes[2]), "", names_outcomes)
-#     
-#     # Perform set difference on base names not in outcomes
-#     unique_base <-
-#       setdiff(base_stripped, outcomes_stripped)
-#     
-#     # Reapply the first prefix to obtain the original variable names to keep
-#     names_to_keep <- paste0(prefixes[1], unique_base)
-#     
-#     return(names_to_keep)
-#   }
-
-
-# # Example usage with the provided lists of variable names
-# names_base <- c("t0_sample_origin", "t0_education_level_coarsen", "t0_eth_cat",
-#                 "...") # and so on, fill in with the actual variable names
-# names_outcomes <- c("t2_charity_donate", "t2_hours_charity", "t2_family_time_binary",
-#                     "...") # and so on, fill in with the actual variable names
-#
-# # Call the function
-# names_to_keep <- filterVariables(names_base, names_outcomes, c("t0_", "t2_"))
-#
-# # Print the variable names to keep
-# print(names_to_keep)
-#
-
-# names_to_keep <-
-#   filter_variables(names_base, names_outcomes, c("t0_", "t2_"))
-# 
-# names_to_keep
-# colnames(df_clean)
-# 
-# 
-# names_to_keep
-# 
-# 
-# # use names
-# use_names <-
-#   setdiff(names_to_keep,  c("t0_sample_weights", "t0_censored"))
-# use_names
-# 
-# names_outcomes <-
-#   df_clean |> select(starts_with("t2")) |> colnames()
-
 
 
 #### SET VARIABLE NAMES
@@ -1228,68 +1043,78 @@ print(W)
 
 
 gain_A <- function(data, trt) {
-  mtp_base <- function(data, trt) {
-    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
-  }
-  
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base(data, trt))
-  }
-  
-  mtp_one_contrast <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast(data, trt),
-         data[[trt]])
-}
-
-
-
-lose_A <- function(data, trt) {
-  mtp_base <- function(data, trt) {
+  # make zero at baseline
+  mtp_base_A <- function(data, trt) {
     ifelse(data[[trt]] > 0, 0, data[[trt]])
   }
   
   if (trt == "t0_religion_church_round") {
-    return(mtp_base(data, trt))
+    return(mtp_base_A(data, trt))
   }
   
-  mtp_one_contrast <- function(data, trt) {
+  # shift to at least 4 at time 1
+  mtp_one_contrast_A <- function(data, trt) {
     ifelse(data[[trt]] <= 4, 4,  data[[trt]])
   }
   
   #  trt is a variable name passed as a string to the function
   
   ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast(data, trt),
+         mtp_one_contrast_A(data, trt),
          data[[trt]])
 }
+
+
+
+gain_A <- function(data, trt) {
+  # make zero at baseline
+  mtp_base_A <- function(data, trt) {
+    ifelse(data[[trt]] <= 4, 4,  data[[trt]]))
+  }
+  
+  if (trt == "t0_religion_church_round") {
+    return(mtp_base_A(data, trt))
+  }
+  
+  # shift to at least 4 at time 1
+  mtp_one_contrast_A <- function(data, trt) {
+    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+  }
+  
+  #  trt is a variable name passed as a string to the function
+  
+  ifelse(trt == "t1_religion_religious",
+         mtp_one_contrast_A(data, trt),
+         data[[trt]])
+}
+
+
 
 
 zero_A <- function(data, trt) {
-  mtp_base <- function(data, trt) {
+  
+  # make zero at baseline
+  mtp_base_zero <- function(data, trt) {
     ifelse(data[[trt]] > 0, 0, data[[trt]])
   }
   
   if (trt == "t0_religion_church_round") {
-    return(mtp_base(data, trt))
+    return(mtp_base_zero(data, trt))
   }
   
-  mtp_one_contrast <- function(data, trt) {
+  
+  # keep zero at exposure wave
+  
+  mtp_one_contrast_zero <- function(data, trt) {
     ifelse(data[[trt]] > 0, 0, data[[trt]])
   }
   
   #  trt is a variable name passed as a string to the function
   
   ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast(data, trt),
+         mtp_one_contrast_zero(data, trt),
          data[[trt]])
 }
-
 
 # BONUS: progressr progress bars!
 progressr::handlers(global = TRUE)
@@ -1339,37 +1164,51 @@ sl_lib <- c("SL.biglasso",
             "SL.ranger", #
             "SL.xgboost") #
 
-timing_info <-
-  system.time({
-    m_hours_charity_z_test <- lmtp_tmle(
-      outcome = "t2_hours_charity_z",
-      baseline = names_base,
-      shift = gain_A,
-      data = df_clean_slice,
-      trt = A,
-      cens = C,
-      mtp = TRUE,
-      folds = 10,
-      outcome_type = "continuous",
-      weights = df_clean_slice$t0_sample_weights,
-      learners_trt = "SL.xgboost",  # ranger much faster
-      learners_outcome = "SL.xgboost",
-      parallel = n_cores
-    )
-  })
 
-m_hours_charity_z_test
-
-# print timing info
-print(paste("Time taken: ", round(timing_info['elapsed'], 2), " seconds"))
-m_hours_charity
-# here_save(m_hours_charity, "m_hours_charity")
-#
+t2_warm_asians_z_test_gain <- lmtp_tmle(
+  outcome = "t2_warm_asians_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt = "SL.xgboost",
+  # ranger much faster
+  learners_outcome = "SL.xgboost",
+  parallel = n_cores
+)
 
 
 
-t2_m_hours_charity_z_gain <- lmtp_tmle(
-  outcome = "t2_hours_charity_z",
+
+t2_warm_asians_z_test_zero <- lmtp_tmle(
+  outcome = "t2_warm_asians_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean_slice,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt = "SL.xgboost",
+  # ranger much faster
+  learners_outcome = "SL.xgboost",
+  parallel = n_cores
+)
+
+# warm asians -------------------------------------------------------------
+
+
+
+
+t2_warm_asians_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_asians_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1383,34 +1222,14 @@ t2_m_hours_charity_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(t2_m_hours_charity_z_gain, "t2_m_hours_charity_z_gain")
+here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
 
 
 
-# t2_m_hours_charity_z_lose <- lmtp_tmle(
-#   outcome = "t2_hours_charity_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = SL.ranger,
-#   learners_outcome = SL.ranger,
-#   parallel = n_cores - 1
-# )
-# 
-# here_save(t2_m_hours_charity_z_lose, "t2_m_hours_charity_z_lose")
-# t2_m_hours_charity_z_lose
-# here_save(t2_m_hours_charity_z_lose, "t2_m_hours_charity_z_lose")
 
 
-
-t2_hours_charity_z_zero <- lmtp_tmle(
-  outcome = "t2_hours_charity_z",
+t2_warm_asians_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_asians_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1422,19 +1241,19 @@ t2_hours_charity_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores - 1
-)
-
-here_save(t2_hours_charity_z_zero, "t2_hours_charity_z_zero")
-
-
-#check
-lmtp_contrast(t2_m_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
+  parallel = n_cores-1
+)         
+here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
 
 
-# church donations --------------------------------------------------------
-t2_charity_donate_z_gain <- lmtp_tmle(
-  outcome = "t2_charity_donate_z",
+
+# warm_chinese ------------------------------------------------------------
+
+
+
+
+t2_warm_chinese_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_chinese_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1448,30 +1267,11 @@ t2_charity_donate_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(t2_charity_donate_z_gain, "t2_charity_donate_z_gain")
-t2_charity_donate_z_gain
-# 
-# t2_charity_donate_z_lose <- lmtp_tmle(
-#   outcome = "t2_charity_donate_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
-# 
-# here_save(t2_charity_donate_z_lose, "t2_charity_donate_z_lose")
-# t2_charity_donate_z_lose
+here_save(t2_warm_chinese_z_gain, "t2_warm_chinese_z_gain")
 
-t2_charity_donate_z_zero <- lmtp_tmle(
-  outcome = "t2_charity_donate_z",
+
+t2_warm_chinese_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_chinese_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1483,25 +1283,15 @@ t2_charity_donate_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores - 1
-)
-
-here_save(t2_charity_donate_z_zero, "t2_charity_donate_z_zero")
-
-lmtp_contrast(t2_charity_donate_z_gain, ref = t2_charity_donate_z_zero, type = "additive")
+  parallel = n_cores-1
+)         
+here_save(t2_warm_chinese_z, "t2_warm_chinese_z")
 
 
-#############################
-# church subjective support -----------------------------------------------
-#############################
+# t2_warm_immigrants_z ---------------------------------------------------------
 
-
-
-# church soc support ------------------------------------------------------
-
-
-t2_support_z_gain <- lmtp_tmle(
-  outcome = "t2_support_z",
+t2_warm_immigrants_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_immigrants_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1515,30 +1305,11 @@ t2_support_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(t2_support_z_gain, "t2_support_z_gain")
+here_save(t2_warm_immigrants_z_gain, "t2_warm_immigrants_z_gain")
 
-# 
-# t2_support_z_lose <- lmtp_tmle(
-#   outcome = "t2_support_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
-# 
-# here_save(t2_support_z_lose, "t2_support_z_lose")
-# t2_support_z_lose
 
-t2_support_z_zero <- lmtp_tmle(
-  outcome = "t2_support_z",
+t2_warm_immigrants_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_immigrants_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1550,17 +1321,15 @@ t2_support_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores - 1
-)
-
-here_save(t2_support_z_zero, "t2_support_z_zero")
-
-
-# church soc belong -------------------------------------------------------
+  parallel = n_cores-1
+)         
+here_save(t2_warm_immigrants_z_zero, "t2_warm_immigrants_z_zero")
 
 
-t2_belong_z_gain <- lmtp_tmle(
-  outcome = "t2_belong_z",
+# t2_warm_indians_z ------------------------------------------------------------
+
+t2_warm_indians_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_indians_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1574,30 +1343,11 @@ t2_belong_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(t2_belong_z_gain, "t2_belong_z_gain")
+here_save(t2_warm_indians_z_gain, "t2_warm_indians_z_gain")
 
-# 
-# t2_belong_z_lose <- lmtp_tmle(
-#   outcome = "t2_belong_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
-# 
-# here_save(t2_belong_z_lose, "t2_belong_z_lose")
-# t2_belong_z_lose
 
-t2_belong_z_zero <- lmtp_tmle(
-  outcome = "t2_belong_z",
+t2_warm_indians_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_indians_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1609,20 +1359,17 @@ t2_belong_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores - 1
-)
-
-here_save(t2_belong_z_zero, "t2_belong_z_zero")
-
+  parallel = n_cores-1
+)         
+here_save(t2_warm_indians_z_zero, "t2_warm_indians_z_zero")
 
 
 
-# church neighbourhood ----------------------------------------------------
 
+# t2_warm_elderly_z ------------------------------------------------------------
 
-
-t2_neighbourhood_community_z_gain <- lmtp_tmle(
-  outcome = "t2_neighbourhood_community_z",
+t2_warm_elderly_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_elderly_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1636,30 +1383,11 @@ t2_neighbourhood_community_z_gain <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(t2_neighbourhood_community_z_gain, "t2_neighbourhood_community_z_gain")
+here_save(t2_warm_elderly_z_gain, "t2_warm_elderly_z_gain")
 
-# 
-# t2_neighbourhood_community_z_lose <- lmtp_tmle(
-#   outcome = "t2_neighbourhood_community_z",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib_ranger,
-#   learners_outcome = sl_lib_ranger,
-#   parallel = n_cores - 1
-# )
 
-# here_save(t2_neighbourhood_community_z_lose, "t2_neighbourhood_community_z_lose")
-# t2_neighbourhood_community_z_lose
-
-t2_neighbourhood_community_z_lose_zero <- lmtp_tmle(
-  outcome = "t2_neighbourhood_community_z",
+t2_warm_elderly_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_elderly_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1671,17 +1399,16 @@ t2_neighbourhood_community_z_lose_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores - 1
-)
-
-here_save(t2_neighbourhood_community_z_lose_zero, "t2_neighbourhood_community_z_lose_zero")
-
+  parallel = n_cores-1
+)         
+here_save(t2_warm_elderly_z_zero, "t2_warm_elderly_z_zero")
 
 
-# church: family time help received -----------------------------------------------
+# t2_warm_maori_z --------------------------------------------------------------
 
-t2_family_time_binary_gain <- lmtp_tmle(
-  outcome = "t2_family_time_binary",
+
+t2_warm_maori_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_maori_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1689,40 +1416,17 @@ t2_family_time_binary_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_family_time_binary_gain, "t2_family_time_binary_gain")
-t2_family_time_binary_gain
-
-# 
-# t2_family_time_binary_lose <- lmtp_tmle(
-#   outcome = "t2_family_time_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-# 
-# here_save(t2_family_time_binary_lose, "t2_family_time_binary_lose")
-# t2_family_time_binary_lose
+)         
+here_save(t2_warm_maori_z_gain, "t2_warm_maori_z_gain")
 
 
-
-t2_family_time_binary_zero <- lmtp_tmle(
-  outcome = "t2_family_time_binary",
+t2_warm_maori_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_maori_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1730,22 +1434,21 @@ t2_family_time_binary_zero <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_family_time_binary_zero, "t2_family_time_binary_zero")
-t2_family_time_binary_zero
+)         
+here_save(t2_warm_maori_z_zero, "t2_warm_maori_z_zero")
 
 
 
-# church: friends help time received ----------------------------------------------
+# t2_warm_mental_illness_z -----------------------------------------------------
 
-t2_friends_time_binary_gain <- lmtp_tmle(
-  outcome = "t2_friends_time_binary",
+
+t2_warm_mental_illness_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_mental_illness_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1753,40 +1456,17 @@ t2_friends_time_binary_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_friends_time_binary_gain, "t2_friends_time_binary_gain")
-t2_friends_time_binary_gain
-# 
-# 
-# t2_friends_time_binary_lose <- lmtp_tmle(
-#   outcome = "t2_friends_time_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-# 
-# here_save(t2_friends_time_binary_lose, "t2_friends_time_binary_lose")
-# t2_friends_time_binary_lose
+)         
+here_save(t2_warm_mental_illness_z_gain, "t2_warm_mental_illness_z_gain")
 
 
-
-t2_friends_time_binary_zero <- lmtp_tmle(
-  outcome = "t2_friends_time_binary",
+t2_warm_mental_illness_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_mental_illness_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1794,22 +1474,21 @@ t2_friends_time_binary_zero <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_friends_time_binary_zero, "t2_friends_time_binary_zero")
-t2_friends_time_binary_zero
+)         
+here_save(t2_warm_mental_illness_z_zero, "t2_warm_mental_illness_z_zero")
 
 
 
+# t2_warm_muslims_z ------------------------------------------------------------
 
-# church: community time help received --------------------------------------------
-t2_community_time_binary_gain <- lmtp_tmle(
-  outcome = "t2_community_time_binary",
+
+t2_warm_muslims_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_muslims_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1817,40 +1496,17 @@ t2_community_time_binary_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_community_time_binary_gain, "t2_community_time_binary_gain")
-t2_community_time_binary_gain
-
-# 
-# t2_community_time_binary_lose <- lmtp_tmle(
-#   outcome = "t2_community_time_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-# 
-# here_save(t2_community_time_binary_lose, "t2_community_time_binary_lose")
-# t2_community_time_binary_lose
-# 
+)         
+here_save(t2_warm_muslims_z_gain, "t2_warm_muslims_z_gain")
 
 
-t2_community_time_binary_zero <- lmtp_tmle(
-  outcome = "t2_community_time_binary",
+t2_warm_muslims_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_muslims_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1858,27 +1514,21 @@ t2_community_time_binary_zero <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_community_time_binary_zero, "t2_community_time_binary_zero")
-t2_community_time_binary_zero
+)         
+here_save(t2_warm_muslims_z_gain, "t2_warm_muslims_z_gain")
 
 
-
-# money -------------------------------------------------------------------
-
-
-# church_friends money received --------------------------------------------------
+# t2_warm_nz_euro_z ------------------------------------------------------------
 
 
 
-t2_family_money_binary_gain <- lmtp_tmle(
-  outcome = "t2_family_money_binary",
+t2_warm_nz_euro_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_nz_euro_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1886,40 +1536,17 @@ t2_family_money_binary_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_family_money_binary_gain, "t2_family_money_binary_gain")
-t2_family_money_binary_gain
-# 
-# 
-# t2_family_money_binary_lose <- lmtp_tmle(
-#   outcome = "t2_family_money_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-
-# here_save(t2_family_money_binary_lose, "t2_family_money_binary_lose")
-# t2_family_money_binary_lose
+)         
+here_save(t2_warm_nz_euro_z_gain, "t2_warm_nz_euro_z_gain")
 
 
-
-t2_family_money_binary_zero <- lmtp_tmle(
-  outcome = "t2_family_money_binary",
+t2_warm_nz_euro_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_nz_euro_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1927,22 +1554,21 @@ t2_family_money_binary_zero <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_family_money_binary_zero, "t2_family_money_binary_zero")
-t2_family_money_binary_zero
+)         
+here_save(t2_warm_nz_euro_z_zero, "t2_warm_nz_euro_z_zero")
 
 
 
-# church: friends help money received ----------------------------------------------
+# t2_warm_overweight_z ---------------------------------------------------------
 
-t2_friends_money_binary_gain <- lmtp_tmle(
-  outcome = "t2_friends_money_binary",
+
+t2_warm_overweight_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_overweight_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1950,40 +1576,17 @@ t2_friends_money_binary_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_friends_money_binary_gain, "t2_friends_money_binary_gain")
-t2_friends_money_binary_gain
-# 
-# 
-# t2_friends_money_binary_lose <- lmtp_tmle(
-#   outcome = "t2_friends_money_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-# 
-# here_save(t2_friends_money_binary_lose, "t2_friends_money_binary_lose")
-# t2_friends_money_binary_lose
+)         
+here_save(t2_warm_overweight_z_gain, "t2_warm_overweight_z_gain")
 
 
-
-t2_friends_money_binary_zero <- lmtp_tmle(
-  outcome = "t2_friends_money_binary",
+t2_warm_overweight_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_overweight_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -1991,22 +1594,21 @@ t2_friends_money_binary_zero <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_friends_money_binary_zero, "t2_friends_money_binary_zero")
-t2_friends_money_binary_zero
+)         
+here_save(t2_warm_overweight_z_zero, "t2_warm_overweight_z_zero")
 
 
 
+# t2_warm_pacific_z ------------------------------------------------------------
 
-# church: community money help received --------------------------------------------
-t2_community_money_binary_gain <- lmtp_tmle(
-  outcome = "t2_community_money_binary",
+
+t2_warm_pacific_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_pacific_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -2014,40 +1616,17 @@ t2_community_money_binary_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
-)
-
-here_save(t2_community_money_binary_gain, "t2_community_money_binary_gain")
-t2_community_money_binary_gain
-
-# 
-# t2_community_money_binary_lose <- lmtp_tmle(
-#   outcome = "t2_community_money_binary",
-#   baseline = names_base,
-#   shift = lose_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt = "SL.ranger",
-#   learners_outcome = "SL.ranger",
-#   parallel = n_cores-1
-# )
-# 
-# here_save(t2_community_money_binary_lose, "t2_community_money_binary_lose")
-# t2_community_money_binary_lose
-# 
+)         
+here_save(t2_warm_pacific_z_gain, "t2_warm_pacific_z_gain")
 
 
-t2_community_money_binary_zero <- lmtp_tmle(
-  outcome = "t2_community_money_binary",
+t2_warm_pacific_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_pacific_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
@@ -2055,16 +1634,552 @@ t2_community_money_binary_zero <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  outcome_type = "binomial",
+  outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
+)         
+here_save(t2_warm_pacific_z_zero, "t2_warm_pacific_z_zero")
+
+
+
+
+# t2_warm_refugees_z -----------------------------------------------------------
+
+t2_warm_refugees_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_refugees_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_warm_refugees_z_gain, "t2_warm_refugees_z_gain")
+
+
+t2_warm_refugees_z_zero <- lmtp_tmle(
+  outcome = "t2_warm_refugees_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_warm_refugees_z_zero, "t2_warm_refugees_z_zero")
+
+
+
+# t2_perc_gend_discrim_z -------------------------------------------------------
+
+
+t2_perc_gend_discrim_z_gain <- lmtp_tmle(
+  outcome = "t2_perc_gend_discrim_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_perc_gend_discrim_z_gain, "t2_perc_gend_discrim_z_gain")
+
+
+t2_perc_gend_discrim_z_zero <- lmtp_tmle(
+  outcome = "t2_perc_gend_discrim_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_perc_gend_discrim_z_zero, "t2_perc_gend_discrim_z_zero")
+
+
+# t2_perc_discrim_z ------------------------------------------------------------
+
+
+t2_perc_discrim_z_gain <- lmtp_tmle(
+  outcome = "t2_perc_discrim_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_perc_discrim_z_gain, "t2_perc_discrim_z_gain")
+
+
+t2_perc_discrim_z_zero <- lmtp_tmle(
+  outcome = "t2_perc_discrim_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_perc_discrim_z_zero, "t2_perc_discrim_z_zero")
+
+
+
+
+# t2_perc_religious_discrim_z --------------------------------------------------
+
+
+
+
+t2_perc_religious_discrim_z_gain <- lmtp_tmle(
+  outcome = "t2_warm_chinese_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_perc_religious_discrim_z_gain, "t2_perc_religious_discrim_z_gain")
+
+
+t2_perc_religious_discrim_z_zero <- lmtp_tmle(
+  outcome = "t2_perc_religious_discrim_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  learners_outcome = "SL.ranger",
+  parallel = n_cores-1
+)         
+here_save(t2_perc_religious_discrim_z_zero, "t2_perc_religious_discrim_z_zero")
+
+
+# read models -------------------------------------------------------------
+
+
+# asians ------------------------------------------------------------------
+
+
+t2_warm_asians_z_gain<- read_here("t2_warm_asians_z_gain")
+t2_warm_asians_z_zero<- read_here("t2_warm_asians_z_zero")
+
+contrast_t2_warm_asians_z <-
+  lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_zero, type = "additive")
+
+tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
+  contrast_t2_warm_asians_z,
+  scale = "RD",
+  new_name = "religious service: warm asians"
 )
 
-here_save(t2_community_money_binary_zero, "t2_community_money_binary_zero")
-t2_community_money_binary_zero
+output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
 
 
+
+# chinese -----------------------------------------------------------------
+
+t2_warm_chinese_z_gain<- read_here("t2_warm_chinese_z_gain")
+t2_warm_chinese_z_zero<- read_here("t2_warm_chinese_z_zero")
+
+
+contrast_t2_warm_chinese_z <-
+  lmtp_contrast(t2_warm_chinese_z_gain, ref =  t2_warm_chinese_z_zero, type = "additive")
+
+tab_contrast_t2_warm_chinese_z <- margot_tab_lmtp(
+  contrast_t2_warm_chinese_z,
+  scale = "RD",
+  new_name = "religious service: warm chinese"
+)
+
+output_contrast_t2_warm_chinese_z <- lmtp_evalue_tab(tab_contrast_t2_warm_chinese_z,  delta = 1, sd = 1, scale = c("RD"))
+
+
+# immigrants --------------------------------------------------------------
+
+
+t2_warm_immigrants_z_gain<- read_here("t2_warm_immigrants_z_gain")
+t2_warm_immigrants_z_zero<- read_here("t2_warm_immigrants_z_zero")
+
+
+contrast_t2_warm_immigrants_z <-
+  lmtp_contrast(t2_warm_immigrants_z_gain, ref =  t2_warm_immigrants_z_zero, type = "additive")
+
+tab_contrast_t2_warm_immigrants_z <- margot_tab_lmtp(
+  contrast_t2_warm_immigrants_z,
+  scale = "RD",
+  new_name = "religious service: warm immigrants"
+)
+
+output_tab_contrast_t2_warm_immigrants_z <- lmtp_evalue_tab(tab_contrast_t2_warm_immigrants_z,  delta = 1, sd = 1, scale = c("RD"))
+# indians -----------------------------------------------------------------
+
+
+
+t2_warm_indians_z_gain<- read_here("t2_warm_indians_z_gain")
+t2_warm_indians_z_zero<- read_here("t2_warm_indians_z_zero")
+
+
+contrast_t2_warm_indians_z <-
+  lmtp_contrast(t2_warm_indians_z_gain, ref =  t2_warm_indians_z_zero, type = "additive")
+
+tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
+  contrast_t2_warm_indians_z
+  scale = "RD",
+  new_name = "religious service: warm indians"
+)
+
+output_tab_contrast_t2_warm_indians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_indians_z,  delta = 1, sd = 1, scale = c("RD"))
+# elderly -----------------------------------------------------------------
+
+t2_warm_elderly_z_gain<- read_here("t2_warm_elderly_z_gain")
+t2_warm_elderly_z_zero<- read_here("t2_warm_elderly_z_zero")
+
+
+contrast_t2_warm_elderly_z <-
+  lmtp_contrast(t2_warm_elderly_z_gain, ref =  t2_warm_elderly_z_zero, type = "additive")
+
+tab_contrast_t2_warm_elderly_z <- margot_tab_lmtp(
+  contrast_t2_warm_elderly_z,
+  scale = "RD",
+  new_name = "religious service: warm elderly"
+)
+
+output_tab_contrast_t2_warm_elderly_z <- lmtp_evalue_tab(tab_contrast_t2_warm_elderly_z,  delta = 1, sd = 1, scale = c("RD"))
+# maori -------------------------------------------------------------------
+
+t2_warm_maori_z_gain<- read_here("t2_warm_maori_z_gain")
+t2_warm_maori_z_zero<- read_here("t2_warm_maori_z_zero")
+
+contrast_t2_warm_maori_z <-
+  lmtp_contrast(t2_warm_maori_z_gain, ref =  t2_warm_maori_z_zero, type = "additive")
+
+tab_contrast_t2_warm_maori_z <- margot_tab_lmtp(
+  contrast_t2_warm_maori_z,
+  scale = "RD",
+  new_name = "religious service: warm maori"
+)
+
+output_tab_contrast_t2_warm_maori_z <- lmtp_evalue_tab(tab_contrast_t2_warm_maori_z,  delta = 1, sd = 1, scale = c("RD"))
+
+# mentally ill ------------------------------------------------------------
+
+t2_warm_mental_illness_z_gain<- read_here("t2_warm_mental_illness_z_gain")
+t2_warm_mental_illness_z_zero<- read_here("t2_warm_mental_illness_z_zero")
+
+contrast_t2_warm_mental_illness_z <-
+  lmtp_contrast(t2_warm_mental_illness_z_gain, ref =  t2_warm_mental_illness_z_zero, type = "additive")
+
+tab_contrast_t2_warm_mental_illness_z <- margot_tab_lmtp(
+  contrast_t2_warm_mental_illness_z,
+  scale = "RD",
+  new_name = "religious service: warm mental illness"
+)
+
+output_tab_contrast_t2_warm_mental_illness_z <- lmtp_evalue_tab( tab_contrast_t2_warm_mental_illness_z,  delta = 1, sd = 1, scale = c("RD"))
+
+# muslims -----------------------------------------------------------------
+t2_warm_muslims_z_gain<- read_here("t2_warm_muslims_z_gain")
+t2_warm_muslims_z_zero<- read_here("t2_warm_muslims_z_zero")
+
+
+contrast_t2_warm_muslims_z <-
+  lmtp_contrast(t2_warm_muslims_z_gain, ref =  t2_warm_muslims_z_zero, type = "additive")
+
+tab_contrast_t2_warm_muslims_z <- margot_tab_lmtp(
+  contrast_t2_warm_muslims_z,
+  scale = "RD",
+  new_name = "religious service: warm muslims"
+)
+
+output_tab_contrast_t2_warm_muslims_z <- lmtp_evalue_tab(tab_contrast_t2_warm_muslims_z ,  delta = 1, sd = 1, scale = c("RD"))
+# nzeuro ------------------------------------------------------------------
+
+t2_warm_nz_euro_z_gain<- read_here("t2_warm_nz_euro_z_gain")
+t2_warm_nz_euro_z_zero<- read_here("t2_warm_nz_euro_z_zero")
+
+contrast_t2_warm_nz_euro_z <-
+  lmtp_contrast(t2_warm_nz_euro_z_gain, ref =  t2_warm_nz_euro_z_zero, type = "additive")
+
+tab_contrast_t2_warm_nz_euro_z <- margot_tab_lmtp(
+  contrast_t2_warm_nz_euro_z,
+  scale = "RD",
+  new_name = "religious service: warm nz euro"
+)
+
+output_tab_contrast_t2_warm_nz_euro_z <- lmtp_evalue_tab(tab_contrast_t2_warm_nz_euro_z,  delta = 1, sd = 1, scale = c("RD"))
+# overweight --------------------------------------------------------------
+
+
+t2_warm_overweight_z_gain<- read_here("t2_warm_overweight_z_gain")
+t2_warm_overweight_z_zero<- read_here("t2_warm_overweight_z_zero")
+
+
+contrast_t2_warm_overweight_z <-
+  lmtp_contrast(t2_warm_overweight_z_gain, ref = t2_warm_overweight_z_zero, type = "additive")
+
+tab_contrast_t2_warm_overweight_z <- margot_tab_lmtp(
+  contrast_t2_warm_overweight_z,
+  scale = "RD",
+  new_name = "religious service: warm overweight"
+)
+
+output_tab_contrast_t2_warm_overweight_z <- lmtp_evalue_tab(tab_contrast_t2_warm_overweight_z,  delta = 1, sd = 1, scale = c("RD"))
+# pacific -----------------------------------------------------------------
+
+
+t2_warm_pacific_z_gain<- read_here("t2_warm_pacific_z_gain")
+t2_warm_pacific_z_zero<- read_here("t2_warm_pacific_z_zero")
+
+contrast_t2_warm_pacific_z <-
+  lmtp_contrast(t2_warm_pacific_z_gain, ref =  t2_warm_pacific_z_zero, type = "additive")
+
+tab_contrast_t2_warm_pacific_z <- margot_tab_lmtp(
+  contrast_t2_warm_pacific_z,
+  scale = "RD",
+  new_name = "religious service: warm pacific"
+)
+
+output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
+# refugees ----------------------------------------------------------------
+
+
+t2_warm_refugees_z_gain<- read_here("t2_warm_refugees_z_gain")
+t2_warm_refugees_z_zero<- read_here("t2_warm_refugees_z_zero")
+
+
+contrast_t2_warm_refugees_z <-
+  lmtp_contrast(t2_warm_refugees_z_gain, ref =  t2_warm_refugees_z_zero, type = "additive")
+
+tab_contrast_t2_warm_refugees_z <- margot_tab_lmtp(
+  contrast_t2_warm_refugees_z,
+  scale = "RD",
+  new_name = "religious service: warm refugees"
+)
+
+output_tab_contrast_t2_warm_refugees_z <- lmtp_evalue_tab( tab_contrast_t2_warm_refugees_z,  delta = 1, sd = 1, scale = c("RD"))
+# perceive gender discrim -------------------------------------------------
+t2_perc_gend_discrim_z_gain<- read_here("t2_perc_gend_discrim_z_gain")
+t2_perc_gend_discrim_z_zero<- read_here("t2_perc_gend_discrim_z_zero")
+
+contrast_t2_perc_gend_discrim_z <-
+  lmtp_contrast(t2_perc_gend_discrim_z_gain, ref =  t2_perc_gend_discrim_z_zero, type = "additive")
+
+tab_contrast_t2_perc_gend_discrim_z <- margot_tab_lmtp(
+  contrast_t2_perc_gend_discrim_z,
+  scale = "RD",
+  new_name = "religious service: perceive gender discrim"
+)
+
+output_tab_contrast_t2_perc_gend_discrim_z <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z ,  delta = 1, sd = 1, scale = c("RD"))
+# perceive rel discrim ----------------------------------------------------
+t2_perc_religious_discrim_z_gain<- read_here("t2_perc_religious_discrim_z_gain")
+t2_perc_religious_discrim_z_zero<- read_here("t2_perc_religious_discrim_z_zero")
+
+contrast_t2_perc_religious_discrim_z <-
+  lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_zero, type = "additive")
+
+tab_contrast_t2_perc_religious_discrim_z <- margot_tab_lmtp(
+  contrast_t2_perc_religious_discrim_z,
+  scale = "RD",
+  new_name = "religious service: perceive religious discrim"
+)
+
+output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
+
+# perceive ethnic discrim -------------------------------------------------
+
+t2_perc_discrim_z_gain<- read_here("t2_perc_discrim_z_gain")
+t2_perc_discrim_z_zero<- read_here("t2_perc_discrim_z_zero")
+
+
+
+contrast_t2_perc_discrim_z <-
+  lmtp_contrast(t2_perc_discrim_z_gain, ref =  t2_perc_discrim_z_zero, type = "additive")
+
+tab_contrast_t2_perc_discrim_z <- margot_tab_lmtp(
+  contrast_t2_perc_discrim_z,
+  scale = "RD",
+  new_name = "religious service: perceive ethnic discrim"
+)
+
+output_tab_contrast_t2_perc_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
+
+
+
+# tables and graphs -------------------------------------------------------
+
+
+tab_all_warm <- rbind(
+  output_tab_contrast_t2_warm_asians_z,
+  output_contrast_t2_warm_chinese_z,
+  output_tab_contrast_t2_warm_immigrants_z,
+  output_tab_contrast_t2_warm_indians_z,
+  output_tab_contrast_t2_warm_elderly_z,
+  output_tab_contrast_t2_warm_maori_z,
+  output_tab_contrast_t2_warm_mental_illness_z,
+  output_tab_contrast_t2_warm_muslims_z,
+  output_tab_contrast_t2_warm_nz_euro_z,
+  output_tab_contrast_t2_warm_overweight_z,
+  output_tab_contrast_t2_warm_pacific_z,
+  output_tab_contrast_t2_warm_refugees_z)
+
+group_tab_all_warm <- group_tab(tab_all_warm)
+
+here_save(tab_all_warm, "tab_all_warm")
+here_save(group_tab_all_warm, "group_tab_all_warm")
+
+
+
+
+tab_all_perceive <-
+  rbind(
+    output_tab_contrast_t2_perc_gend_discrim_z,
+    output_tab_contrast_t2_perc_religious_discrim_z,
+    output_tab_contrast_t2_perc_discrim_z
+  )
+
+
+group_tab_all_perceive <- group_tab(tab_all_perceive)
+
+here_save(tab_all_perceive , "tab_all_perceive")
+here_save(group_tab_all_perceive, "group_tab_all_perceive")
+
+
+# graphs ------------------------------------------------------------------
+
+
+
+plot_group_tab_all_warm <- margot_plot(
+  group_tab_all_warm,
+  type = "RD",
+  title = "Religious service effect warmth to groups",
+  subtitle = "Contrast: weekly vs. none ",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 18,
+  text_size = 4.5,
+  point_size = 2.5,
+  title_size = 20,
+  subtitle_size = 14,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -.5,
+  x_lim_lo = -.5,
+)
+
+plot_group_tab_all_warm
+
+here_save(plot_group_tab_all_warm, 'plot_group_tab_all_warm')
+
+
+
+
+
+plot_group_tab_all_perceive <- margot_plot(
+  group_tab_all_perceive,
+  type = "RD",
+  title = "Religious service effect on perceived prejudice against self",
+  subtitle = "Contrast: weekly vs. none ",
+  xlab = "",
+  ylab = "",
+  estimate_scale = 1,
+  base_size = 18,
+  text_size = 4.5,
+  point_size = 2.5,
+  title_size = 20,
+  subtitle_size = 14,
+  legend_text_size = 8,
+  legend_title_size = 10,
+  x_offset = -.5,
+  x_lim_lo = -.5,
+)
+
+plot_group_tab_all_perceive
+
+here_save(plot_group_tab_all_perceive, 'plot_group_tab_all_perceive')
+
+
+
+
+
+# read material -----------------------------------------------------------
+
+
+tab_all_warm <- here_read("tab_all_warm")
+group_tab_all_warm<- here_read("group_tab_all_warm")
+
+tab_all_warm<- here_read("tab_all_warm")
+group_tab_all_warm<- here_read("group_tab_all_warm")
+
+
+plot_group_tab_all_perceive <- here_read(plot_group_tab_all_perceive, "plot_group_tab_all_perceive")
+plot_group_tab_all_warm<- here_read(plot_group_tab_all_warm, "plot_group_tab_all_warm")
+
+
+transition_table <- here_read("transition_table")
+transition_table_out_binary <-
+  here_read("transition_table_out_binary")
+
+n_participants <- here_read("n_participants")
+
+table_baseline <- here_save("table_baseline")
+table_exposures <- here_save("table_exposures")
+table_outcomes <- here_save("table_outcomes")
+
+
+graph_density_of_exposure_down<- here_read("graph_density_of_exposure_down")
+graph_density_of_exposure_up<- here_read("graph_density_of_exposure_up")
 
 
