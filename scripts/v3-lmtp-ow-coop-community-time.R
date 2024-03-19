@@ -514,7 +514,7 @@ base_var <-
   setdiff(baseline_vars, c("censored", "sample_weights"))
 base_var
 
-
+here_save(base_var, "base_var")
 #community at baseline
 n_participants <-
   n_unique(dat_long$id) #47202 # reports hours with
@@ -548,11 +548,11 @@ out_social
 
 #t_tab_cats_labels <- c("No Cats", "Cats")
 # transition table
-transition_table_socialising  <-
+transition_table <-
   margot::transition_table(out_social)
-transition_table_socialising
-here_save(transition_table_socialising,
-          "transition_table_socialising")
+transition_table
+here_save(transition_table,
+          "transition_table")
 
 out_shift_social <-
   msm::statetable.msm(hours_community_round_shift, id, data = dt_positivity_full_socialising)
@@ -563,13 +563,13 @@ t_tab_2_social_labels <-
   c("< 1 weekly hours", ">= 1 weekly hours")
 # transition table
 
-transition_table_socialising_shift  <-
+transition_table_binary  <-
   margot::transition_table(out_shift_social,
                            state_names = t_tab_2_social_labels)
 
-transition_table_socialising_shift
-here_save(transition_table_socialising_shift,
-          "transition_table_socialising_shift")
+transition_table_binary
+here_save(transition_table_binary,
+          "transition_table_binary")
 # double check path
 push_mods
 
@@ -613,86 +613,14 @@ sd_volunteer <-
 sd_donations
 sd_volunteer
 
-#dat#
-# baseline_vars = c(
-#   "male",
-#   "age",
-#   "education_level_coarsen",
-#   "eth_cat",
-#   "sample_origin",
-#   "nz_dep2018",
-#   "nzsei13",
-#   "total_siblings_factor",
-#   "born_nz",
-#   "hlth_disability",
-#   "hlth_bmi",
-#   "kessler6_sum",
-#   "sfhealth",
-#   "hours_family_sqrt_round",
-#   "hours_friends_sqrt_round",
-#   "hours_community_sqrt_round",
-#   "household_inc_log",
-#   "partner",
-#   "political_conservative",
-#   "urban",
-#   "children_num",
-#   "hours_children_log",
-#   "hours_work_log",
-#   "hours_housework_log",
-#   "hours_exercise_log",
-#   "agreeableness",
-#   "conscientiousness",
-#   "extraversion",
-#   "honesty_humility",
-#   "openness",
-#   "neuroticism",
-#   "modesty",
-#   "religion_church_round",
-#   "sample_weights",
-#   "alert_level_combined_lead"
-# )
-# check
 baseline_vars
 
 # check
 baseline_vars
-#
-# # set exposure variable, can be both the continuous and the coarsened, if needed
-# exposure_var = c("religion_church_round",
-#                  "censored",
-#                  "hours_community_round") #
-#
-#
-# # set outcomes for prosocial domain
-# outcome_vars = c(
-#   "hours_charity",
-#   "charity_donate",
-#   "warm_asians",
-#   "warm_chinese",
-#   "warm_immigrants",
-#   "warm_indians",
-#   "warm_elderly",
-#   "warm_maori",
-#   "warm_mental_illness",
-#   "warm_muslims",
-#   "warm_nz_euro",
-#   "warm_overweight",
-#   "warm_pacific",
-#   "warm_refugees",
-#   "family_time_binary",
-#   "friends_time_binary",
-#   "community_time_binary",
-#   "support",
-#   "perc_gend_discrim",
-#   "perc_religious_discrim",
-#   "perc_discrim"
-# )
+
 
 
 # check associations only -------------------------------------------------
-
-
-
 dt_18 <- dat_long|>
   filter(wave == 2018) 
 
@@ -873,7 +801,6 @@ table_exposures
 
 # save baseline
 here_save(table_exposures, "table_exposures")
-table_exposures <- here_read("table_exposures")
 
 table_exposures
 
@@ -1232,14 +1159,14 @@ names_base <-
                      -t0_censored) |> colnames()
 
 names_base
-
+here_save(names_base, "names_base")
 
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
 
 names_outcomes
 
-
+here_save(names_outcomes, "names_outcomes")
 # 
 # 
 # 
@@ -1418,28 +1345,8 @@ library(randomForest)
 
 #names_t2_hours_charity_z<- select_and_rename_cols(names_base = names_base, baseline_vars = base_var, outcom = "t2_hours_charity_z")
 
-m_hours_charity_z_test <- lmtp_tmle(
-  outcome = "t2_hours_charity_z",
-  baseline = names_base,
-  shift = gain_A,
-  data = df_clean_slice,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "continuous",
-  weights = df_clean_slice$t0_sample_weights,
-  learners_trt = sl_lib,
-  # ranger much faster
-  learners_outcome = sl_lib,
-  parallel = n_cores
-)
-
-m_hours_charity_z_test
-
-
-m_hours_charity_z_test_2 <- lmtp_tmle(
-  outcome = "t2_hours_charity_z",
+t2_charity_donate_z_test_gain <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean_slice,
@@ -1455,9 +1362,32 @@ m_hours_charity_z_test_2 <- lmtp_tmle(
   parallel = n_cores
 )
 
-m_hours_charity_z_test_2
+t2_charity_donate_z_test_gain
 
 
+t2_charity_donate_z_test_zero <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean_slice,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt = "SL.ranger",
+  # ranger much faster
+  learners_outcome = "SL.ranger",
+  parallel = n_cores
+)
+
+t2_charity_donate_z_test_zero
+
+
+contrast_hours_charity_z_test <-
+  lmtp_contrast(t2_charity_donate_z_test_gain, ref = t2_charity_donate_z_test_zero, type = "additive")
+contrast_hours_charity_z_test
 
 # models ------------------------------------------------------------------
 
