@@ -1213,10 +1213,8 @@ here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
 
 
 # warm_chinese ------------------------------------------------------------
-
-
 t2_warm_chinese_z_gain <- lmtp_tmle(
-  outcome = "t2_warm_chinese_z",
+  outcome = "t2_warm_elderly_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean,
@@ -1248,7 +1246,7 @@ t2_warm_chinese_z_zero <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(t2_warm_chinese_z, "t2_warm_chinese_z")
+here_save(t2_warm_chinese_z_zero, "t2_warm_chinese_z_zero")
 
 
 # t2_warm_immigrants_z ---------------------------------------------------------
@@ -1483,7 +1481,7 @@ t2_warm_muslims_z_zero <- lmtp_tmle(
   learners_outcome = "SL.ranger",
   parallel = n_cores-1
 )         
-here_save(t2_warm_muslims_z_gain, "t2_warm_muslims_z_gain")
+here_save(t2_warm_muslims_z_zero, "t2_warm_muslims_z_zero")
 
 
 # t2_warm_nz_euro_z ------------------------------------------------------------
