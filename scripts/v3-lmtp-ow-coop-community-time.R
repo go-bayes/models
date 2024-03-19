@@ -1160,6 +1160,7 @@ names_base <-
 
 names_base
 here_save(names_base, "names_base")
+names_base <- here_read("names_base")
 
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
@@ -1167,6 +1168,9 @@ names_outcomes <-
 names_outcomes
 
 here_save(names_outcomes, "names_outcomes")
+names_outcomes <- here_read("names_outcomes")
+names_outcomes
+
 # 
 # 
 # 
@@ -1269,7 +1273,7 @@ print(W)
 # 
 # 
 # 
-# zero_A <- function(data, trt) {
+# NULL <- function(data, trt) {
 #   mtp_base <- function(data, trt) {
 #     ifelse(data[[trt]] > 0, 0, data[[trt]])
 #   }
@@ -1290,15 +1294,13 @@ print(W)
 # }
 
 
-gain_A <- function(data, trt){
-  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
-}
+gain_A <- function(data, trt)  data[[trt]] + 1 
 
-zero_A <- function(data, trt){
-  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
-}
+# NULL <- function(data, trt){
+#   ifelse( data[[trt]] > 0, 0,  data[[trt]] )
+# }
 
-
+gain_A
 
 
 # BONUS: progressr progress bars!
@@ -1318,7 +1320,7 @@ library("ranger")
 
 # test data
 df_clean_slice <- df_clean |>
-  slice_head(n = 500) |>
+  slice_head(n = 1000) |>
   as.data.frame()
 colnames(df_clean_slice)
 
@@ -1334,12 +1336,12 @@ library(SuperLearner)
 #                          outcome = "t2_hours_charity_z")
 #
 # names_base_t2_hours_charity_z
-m_hours_charity_z_test
+#m_hours_charity_z_test
 
 sl_lib <- c("SL.glmnet",
             "SL.ranger", #
             "SL.xgboost") #
-library(randomForest)
+library(ranger)
 
 
 
@@ -1362,13 +1364,14 @@ t2_charity_donate_z_test_gain <- lmtp_tmle(
   parallel = n_cores
 )
 
+
 t2_charity_donate_z_test_gain
 
 
 t2_charity_donate_z_test_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean_slice,
   trt = A,
   cens = C,
@@ -1383,7 +1386,7 @@ t2_charity_donate_z_test_zero <- lmtp_tmle(
 )
 
 t2_charity_donate_z_test_zero
-
+t2_charity_donate_z_test_gain
 
 contrast_hours_charity_z_test <-
   lmtp_contrast(t2_charity_donate_z_test_gain, ref = t2_charity_donate_z_test_zero, type = "additive")
@@ -1412,7 +1415,7 @@ here_save(t2_hours_charity_z_gain, "t2_hours_charity_z_gain")
 t2_hours_charity_z_zero <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1450,7 +1453,7 @@ here_save(t2_volunteers_binary_gain, "t2_volunteers_binary_gain")
 t2_volunteers_binary_zero <- lmtp_tmle(
   outcome = "t2_volunteers_binary",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1488,7 +1491,7 @@ here_save(t2_charity_donate_z_gain, "t2_charity_donate_z_gain")
 t2_charity_donate_z_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1534,7 +1537,7 @@ here_save(t2_support_z_gain, "t2_support_z_gain")
 t2_support_z_zero <- lmtp_tmle(
   outcome = "t2_support_z",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1572,7 +1575,7 @@ here_save(t2_belong_z_gain, "t2_belong_z_gain")
 t2_belong_z_zero <- lmtp_tmle(
   outcome = "t2_belong_z",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1612,7 +1615,7 @@ here_save(t2_neighbourhood_community_z_gain,
 t2_neighbourhood_community_z_zero <- lmtp_tmle(
   outcome = "t2_neighbourhood_community_z",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1654,7 +1657,7 @@ here_save(t2_family_time_binary_gain, "t2_family_time_binary_gain")
 t2_family_time_binary_zero <- lmtp_tmle(
   outcome = "t2_family_time_binary",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1694,7 +1697,7 @@ here_save(t2_friends_time_binary_gain, "t2_friends_time_binary_gain")
 t2_friends_time_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1735,7 +1738,7 @@ here_save(t2_community_time_binary_gain,
 t2_community_time_binary_zero <- lmtp_tmle(
   outcome = "t2_community_time_binary",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1777,7 +1780,7 @@ here_save(t2_family_money_binary_gain, "t2_family_money_binary_gain")
 t2_family_money_binary_zero <- lmtp_tmle(
   outcome = "t2_family_money_binary",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1816,7 +1819,7 @@ here_save(t2_friends_money_binary_gain,
 t2_friends_money_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1856,7 +1859,7 @@ here_save(t2_community_money_binary_gain,
 t2_community_money_binary_zero <- lmtp_tmle(
   outcome = "t2_community_money_binary",
   baseline = names_base,
-  shift = zero_A,
+  shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
