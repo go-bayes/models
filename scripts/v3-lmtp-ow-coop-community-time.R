@@ -1294,7 +1294,9 @@ print(W)
 # }
 
 
-gain_A <- function(data, trt)  data[[trt]] + 1 
+
+gain_A <- function(data, trt)  data[[trt]] + 1
+
 
 # NULL <- function(data, trt){
 #   ifelse( data[[trt]] > 0, 0,  data[[trt]] )
