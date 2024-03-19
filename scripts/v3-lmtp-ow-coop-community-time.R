@@ -1876,7 +1876,6 @@ here_save(t2_community_money_binary_zero,
           "t2_community_money_binary_zero")
 
 
-
 # results -----------------------------------------------------------------
 
 t2_volunteers_binary_gain <- here_read("t2_volunteers_binary_gain")
