@@ -41,7 +41,7 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-church-coop"
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-church-prej"
 )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
@@ -357,7 +357,7 @@ dat_long_full <- dat |>
     urban = as.numeric(urban)) |>
   ungroup() |>
   dplyr::mutate(
-    friends_money = ifelse(friends_money < 0, 0, friends_money),
+  #  friends_money = ifelse(friends_money < 0, 0, friends_money),
     # someone gave neg number
     hours_work_log = log(hours_work + 1),
     hours_housework_log = log(hours_housework + 1),
@@ -367,22 +367,22 @@ dat_long_full <- dat |>
     hours_children_log = log(hours_children + 1),
     # total_siblings_log = log(total_siblings + 1),
     # hours_community_log = log(hours_community + 1),
-    hours_friends_log  = log(hours_friends + 1),
-    hours_family_log = log(hours_family + 1)#,
+    # hours_friends_log  = log(hours_friends + 1),
+    # hours_family_log = log(hours_family + 1)#,
     #  children_num_log = log(children_num + 1)
   ) |>
-  dplyr::select(
-    -c(
-      hours_work,
-      hours_housework,
-      household_inc,
-      hours_exercise,
-      hours_children,
-      have_siblings,
-      children_num,
-      total_siblings
-    )
-  ) |>
+  # dplyr::select(
+  #   -c(
+  #     hours_work,
+  #     hours_housework,
+  #     household_inc,
+  #     hours_exercise,
+  #     hours_children,
+  #     have_siblings,
+  #     children_num,
+  #     total_siblings
+  #   )
+  # ) |>
   droplevels() |>
   dplyr::rename(sample_weights = w_gend_age_ethnic,
                 sample_origin =  sample_origin_names_combined) |>
@@ -395,20 +395,20 @@ dat_long_full <- dat |>
   #   friends_money_binary = as.integer(ifelse(friends_money > 0, 1, 0)),
   #   community_money_binary = as.integer(ifelse(community_money> 0, 1, 0))
   # ) |>  #shorter name
-  dplyr::select(
-    -c(
-      religion_church,
-      family_time,
-      friends_time,
-      community_time,
-      hours_community,
-      hours_family,
-      hours_friends,
-      community_money,
-      friends_money,
-      family_money
-    )
-  ) |>
+  # dplyr::select(
+  #   -c(
+  #     religion_church,
+  #     family_time,
+  #     friends_time,
+  #     community_time,
+  #     hours_community,
+  #     hours_family,
+  #     hours_friends,
+  #     community_money,
+  #     friends_money,
+  #     family_money
+  #   )
+  # ) |>
   arrange(id, wave) |>
   droplevels() |>
   data.frame() |>
@@ -433,13 +433,13 @@ dplyr::mutate(# religion_church_binary = as.factor(religion_church_binary),
   urban = as.numeric(urban)) |>
   mutate(
     rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
-    #   have_siblings = as.numeric(as.character(have_siblings)),
-    #   parent = as.numeric(as.character(parent)),
+    have_siblings = as.numeric(as.character(have_siblings)),
+    parent = as.numeric(as.character(parent)),
     partner = as.numeric(as.character(partner)),
     born_nz = as.numeric(as.character(born_nz)),
     censored = as.numeric(as.character(censored)),
-    employed = as.numeric(as.character(employed)),
-    hlth_disability = as.numeric(as.character(hlth_disability))
+    employed = as.numeric(as.character(employed))#,
+  #  hlth_disability = as.numeric(as.character(hlth_disability))
   ) |>
   droplevels() |>
   arrange(id, wave) |>
@@ -464,21 +464,26 @@ dat_long_colnames
 
 # baseline vars -----------------------------------------------------------
 
+baseline_vars <-
+  setdiff(dat_long_colnames,
+          c("id","wave"))
 
-dat_long <- dat_long_full |>
-  select(-alert_level_combined)
+# c(outcome_vars, 'id', 'wave'))
+baseline_vars
+baseline_vars <- sort(baseline_vars)
 
-str(dat_long)
-# check
-table(dat_long$censored)
+baseline_vars
 
-# select vars for baseline
-dat_long_colnames <- colnames(dat_long)
+# just core baseline variables
+base_var <-
+  setdiff(baseline_vars, c("censored", "sample_weights"))
+base_var
 
-dat_long_colnames <- sort(dat_long_colnames)
+push_mods
+here_save(base_var, "base_var")
+here_save(baseline_vars, "baseline_vars")
 
-dat_long_colnames
-
+push_mods
 # set baseline exposure and outcomes --------------------------------------
 
 exposure_var = c("religion_church_round",
@@ -507,17 +512,6 @@ outcome_vars = c(
   "perc_discrim"
 )
 
-dat_long_colnames <- colnames(dat_long)
-#
-baseline_vars <-
-  setdiff(dat_long_colnames,
-          c("id","wave"))
-
-# c(outcome_vars, 'id', 'wave'))
-
-baseline_vars <- sort(baseline_vars)
-
-baseline_vars
 
 
 #community at baseline
@@ -564,7 +558,7 @@ transition_table
 here_save(transition_table, "transition_table")
 
 transition_table_out_binary <-
-  margot::transition_table(out_church_2,
+  margot::transition_table(out_binary,
                            state_names = t_tab_binary_labels)
 
 transition_table_out_binary
@@ -585,43 +579,6 @@ colnames(dat)
 
 # sd values ---------------------------------------------------------------
 
-dt_outcome <-
-  dat_long |>
-  filter(wave == 2020)
-
-dt_outcome$religion_church_round
-mean_donations <-
-  mean(dt_outcome$charity_donate, na.rm = TRUE)
-mean_volunteer <-
-  mean(dt_outcome$hours_charity, na.rm = TRUE)
-
-mean_donations
-mean_volunteer
-
-
-sd_donations <-
-  sd(dt_outcome$charity_donate, na.rm = TRUE)
-sd_volunteer <-
-  sd(dt_outcome$hours_charity, na.rm = TRUE)
-
-# save for manuscript
-here_save(sd_donations, "sd_donations")
-here_save(sd_volunteer, "sd_volunteer")
-
-# read
-sd_donations <-
-  here_read("sd_donations")
-sd_volunteer <-
-  here_read("sd_volunteer")
-
-
-sd_donations
-sd_volunteer
-
-baseline_vars
-
-# check
-baseline_vars
 
 # check associations only -------------------------------------------------
 
@@ -1002,6 +959,7 @@ df_clean <- df_wide_censored %>%
   relocate("t0_censored", .before = starts_with("t1_"))  |>
   relocate("t1_censored", .before = starts_with("t2_"))
 
+naniar::vis_miss(df_clean, warn_large_data = FALSE)
 
 here_save(df_clean, "df_clean")
 # read data --  start here if previous work already done
@@ -1041,79 +999,90 @@ W
 # check
 print(W)
 
+# 
+# gain_A <- function(data, trt) {
+#   # make zero at baseline
+#   mtp_base_A <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
+#   
+#   if (trt == "t0_religion_church_round") {
+#     return(mtp_base_A(data, trt))
+#   }
+#   
+#   # shift to at least 4 at time 1
+#   mtp_one_contrast_A <- function(data, trt) {
+#     ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+#   }
+#   
+#   #  trt is a variable name passed as a string to the function
+#   
+#   ifelse(trt == "t1_religion_religious",
+#          mtp_one_contrast_A(data, trt),
+#          data[[trt]])
+# }
+# 
+# 
+# 
+# gain_A <- function(data, trt) {
+#   # make zero at baseline
+#   mtp_base_A <- function(data, trt) {
+#     ifelse(data[[trt]] <= 4, 4,  data[[trt]]))
+#   }
+#   
+#   if (trt == "t0_religion_church_round") {
+#     return(mtp_base_A(data, trt))
+#   }
+#   
+#   # shift to at least 4 at time 1
+#   mtp_one_contrast_A <- function(data, trt) {
+#     ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+#   }
+#   
+#   #  trt is a variable name passed as a string to the function
+#   
+#   ifelse(trt == "t1_religion_religious",
+#          mtp_one_contrast_A(data, trt),
+#          data[[trt]])
+# }
 
-gain_A <- function(data, trt) {
-  # make zero at baseline
-  mtp_base_A <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base_A(data, trt))
-  }
-  
-  # shift to at least 4 at time 1
-  mtp_one_contrast_A <- function(data, trt) {
-    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast_A(data, trt),
-         data[[trt]])
+# 
+# 
+# 
+# zero_A <- function(data, trt) {
+#   
+#   # make zero at baseline
+#   mtp_base_zero <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
+#   
+#   if (trt == "t0_religion_church_round") {
+#     return(mtp_base_zero(data, trt))
+#   }
+#   
+#   
+#   # keep zero at exposure wave
+#   
+#   mtp_one_contrast_zero <- function(data, trt) {
+#     ifelse(data[[trt]] > 0, 0, data[[trt]])
+#   }
+#   
+#   #  trt is a variable name passed as a string to the function
+#   
+#   ifelse(trt == "t1_religion_religious",
+#          mtp_one_contrast_zero(data, trt),
+#          data[[trt]])
+# }
+
+
+
+
+gain_A <- function(data, trt){
+  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
 }
 
-
-
-gain_A <- function(data, trt) {
-  # make zero at baseline
-  mtp_base_A <- function(data, trt) {
-    ifelse(data[[trt]] <= 4, 4,  data[[trt]]))
-  }
-  
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base_A(data, trt))
-  }
-  
-  # shift to at least 4 at time 1
-  mtp_one_contrast_A <- function(data, trt) {
-    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast_A(data, trt),
-         data[[trt]])
-}
-
-
-
-
-zero_A <- function(data, trt) {
-  
-  # make zero at baseline
-  mtp_base_zero <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base_zero(data, trt))
-  }
-  
-  
-  # keep zero at exposure wave
-  
-  mtp_one_contrast_zero <- function(data, trt) {
-    ifelse(data[[trt]] > 0, 0, data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast_zero(data, trt),
-         data[[trt]])
+zero_A <- function(data, trt){
+  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
 }
 
 # BONUS: progressr progress bars!
@@ -1158,11 +1127,7 @@ m_hours_charity_z_test
 # sl_lib <- c("SL.glmnet",
 #             "SL.ranger", #
 #             "SL.xgboost") #
-library(randomForest)
-
-sl_lib <- c("SL.biglasso",
-            "SL.ranger", #
-            "SL.xgboost") #
+library(ranger)
 
 
 t2_warm_asians_z_test_gain <- lmtp_tmle(
@@ -1176,13 +1141,13 @@ t2_warm_asians_z_test_gain <- lmtp_tmle(
   folds = 10,
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
-  learners_trt = "SL.xgboost",
+  learners_trt = "SL.ranger",
   # ranger much faster
-  learners_outcome = "SL.xgboost",
+  learners_outcome = "SL.ranger",
   parallel = n_cores
 )
 
-
+t2_warm_asians_z_test_gain
 
 
 t2_warm_asians_z_test_zero <- lmtp_tmle(
@@ -1196,9 +1161,9 @@ t2_warm_asians_z_test_zero <- lmtp_tmle(
   folds = 10,
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
-  learners_trt = "SL.xgboost",
+  learners_trt = "SL.ranger",
   # ranger much faster
-  learners_outcome = "SL.xgboost",
+  learners_outcome = "SL.ranger",
   parallel = n_cores
 )
 
@@ -1248,8 +1213,6 @@ here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
 
 
 # warm_chinese ------------------------------------------------------------
-
-
 
 
 t2_warm_chinese_z_gain <- lmtp_tmle(
