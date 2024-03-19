@@ -1872,7 +1872,7 @@ contrast_hours_charity_z <-
 tab_contrast_hours_charity_z <- margot_tab_lmtp(
   contrast_hours_charity_z,
   scale = "RD",
-  new_name = "hours volunteer: church"
+  new_name = "religious service: hours volunteer"
 )
 
 
@@ -1897,7 +1897,7 @@ contrast_charity_donate_z <-
 tab_contrast_charity_donate_z <- margot_tab_lmtp(
   contrast_charity_donate_z,
   scale = "RD",
-  new_name = "religious service donations: church"
+  new_name = "religious service: donations"
 )
 
 
@@ -1931,7 +1931,7 @@ tab_contrast_support_z <- margot_tab_lmtp(
   new_name = "religious service: social suport"
 )
 
-output_tab_contrast_support_z<- lmtp_evalue_tab(tab_contrast_belong_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_support_z<- lmtp_evalue_tab(tab_contrast_support_z,  delta = 1, sd = 1, scale = c("RD"))
 
 
 
@@ -2160,52 +2160,54 @@ tab_contrast_received_time <- here_read( "tab_contrast_received_time")
 group_tab_contrast_received_time <- here_read( "group_tab_contrast_received_time")
 
 # graphs ------------------------------------------------------------------
-conflicts_prefer(ggplot2::margin)
-plot_group_tab_all_prosocial_rr <- margot_plot(
-  group_tab_all_prosocial_rr,
-  type = "RR",
-  title = "Religious service effect on reported volunteering (binary)",
+
+
+plot_group_tab_all_prosocial <- margot_plot(
+  group_tab_all_prosocial,
+  type = "RD",
+  title = "Religious service effect: reported prosociality",
   subtitle = "Contrast: weekly vs. none ",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 11,
-  text_size = 4.5,
+  base_size = 14,
+  text_size = 3.5,
   point_size = 2.5,
   title_size = 20,
   subtitle_size = 14,
-  legend_text_size = 8,
+  legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -.5,
-  x_lim_lo = .5,
-  x_lim_hi =  1.5
+  x_offset = -2,
+  x_lim_lo = -2,
+  x_lim_hi =  1
 )
 
-plot_group_tab_all_prosocial_rr
-
+here_save(plot_group_tab_all_prosocial, "plot_group_tab_all_prosocial")
+plot_group_tab_all_prosocial
 
 plot_group_tab_all_perceived_support <- margot_plot(
   group_tab_all_perceived_support,
   type = "RD",
-  title = "Religious service effect on perceived social support/connection",
+  title = "Religious service effect: perceived support",
   subtitle = "Contrast: weekly vs. none ",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 18,
-  text_size = 4.5,
+  base_size = 14,
+  text_size = 3.5,
   point_size = 2.5,
   title_size = 20,
   subtitle_size = 14,
-  legend_text_size = 8,
+  legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -.5,
-  x_lim_lo = -.5,
+  x_offset = -2,
+  x_lim_lo = -2,
+  x_lim_hi =  1
 )
 
 plot_group_tab_all_perceived_support
 
-
+here_save(plot_group_tab_all_perceived_support, "plot_group_tab_all_perceived_support")
 
 plot_group_tab_all_received_time <- margot_plot(
   group_tab_contrast_received_time,
@@ -2216,19 +2218,20 @@ plot_group_tab_all_received_time <- margot_plot(
   ylab = "",
   estimate_scale = 1,
   base_size = 14,
-  text_size = 4.5,
+  text_size = 3.5,
   point_size = 2.5,
   title_size = 20,
   subtitle_size = 14,
   legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -5,
-  x_lim_lo = -5,
-  x_lim_hi =  15.5
+  x_offset = -4,
+  x_lim_lo = -4,
+  x_lim_hi =  4
 )
 
 plot_group_tab_all_received_time
 
+here_save(plot_group_tab_all_received_time, "plot_group_tab_all_received_time")
 
 plot_group_tab_all_received_money <- margot_plot(
   group_tab_all_received_money,
@@ -2237,20 +2240,21 @@ plot_group_tab_all_received_money <- margot_plot(
   subtitle = "Contrast: weekly vs. none ",
   xlab = "",
   ylab = "",
-  estimate_scale = 1,
   base_size = 14,
-  text_size = 4.5,
+  text_size = 3.5,
   point_size = 2.5,
   title_size = 20,
   subtitle_size = 14,
   legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -5,
-  x_lim_lo = -5,
-  x_lim_hi =  15.5
+  x_offset = -4,
+  x_lim_lo = -4,
+  x_lim_hi =  4
 )
 
 plot_group_tab_all_received_money
+
+here_save(plot_group_tab_all_received_money, "plot_group_tab_all_received_money")
 
 
 
