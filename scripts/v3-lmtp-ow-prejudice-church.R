@@ -1723,7 +1723,7 @@ t2_perc_discrim_z_zero <- lmtp_tmle(
 here_save(t2_perc_discrim_z_zero, "t2_perc_discrim_z_zero")
 
 
-
+push_mods
 
 # t2_perc_religious_discrim_z --------------------------------------------------
 
@@ -1768,12 +1768,13 @@ here_save(t2_perc_religious_discrim_z_zero, "t2_perc_religious_discrim_z_zero")
 
 # read models -------------------------------------------------------------
 
+zero_A
 
 # asians ------------------------------------------------------------------
 
 
-t2_warm_asians_z_gain<- read_here("t2_warm_asians_z_gain")
-t2_warm_asians_z_zero<- read_here("t2_warm_asians_z_zero")
+t2_warm_asians_z_gain<- here_read("t2_warm_asians_z_gain")
+t2_warm_asians_z_zero<- here_read("t2_warm_asians_z_zero")
 
 contrast_t2_warm_asians_z <-
   lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_zero, type = "additive")
@@ -1790,8 +1791,8 @@ output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asi
 
 # chinese -----------------------------------------------------------------
 
-t2_warm_chinese_z_gain<- read_here("t2_warm_chinese_z_gain")
-t2_warm_chinese_z_zero<- read_here("t2_warm_chinese_z_zero")
+t2_warm_chinese_z_gain<- here_read("t2_warm_chinese_z_gain")
+t2_warm_chinese_z_zero<- here_read("t2_warm_chinese_z_zero")
 
 
 contrast_t2_warm_chinese_z <-
@@ -1809,8 +1810,8 @@ output_contrast_t2_warm_chinese_z <- lmtp_evalue_tab(tab_contrast_t2_warm_chines
 # immigrants --------------------------------------------------------------
 
 
-t2_warm_immigrants_z_gain<- read_here("t2_warm_immigrants_z_gain")
-t2_warm_immigrants_z_zero<- read_here("t2_warm_immigrants_z_zero")
+t2_warm_immigrants_z_gain<- here_read("t2_warm_immigrants_z_gain")
+t2_warm_immigrants_z_zero<- here_read("t2_warm_immigrants_z_zero")
 
 
 contrast_t2_warm_immigrants_z <-
@@ -1827,15 +1828,15 @@ output_tab_contrast_t2_warm_immigrants_z <- lmtp_evalue_tab(tab_contrast_t2_warm
 
 
 
-t2_warm_indians_z_gain<- read_here("t2_warm_indians_z_gain")
-t2_warm_indians_z_zero<- read_here("t2_warm_indians_z_zero")
+t2_warm_indians_z_gain<- here_read("t2_warm_indians_z_gain")
+t2_warm_indians_z_zero<- here_read("t2_warm_indians_z_zero")
 
 
 contrast_t2_warm_indians_z <-
   lmtp_contrast(t2_warm_indians_z_gain, ref =  t2_warm_indians_z_zero, type = "additive")
 
 tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
-  contrast_t2_warm_indians_z
+  contrast_t2_warm_indians_z,
   scale = "RD",
   new_name = "religious service: warm indians"
 )
@@ -1843,8 +1844,8 @@ tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
 output_tab_contrast_t2_warm_indians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_indians_z,  delta = 1, sd = 1, scale = c("RD"))
 # elderly -----------------------------------------------------------------
 
-t2_warm_elderly_z_gain<- read_here("t2_warm_elderly_z_gain")
-t2_warm_elderly_z_zero<- read_here("t2_warm_elderly_z_zero")
+t2_warm_elderly_z_gain<- here_read("t2_warm_elderly_z_gain")
+t2_warm_elderly_z_zero<- here_read("t2_warm_elderly_z_zero")
 
 
 contrast_t2_warm_elderly_z <-
@@ -1859,8 +1860,8 @@ tab_contrast_t2_warm_elderly_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_elderly_z <- lmtp_evalue_tab(tab_contrast_t2_warm_elderly_z,  delta = 1, sd = 1, scale = c("RD"))
 # maori -------------------------------------------------------------------
 
-t2_warm_maori_z_gain<- read_here("t2_warm_maori_z_gain")
-t2_warm_maori_z_zero<- read_here("t2_warm_maori_z_zero")
+t2_warm_maori_z_gain<- here_read("t2_warm_maori_z_gain")
+t2_warm_maori_z_zero<- here_read("t2_warm_maori_z_zero")
 
 contrast_t2_warm_maori_z <-
   lmtp_contrast(t2_warm_maori_z_gain, ref =  t2_warm_maori_z_zero, type = "additive")
@@ -1875,8 +1876,8 @@ output_tab_contrast_t2_warm_maori_z <- lmtp_evalue_tab(tab_contrast_t2_warm_maor
 
 # mentally ill ------------------------------------------------------------
 
-t2_warm_mental_illness_z_gain<- read_here("t2_warm_mental_illness_z_gain")
-t2_warm_mental_illness_z_zero<- read_here("t2_warm_mental_illness_z_zero")
+t2_warm_mental_illness_z_gain<- here_read("t2_warm_mental_illness_z_gain")
+t2_warm_mental_illness_z_zero<- here_read("t2_warm_mental_illness_z_zero")
 
 contrast_t2_warm_mental_illness_z <-
   lmtp_contrast(t2_warm_mental_illness_z_gain, ref =  t2_warm_mental_illness_z_zero, type = "additive")
@@ -1890,8 +1891,8 @@ tab_contrast_t2_warm_mental_illness_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_mental_illness_z <- lmtp_evalue_tab( tab_contrast_t2_warm_mental_illness_z,  delta = 1, sd = 1, scale = c("RD"))
 
 # muslims -----------------------------------------------------------------
-t2_warm_muslims_z_gain<- read_here("t2_warm_muslims_z_gain")
-t2_warm_muslims_z_zero<- read_here("t2_warm_muslims_z_zero")
+t2_warm_muslims_z_gain<- here_read("t2_warm_muslims_z_gain")
+t2_warm_muslims_z_zero<- here_read("t2_warm_muslims_z_zero")
 
 
 contrast_t2_warm_muslims_z <-
@@ -1906,8 +1907,8 @@ tab_contrast_t2_warm_muslims_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_muslims_z <- lmtp_evalue_tab(tab_contrast_t2_warm_muslims_z ,  delta = 1, sd = 1, scale = c("RD"))
 # nzeuro ------------------------------------------------------------------
 
-t2_warm_nz_euro_z_gain<- read_here("t2_warm_nz_euro_z_gain")
-t2_warm_nz_euro_z_zero<- read_here("t2_warm_nz_euro_z_zero")
+t2_warm_nz_euro_z_gain<- here_read("t2_warm_nz_euro_z_gain")
+t2_warm_nz_euro_z_zero<- here_read("t2_warm_nz_euro_z_zero")
 
 contrast_t2_warm_nz_euro_z <-
   lmtp_contrast(t2_warm_nz_euro_z_gain, ref =  t2_warm_nz_euro_z_zero, type = "additive")
@@ -1922,8 +1923,8 @@ output_tab_contrast_t2_warm_nz_euro_z <- lmtp_evalue_tab(tab_contrast_t2_warm_nz
 # overweight --------------------------------------------------------------
 
 
-t2_warm_overweight_z_gain<- read_here("t2_warm_overweight_z_gain")
-t2_warm_overweight_z_zero<- read_here("t2_warm_overweight_z_zero")
+t2_warm_overweight_z_gain<- here_read("t2_warm_overweight_z_gain")
+t2_warm_overweight_z_zero<- here_read("t2_warm_overweight_z_zero")
 
 
 contrast_t2_warm_overweight_z <-
@@ -1939,8 +1940,8 @@ output_tab_contrast_t2_warm_overweight_z <- lmtp_evalue_tab(tab_contrast_t2_warm
 # pacific -----------------------------------------------------------------
 
 
-t2_warm_pacific_z_gain<- read_here("t2_warm_pacific_z_gain")
-t2_warm_pacific_z_zero<- read_here("t2_warm_pacific_z_zero")
+t2_warm_pacific_z_gain<- here_read("t2_warm_pacific_z_gain")
+t2_warm_pacific_z_zero<- here_read("t2_warm_pacific_z_zero")
 
 contrast_t2_warm_pacific_z <-
   lmtp_contrast(t2_warm_pacific_z_gain, ref =  t2_warm_pacific_z_zero, type = "additive")
@@ -1955,8 +1956,8 @@ output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pa
 # refugees ----------------------------------------------------------------
 
 
-t2_warm_refugees_z_gain<- read_here("t2_warm_refugees_z_gain")
-t2_warm_refugees_z_zero<- read_here("t2_warm_refugees_z_zero")
+t2_warm_refugees_z_gain<- here_read("t2_warm_refugees_z_gain")
+t2_warm_refugees_z_zero<- here_read("t2_warm_refugees_z_zero")
 
 
 contrast_t2_warm_refugees_z <-
@@ -1970,8 +1971,8 @@ tab_contrast_t2_warm_refugees_z <- margot_tab_lmtp(
 
 output_tab_contrast_t2_warm_refugees_z <- lmtp_evalue_tab( tab_contrast_t2_warm_refugees_z,  delta = 1, sd = 1, scale = c("RD"))
 # perceive gender discrim -------------------------------------------------
-t2_perc_gend_discrim_z_gain<- read_here("t2_perc_gend_discrim_z_gain")
-t2_perc_gend_discrim_z_zero<- read_here("t2_perc_gend_discrim_z_zero")
+t2_perc_gend_discrim_z_gain<- here_read("t2_perc_gend_discrim_z_gain")
+t2_perc_gend_discrim_z_zero<- here_read("t2_perc_gend_discrim_z_zero")
 
 contrast_t2_perc_gend_discrim_z <-
   lmtp_contrast(t2_perc_gend_discrim_z_gain, ref =  t2_perc_gend_discrim_z_zero, type = "additive")
@@ -1984,8 +1985,8 @@ tab_contrast_t2_perc_gend_discrim_z <- margot_tab_lmtp(
 
 output_tab_contrast_t2_perc_gend_discrim_z <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z ,  delta = 1, sd = 1, scale = c("RD"))
 # perceive rel discrim ----------------------------------------------------
-t2_perc_religious_discrim_z_gain<- read_here("t2_perc_religious_discrim_z_gain")
-t2_perc_religious_discrim_z_zero<- read_here("t2_perc_religious_discrim_z_zero")
+t2_perc_religious_discrim_z_gain<- here_read("t2_perc_religious_discrim_z_gain")
+t2_perc_religious_discrim_z_zero<- here_read("t2_perc_religious_discrim_z_zero")
 
 contrast_t2_perc_religious_discrim_z <-
   lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_zero, type = "additive")
@@ -2000,8 +2001,8 @@ output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast
 
 # perceive ethnic discrim -------------------------------------------------
 
-t2_perc_discrim_z_gain<- read_here("t2_perc_discrim_z_gain")
-t2_perc_discrim_z_zero<- read_here("t2_perc_discrim_z_zero")
+t2_perc_discrim_z_gain<- here_read("t2_perc_discrim_z_gain")
+t2_perc_discrim_z_zero<- here_read("t2_perc_discrim_z_zero")
 
 
 
@@ -2035,7 +2036,7 @@ tab_all_warm <- rbind(
   output_tab_contrast_t2_warm_pacific_z,
   output_tab_contrast_t2_warm_refugees_z)
 
-group_tab_all_warm <- group_tab(tab_all_warm)
+group_tab_all_warm <- group_tab(tab_all_warm, type = "RD")
 
 here_save(tab_all_warm, "tab_all_warm")
 here_save(group_tab_all_warm, "group_tab_all_warm")
@@ -2051,7 +2052,7 @@ tab_all_perceive <-
   )
 
 
-group_tab_all_perceive <- group_tab(tab_all_perceive)
+group_tab_all_perceive <- group_tab(tab_all_perceive,  type = "RD")
 
 here_save(tab_all_perceive , "tab_all_perceive")
 here_save(group_tab_all_perceive, "group_tab_all_perceive")
@@ -2125,8 +2126,8 @@ tab_all_warm<- here_read("tab_all_warm")
 group_tab_all_warm<- here_read("group_tab_all_warm")
 
 
-plot_group_tab_all_perceive <- here_read(plot_group_tab_all_perceive, "plot_group_tab_all_perceive")
-plot_group_tab_all_warm<- here_read(plot_group_tab_all_warm, "plot_group_tab_all_warm")
+# plot_group_tab_all_perceive <- here_read(plot_group_tab_all_perceive, "plot_group_tab_all_perceive")
+# plot_group_tab_all_warm<- here_read(plot_group_tab_all_warm, "plot_group_tab_all_warm")
 
 
 transition_table <- here_read("transition_table")

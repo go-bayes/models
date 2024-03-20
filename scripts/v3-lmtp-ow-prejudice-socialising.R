@@ -12,6 +12,7 @@
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
+
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
@@ -41,7 +42,7 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-church-prej"
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-soc-prej"
 )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
@@ -49,7 +50,7 @@ push_mods
 
 
 # set exposure here
-nzavs_exposure <- "religion_church_round"
+nzavs_exposure <- "hours_community_round"
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 10
@@ -63,7 +64,7 @@ set.seed(0112358)
 library(future)
 library(ranger)
 plan(multisession)
-n_cores <- parallel::detectCores()
+n_cores <- parallel::detectCores() - 2
 
 # super learner libraries
 sl_lib <- c("SL.glmnet",
@@ -332,7 +333,7 @@ dat_long_full <- dat |>
     "alert_level_combined"
   ) |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
+  mutate(hours_community_round = round(ifelse(hours_community >= 10, 10, hours_community), 0)) |>
   mutate(
     #initialize 'censored'
     censored = ifelse(lead(year_measured) == 1, 1, 0),
@@ -486,7 +487,7 @@ here_save(baseline_vars, "baseline_vars")
 push_mods
 # set baseline exposure and outcomes --------------------------------------
 
-exposure_var = c("religion_church_round",
+exposure_var = c("hours_community_round",
                  "censored"#,
                  # "hours_community_round"
 ) #
@@ -534,17 +535,17 @@ dat_long$wave
 
 dt_positivity_full <- dat_long |>
   filter(wave == 2018 | wave == 2019) |>
-  select(wave, id, religion_church_round, sample_weights) |>
-  mutate(religion_church_shift = ifelse(religion_church_round >= 4, 1, 0))
+  select(wave, id, hours_community_round, sample_weights) |>
+  mutate(hours_community_round_shift = ifelse(hours_community_round >= 4, 1, 0))
 
 
 
 # create transition matrix
 out <-
-  msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
+  msm::statetable.msm(hours_community_round, id, data = dt_positivity_full)
 
 out_binary <-
-  msm::statetable.msm(religion_church_shift, id, data = dt_positivity_full)
+  msm::statetable.msm(hours_community_round_shift, id, data = dt_positivity_full)
 
 out
 out_binary
@@ -568,7 +569,7 @@ here_save(transition_table_binary,
           "transition_table_out_binary")
 transition_table_out_binary <-
   here_read("transition_table_out_binary")
-
+push_mods
 
 # double check path
 push_mods
@@ -601,7 +602,7 @@ fit_cross_sectional_maori <-
   regress_with_covariates(
     dt_18,
     outcome = "warm_maori",
-    exposure = "religion_church_round",
+    exposure = "hours_community_round",
     baseline_vars = base_var
   )
 parameters::model_parameters(fit_cross_sectional_maori)[2, ]
@@ -610,7 +611,7 @@ fit_cross_sectional_muslims <-
   regress_with_covariates(
     dt_18,
     outcome = "warm_muslims",
-    exposure = "religion_church_round",
+    exposure = "hours_community_round",
     baseline_vars = base_var
   )
 parameters::model_parameters(fit_cross_sectional_muslims)[2, ]
@@ -766,9 +767,9 @@ dt_19 <- dat_long |>
 graph_density_of_exposure <-
   coloured_histogram_shift_range(
     dt_19,
-    col_name = "religion_church_round",
+    col_name = "hours_community_round",
     binwidth = 1,
-    range_highlight = c(0, 3.9),
+    range_highlight = c(0, 1),
     shift = "up"
   )
 
@@ -782,36 +783,6 @@ ggsave(
   height = 8,
   units = "in",
   filename = "graph_density_of_exposure.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-
-table(dt_18$censored)
-graph_density_of_exposure_socialising <-
-  coloured_histogram_shift_range(
-    dt_19,
-    col_name = "hours_community_round",
-    binwidth = .25,
-    range_highlight = c(0, 1),
-    shift = "up"
-  )
-
-graph_density_of_exposure_socialising
-
-here_save(graph_density_of_exposure_socialising,
-          "graph_density_of_exposure_socialising")
-
-
-ggsave(
-  graph_density_of_exposure_socialising,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "graph_density_of_exposure_socialising.jpg",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600
@@ -834,7 +805,7 @@ my_data_filtered <- haven::zap_label(dat_long_df)
 my_data_filtered <- haven::zap_widths(dat_long_df)
 
 dat_long_df <- data.frame(dat_long)
-
+exposure_var
 
 prep_coop_all <-
   margot_wide_impute_baseline(
@@ -935,10 +906,10 @@ df_clean <- df_wide_censored %>%
     across(
       .cols = where(is.numeric) &
         !t0_censored &
-        !t0_religion_church_round &
+        !t0_hours_community_round &
         #  !t0_charity_donate & 
         !t0_sample_weights & 
-        !t1_religion_church_round &
+        !t1_hours_community_round &
         !t1_censored,
       .fns = ~ scale(.),
       .names = "{.col}_z"
@@ -949,9 +920,9 @@ df_clean <- df_wide_censored %>%
   select(
     where(is.factor),
     t0_sample_weights,
-    t0_religion_church_round,
+    t0_hours_community_round,
     t0_censored,
-    t1_religion_church_round,
+    t1_hours_community_round,
     t1_censored,
     ends_with("_z")
   ) |>
@@ -989,7 +960,7 @@ names_outcomes
 
 #### SET VARIABLE NAMES
 #  model
-A <- c("t0_religion_church_round", "t1_religion_church_round")
+A <- c("t0_hours_community_round", "t1_hours_community_round")
 C <- c("t0_censored", "t1_censored")
 
 #L <- list(c("L1"), c("L2"))
@@ -1075,15 +1046,10 @@ print(W)
 # }
 
 
+gain_A <- function(data, trt)  data[[trt]] + 1
 
 
-gain_A <- function(data, trt){
-  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
-}
-
-zero_A <- function(data, trt){
-  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
-}
+zero_A <- NULL
 
 # BONUS: progressr progress bars!
 progressr::handlers(global = TRUE)
@@ -1096,6 +1062,7 @@ n_cores <-
 
 # church: charity models ----------------------------------------------------------
 
+# Checks
 A
 C
 
@@ -1105,7 +1072,7 @@ library("ranger")
 
 # test data 
 df_clean_slice <- df_clean |>
-  slice_head(n = 1000) |>
+  slice_head(n = 500) |>
   as.data.frame()
 colnames(df_clean_slice)
 
@@ -1781,7 +1748,7 @@ contrast_t2_warm_asians_z <-
 tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
   contrast_t2_warm_asians_z,
   scale = "RD",
-  new_name = "religious service: warm asians"
+  new_name = "community socialising: warm asians"
 )
 
 output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1800,7 +1767,7 @@ contrast_t2_warm_chinese_z <-
 tab_contrast_t2_warm_chinese_z <- margot_tab_lmtp(
   contrast_t2_warm_chinese_z,
   scale = "RD",
-  new_name = "religious service: warm chinese"
+  new_name = "community socialising: warm chinese"
 )
 
 output_contrast_t2_warm_chinese_z <- lmtp_evalue_tab(tab_contrast_t2_warm_chinese_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1819,7 +1786,7 @@ contrast_t2_warm_immigrants_z <-
 tab_contrast_t2_warm_immigrants_z <- margot_tab_lmtp(
   contrast_t2_warm_immigrants_z,
   scale = "RD",
-  new_name = "religious service: warm immigrants"
+  new_name = "community socialising: warm immigrants"
 )
 
 output_tab_contrast_t2_warm_immigrants_z <- lmtp_evalue_tab(tab_contrast_t2_warm_immigrants_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1837,7 +1804,7 @@ contrast_t2_warm_indians_z <-
 tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
   contrast_t2_warm_indians_z
   scale = "RD",
-  new_name = "religious service: warm indians"
+  new_name = "community socialising: warm indians"
 )
 
 output_tab_contrast_t2_warm_indians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_indians_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1853,7 +1820,7 @@ contrast_t2_warm_elderly_z <-
 tab_contrast_t2_warm_elderly_z <- margot_tab_lmtp(
   contrast_t2_warm_elderly_z,
   scale = "RD",
-  new_name = "religious service: warm elderly"
+  new_name = "community socialising: warm elderly"
 )
 
 output_tab_contrast_t2_warm_elderly_z <- lmtp_evalue_tab(tab_contrast_t2_warm_elderly_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1868,7 +1835,7 @@ contrast_t2_warm_maori_z <-
 tab_contrast_t2_warm_maori_z <- margot_tab_lmtp(
   contrast_t2_warm_maori_z,
   scale = "RD",
-  new_name = "religious service: warm maori"
+  new_name = "community socialising: warm maori"
 )
 
 output_tab_contrast_t2_warm_maori_z <- lmtp_evalue_tab(tab_contrast_t2_warm_maori_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1884,7 +1851,7 @@ contrast_t2_warm_mental_illness_z <-
 tab_contrast_t2_warm_mental_illness_z <- margot_tab_lmtp(
   contrast_t2_warm_mental_illness_z,
   scale = "RD",
-  new_name = "religious service: warm mental illness"
+  new_name = "community socialising: warm mental illness"
 )
 
 output_tab_contrast_t2_warm_mental_illness_z <- lmtp_evalue_tab( tab_contrast_t2_warm_mental_illness_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1900,7 +1867,7 @@ contrast_t2_warm_muslims_z <-
 tab_contrast_t2_warm_muslims_z <- margot_tab_lmtp(
   contrast_t2_warm_muslims_z,
   scale = "RD",
-  new_name = "religious service: warm muslims"
+  new_name = "community socialising: warm muslims"
 )
 
 output_tab_contrast_t2_warm_muslims_z <- lmtp_evalue_tab(tab_contrast_t2_warm_muslims_z ,  delta = 1, sd = 1, scale = c("RD"))
@@ -1915,7 +1882,7 @@ contrast_t2_warm_nz_euro_z <-
 tab_contrast_t2_warm_nz_euro_z <- margot_tab_lmtp(
   contrast_t2_warm_nz_euro_z,
   scale = "RD",
-  new_name = "religious service: warm nz euro"
+  new_name = "community socialising: warm nz euro"
 )
 
 output_tab_contrast_t2_warm_nz_euro_z <- lmtp_evalue_tab(tab_contrast_t2_warm_nz_euro_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1932,7 +1899,7 @@ contrast_t2_warm_overweight_z <-
 tab_contrast_t2_warm_overweight_z <- margot_tab_lmtp(
   contrast_t2_warm_overweight_z,
   scale = "RD",
-  new_name = "religious service: warm overweight"
+  new_name = "community socialising: warm overweight"
 )
 
 output_tab_contrast_t2_warm_overweight_z <- lmtp_evalue_tab(tab_contrast_t2_warm_overweight_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1948,7 +1915,7 @@ contrast_t2_warm_pacific_z <-
 tab_contrast_t2_warm_pacific_z <- margot_tab_lmtp(
   contrast_t2_warm_pacific_z,
   scale = "RD",
-  new_name = "religious service: warm pacific"
+  new_name = "community socialising: warm pacific"
 )
 
 output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1965,7 +1932,7 @@ contrast_t2_warm_refugees_z <-
 tab_contrast_t2_warm_refugees_z <- margot_tab_lmtp(
   contrast_t2_warm_refugees_z,
   scale = "RD",
-  new_name = "religious service: warm refugees"
+  new_name = "community socialising: warm refugees"
 )
 
 output_tab_contrast_t2_warm_refugees_z <- lmtp_evalue_tab( tab_contrast_t2_warm_refugees_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1979,7 +1946,7 @@ contrast_t2_perc_gend_discrim_z <-
 tab_contrast_t2_perc_gend_discrim_z <- margot_tab_lmtp(
   contrast_t2_perc_gend_discrim_z,
   scale = "RD",
-  new_name = "religious service: perceive gender discrim"
+  new_name = "community socialising: perceive gender discrim"
 )
 
 output_tab_contrast_t2_perc_gend_discrim_z <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z ,  delta = 1, sd = 1, scale = c("RD"))
@@ -1993,7 +1960,7 @@ contrast_t2_perc_religious_discrim_z <-
 tab_contrast_t2_perc_religious_discrim_z <- margot_tab_lmtp(
   contrast_t2_perc_religious_discrim_z,
   scale = "RD",
-  new_name = "religious service: perceive religious discrim"
+  new_name = "community socialising: perceive religious discrim"
 )
 
 output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2011,7 +1978,7 @@ contrast_t2_perc_discrim_z <-
 tab_contrast_t2_perc_discrim_z <- margot_tab_lmtp(
   contrast_t2_perc_discrim_z,
   scale = "RD",
-  new_name = "religious service: perceive ethnic discrim"
+  new_name = "community socialising: perceive ethnic discrim"
 )
 
 output_tab_contrast_t2_perc_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2064,7 +2031,7 @@ here_save(group_tab_all_perceive, "group_tab_all_perceive")
 plot_group_tab_all_warm <- margot_plot(
   group_tab_all_warm,
   type = "RD",
-  title = "Religious service effect warmth to groups",
+  title =  "Community time effect warmth to groups",
   subtitle = "Contrast: weekly vs. none ",
   xlab = "",
   ylab = "",
@@ -2091,7 +2058,7 @@ here_save(plot_group_tab_all_warm, 'plot_group_tab_all_warm')
 plot_group_tab_all_perceive <- margot_plot(
   group_tab_all_perceive,
   type = "RD",
-  title = "Religious service effect on perceived prejudice against self",
+  title = "Community time effect on perceived prejudice against self",
   subtitle = "Contrast: weekly vs. none ",
   xlab = "",
   ylab = "",
