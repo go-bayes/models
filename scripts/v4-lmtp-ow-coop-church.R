@@ -2063,7 +2063,7 @@ t2_volunteers_binary_null <- here_read("t2_volunteers_binary_null")
 
 
 t2_hours_charity_z_gain <-
-  here_read("t2_m_hours_charity_z_gain") # note spelling
+  here_read("t2_hours_charity_z_gain") # note spelling
 t2_hours_charity_z_zero <- here_read("t2_hours_charity_z_zero")
 t2_hours_charity_z_null<- here_read("t2_hours_charity_z_null")
 
@@ -2084,7 +2084,7 @@ t2_belong_z_zero <- here_read("t2_belong_z_zero")
 t2_neighbourhood_community_z_gain <-
   here_read("t2_neighbourhood_community_z_gain")
 t2_neighbourhood_community_z_zero <-
-  here_read("t2_neighbourhood_community_z_lose_zero")
+  here_read("t2_neighbourhood_community_z_zero")
 
 
 t2_family_time_binary_gain <-
@@ -2149,6 +2149,30 @@ output_tab_contrast_hours_charity_z <-
 output_tab_contrast_hours_charity_z
 
 
+
+contrast_hours_charity_z_null <-
+  lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "additive")
+
+
+tab_contrast_hours_charity_z_null <- margot_tab_lmtp(
+  contrast_hours_charity_z_null,
+  scale = "RD",
+  new_name = "religious service: hours volunteer"
+)
+
+
+
+output_tab_contrast_hours_charity_z_null <-
+  lmtp_evalue_tab(
+    tab_contrast_hours_charity_z_null,
+    delta = 1,
+    sd = 1,
+    scale = c("RD")
+  )
+output_tab_contrast_hours_charity_z_null
+
+
+
 # results charity donate --------------------------------------------------
 
 
@@ -2167,7 +2191,41 @@ tab_contrast_charity_donate_z <- margot_tab_lmtp(
 output_tab_contrast_charity_donate_z<- lmtp_evalue_tab(tab_contrast_charity_donate_z,  delta = 1, sd = 1, scale = c("RD"))
 
 
+
+contrast_charity_donate_z_null <-
+  lmtp_contrast(t2_charity_donate_z_gain , ref =  t2_charity_donate_z_null, type = "additive")
+
+
+tab_contrast_charity_donate_z_null <- margot_tab_lmtp(
+  contrast_charity_donate_z_null,
+  scale = "RD",
+  new_name = "religious service: donations"
+)
+
+
+
+output_tab_contrast_charity_donate_z_null<- lmtp_evalue_tab(tab_contrast_charity_donate_z_null,  delta = 1, sd = 1, scale = c("RD"))
+
+output_tab_contrast_charity_donate_z
+output_tab_contrast_charity_donate_z_null
+
 # results volunteers binary -----------------------------------------------
+
+contrast_volunteers_binary   <-
+  lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
+
+tab_contrast_volunteers_binary <- margot_tab_lmtp(
+  contrast_volunteers_binary,
+  scale = "RR",
+  new_name = "religious service: volunteers (binary)"
+)
+
+
+
+# volunteerbinary ---------------------------------------------------------
+
+
+output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
 
 contrast_volunteers_binary   <-
   lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
@@ -2181,8 +2239,24 @@ tab_contrast_volunteers_binary <- margot_tab_lmtp(
 output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
 
 
+output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
 
 
+
+contrast_volunteers_binary_null   <-
+  lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_null, type = "rr")
+
+tab_contrast_volunteers_binary_null <- margot_tab_lmtp(
+  contrast_volunteers_binary_null,
+  scale = "RR",
+  new_name = "religious service: volunteers (binary)"
+)
+
+output_tab_contrast_volunteers_binary_null <- lmtp_evalue_tab(tab_contrast_volunteers_binary_null,  delta = 1, sd = 1, scale = c("RR"))
+
+output_tab_contrast_volunteers_binary
+output_tab_contrast_volunteers_binary_null
+# support -----------------------------------------------------------------
 
 contrast_support_z <-
   lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_zero, type = "additive")
@@ -2197,14 +2271,25 @@ output_tab_contrast_support_z<- lmtp_evalue_tab(tab_contrast_support_z,  delta =
 
 
 
+contrast_support_z_null <-
+  lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_null, type = "additive")
+
+tab_contrast_support_z_null <- margot_tab_lmtp(
+  contrast_support_z_null,
+  scale = "RD",
+  new_name = "religious service: social suport"
+)
+
+output_tab_contrast_support_z_null<- lmtp_evalue_tab(tab_contrast_support_z_null,  delta = 1, sd = 1, scale = c("RD"))
+
+output_tab_contrast_support_z
+output_tab_contrast_support_z_null
 
 # results belong ----------------------------------------------------------
 
 
 contrast_belong_z <-
   lmtp_contrast(t2_belong_z_gain, ref =  t2_belong_z_zero, type = "additive")
-
-
 
 
 tab_contrast_belong_z <- margot_tab_lmtp(
@@ -2216,6 +2301,21 @@ tab_contrast_belong_z <- margot_tab_lmtp(
 output_tab_contrast_belong_z<- lmtp_evalue_tab(tab_contrast_belong_z,  delta = 1, sd = 1, scale = c("RD"))
 
 
+
+contrast_belong_z_null <-
+  lmtp_contrast(t2_belong_z_gain, ref =  t2_belong_z_null, type = "additive")
+
+
+tab_contrast_belong_z_null <- margot_tab_lmtp(
+  contrast_belong_z_null,
+  scale = "RD",
+  new_name = "religious service: social belonging"
+)
+
+output_tab_contrast_belong_z_null<- lmtp_evalue_tab(tab_contrast_belong_z_null,  delta = 1, sd = 1, scale = c("RD"))
+
+output_tab_contrast_belong_z
+output_tab_contrast_belong_z_null
 # results neighbourcommunity ----------------------------------------------
 
 
@@ -2233,7 +2333,23 @@ tab_contrast_neighbourhood_community_z <- margot_tab_lmtp(
 output_tab_contrast_neighbourhood_community_z<- lmtp_evalue_tab(tab_contrast_neighbourhood_community_z,  delta = 1, sd = 1, scale = c("RD"))
 
 
+contrast_neighbourhood_community_z_null <-
+  lmtp_contrast(t2_neighbourhood_community_z_gain ,
+                ref = t2_neighbourhood_community_z_null,
+                type = "additive")
+
+tab_contrast_neighbourhood_community_z_null <- margot_tab_lmtp(
+  contrast_neighbourhood_community_z_null,
+  scale = "RD",
+  new_name = "religious service: neighbourhood community"
+)
+
+output_contrast_neighbourhood_community_z_null<- lmtp_evalue_tab(tab_contrast_neighbourhood_community_z_null,  delta = 1, sd = 1, scale = c("RD"))
+
+
+
 output_tab_contrast_neighbourhood_community_z
+output_contrast_neighbourhood_community_z_null
 
 # results family time -----------------------------------------------------
 
@@ -2252,6 +2368,23 @@ output_tab_contrast_family_time<- lmtp_evalue_tab(tab_contrast_family_time_binar
 output_tab_contrast_family_time
 
 
+contrast_family_time_binary_null <-
+  lmtp_contrast(t2_family_time_binary_gain, ref =  t2_family_time_binary_null, type = "rr")
+
+
+tab_contrast_family_time_binary_null <- margot_tab_lmtp(
+  contrast_family_time_binary_null,
+  scale = "RR",
+  new_name = "religious service: family gives time"
+)
+tab_contrast_family_time_binary_null
+
+output_tab_contrast_family_time_null<- lmtp_evalue_tab(tab_contrast_family_time_binary_null,  delta = 1, sd = 1, scale = c("RR"))
+
+
+output_tab_contrast_family_time
+output_tab_contrast_family_time_null
+
 # results friends time ----------------------------------------------------
 contrast_friends_time <-
   lmtp_contrast(t2_friends_time_binary_gain , ref =  t2_friends_time_binary_zero, type = "rr")
@@ -2266,10 +2399,25 @@ tab_contrast_friends_time <- margot_tab_lmtp(
 output_tab_contrast_friends_time<- lmtp_evalue_tab(tab_contrast_friends_time,  delta = 1, sd = 1, scale = c("RR"))
 output_tab_contrast_friends_time
 
+contrast_friends_time_null <-
+  lmtp_contrast(t2_friends_time_binary_gain , ref =  t2_friends_time_binary_null, type = "rr")
+
+tab_contrast_friends_time_null <- margot_tab_lmtp(
+  contrast_friends_time_null,
+  scale = "RR",
+  new_name = "religious service: friends gives time"
+)
+
+
+output_tab_contrast_friends_time_null<- lmtp_evalue_tab(tab_contrast_friends_time_null,  delta = 1, sd = 1, scale = c("RR"))
+
+
+output_tab_contrast_friends_time
+output_tab_contrast_friends_time_null
+
+
 
 # results community time --------------------------------------------------
-
-
 
 contrast_community_time <-
   lmtp_contrast(t2_community_time_binary_gain,
@@ -2288,9 +2436,27 @@ output_tab_contrast_community_time<- lmtp_evalue_tab(tab_contrast_community_time
 output_tab_contrast_community_time
 
 
+contrast_community_time_null <-
+  lmtp_contrast(t2_community_time_binary_gain,
+                ref =  t2_community_time_binary_null,
+                type = "rr")
+
+
+tab_contrast_community_time_null <- margot_tab_lmtp(
+  contrast_community_time_null,
+  scale = "RR",
+  new_name = "religious service: community gives time"
+)
+
+
+output_tab_contrast_community_time_null<- lmtp_evalue_tab(tab_contrast_community_time_null,  delta = 1, sd = 1, scale = c("RR"))
+
+
+output_tab_contrast_community_time
+tab_contrast_community_time_null
+
 
 # results family money  ---------------------------------------------------
-
 
 contrast_family_money <-
   lmtp_contrast(t2_family_money_binary_gain , ref =  t2_family_money_binary_zero, type = "rr")
@@ -2306,11 +2472,28 @@ output_tab_contrast_family_money<- lmtp_evalue_tab(tab_contrast_family_money,  d
 output_tab_contrast_family_money
 
 
+contrast_family_money_null <-
+  lmtp_contrast(t2_family_money_binary_gain , ref =  t2_family_money_binary_null, type = "rr")
+
+tab_contrast_family_money_null <- margot_tab_lmtp(
+  contrast_family_money_null,
+  scale = "RR",
+  new_name = "religious service: family gives money"
+)
+
+
+output_tab_contrast_family_money_null<- lmtp_evalue_tab(tab_contrast_family_money_null,  delta = 1, sd = 1, scale = c("RR"))
+
+
+output_tab_contrast_family_money
+output_tab_contrast_family_money_null
+
+
 # results friends money ---------------------------------------------------
 
 
 contrast_friends_money <-
-  lmtp_contrast(t2_friends_money_binary_gain,
+  lmtp::lmtp_contrast(t2_friends_money_binary_gain,
                 ref =  t2_friends_money_binary_zero,
                 type = "rr")
 
@@ -2325,7 +2508,21 @@ output_tab_contrast_friends_money<- lmtp_evalue_tab(tab_contrast_friends_money, 
 
 
 
+contrast_friends_null <-
+  lmtp::lmtp_contrast(t2_friends_money_binary_gain,
+                      ref =  t2_friends_money_binary_null,
+                      type = "rr")
 
+tab_contrast_friends_null <- margot_tab_lmtp(
+  contrast_friends_null,
+  scale = "RR",
+  new_name = "religious service: friends gives money"
+)
+
+output_tab_contrast_friends_null<- lmtp_evalue_tab(tab_contrast_friends_null,  delta = 1, sd = 1, scale = c("RR"))
+
+output_tab_contrast_friends_money
+output_tab_contrast_friends_null
 # results community money -------------------------------------------------
 
 
@@ -2343,7 +2540,24 @@ tab_contrast_community_money <- margot_tab_lmtp(
 output_tab_contrast_community_money<- lmtp_evalue_tab(tab_contrast_community_money,  delta = 1, sd = 1, scale = c("RR"))
 
 
+output_tab_contrast_community_money
 
+
+contrast_community_money_null <-
+  lmtp_contrast(t2_community_money_binary_gain,
+                ref = t2_community_money_binary_null ,
+                type = "rr")
+
+tab_contrast_community_money_null <- margot_tab_lmtp(
+  contrast_community_money_null,
+  scale = "RR",
+  new_name = "religious service: community gives money"
+)
+
+output_tab_contrast_community_money_null<- lmtp_evalue_tab(tab_contrast_community_money_null,  delta = 1, sd = 1, scale = c("RR"))
+
+output_tab_contrast_community_money
+output_tab_contrast_community_money_null
 
 #######################
 
