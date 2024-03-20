@@ -2041,10 +2041,11 @@ tab_contrast_support_z <- margot_tab_lmtp(
   scale = "RD",
   new_name = "socializing >=1 hour: social suport"
 )
+tab_contrast_support_z
 
-output_tab_contrast_support_z<- lmtp_evalue_tab(tab_contrast_belong_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_support_z<- lmtp_evalue_tab(tab_contrast_support_z,  delta = 1, sd = 1, scale = c("RD"))
 
-
+output_tab_contrast_support_z
 
 
 # results belong ----------------------------------------------------------
