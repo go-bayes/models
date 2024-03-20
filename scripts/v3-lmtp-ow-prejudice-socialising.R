@@ -1754,7 +1754,6 @@ tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
 
 
-
 # chinese -----------------------------------------------------------------
 
 t2_warm_chinese_z_gain<- read_here("t2_warm_chinese_z_gain")
@@ -1790,8 +1789,8 @@ tab_contrast_t2_warm_immigrants_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_immigrants_z <- lmtp_evalue_tab(tab_contrast_t2_warm_immigrants_z,  delta = 1, sd = 1, scale = c("RD"))
-# indians -----------------------------------------------------------------
 
+# indians -----------------------------------------------------------------
 
 
 t2_warm_indians_z_gain<- read_here("t2_warm_indians_z_gain")
@@ -1802,7 +1801,7 @@ contrast_t2_warm_indians_z <-
   lmtp_contrast(t2_warm_indians_z_gain, ref =  t2_warm_indians_z_zero, type = "additive")
 
 tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
-  contrast_t2_warm_indians_z
+  contrast_t2_warm_indians_z,
   scale = "RD",
   new_name = "community socialising: warm indians"
 )
