@@ -1058,7 +1058,7 @@ library(future)
 plan(multisession)
 n_cores <-
   parallel::detectCores()
-
+n_cores = 10
 
 # church: charity models ----------------------------------------------------------
 
@@ -1079,7 +1079,6 @@ colnames(df_clean_slice)
 library(SuperLearner)
 library(xgboost)
 library(ranger)
-library(biglasso)
 # model charitable giving in population
 # measure time taken to run the model
 # 
@@ -1134,6 +1133,8 @@ t2_warm_asians_z_test_zero <- lmtp_tmle(
   parallel = n_cores
 )
 
+t2_warm_asians_z_test_zero
+
 # warm asians -------------------------------------------------------------
 
 
@@ -1152,13 +1153,10 @@ t2_warm_asians_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
-
-
-
-
+t2_warm_asians_z_gain
 
 t2_warm_asians_z_zero <- lmtp_tmle(
   outcome = "t2_warm_asians_z",
@@ -1173,10 +1171,9 @@ t2_warm_asians_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
-here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
-
+here_save(t2_warm_asians_z_zero, "t2_warm_asians_z_zero")
 
 
 # warm_chinese ------------------------------------------------------------
@@ -1193,7 +1190,7 @@ t2_warm_chinese_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_chinese_z_gain, "t2_warm_chinese_z_gain")
 
@@ -1211,7 +1208,7 @@ t2_warm_chinese_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_chinese_z_zero, "t2_warm_chinese_z_zero")
 
@@ -1231,7 +1228,7 @@ t2_warm_immigrants_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_immigrants_z_gain, "t2_warm_immigrants_z_gain")
 
@@ -1249,7 +1246,7 @@ t2_warm_immigrants_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_immigrants_z_zero, "t2_warm_immigrants_z_zero")
 
@@ -1269,7 +1266,7 @@ t2_warm_indians_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_indians_z_gain, "t2_warm_indians_z_gain")
 
@@ -1287,7 +1284,7 @@ t2_warm_indians_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_indians_z_zero, "t2_warm_indians_z_zero")
 
@@ -1309,7 +1306,7 @@ t2_warm_elderly_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_elderly_z_gain, "t2_warm_elderly_z_gain")
 
@@ -1327,7 +1324,7 @@ t2_warm_elderly_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_elderly_z_zero, "t2_warm_elderly_z_zero")
 
@@ -1348,7 +1345,7 @@ t2_warm_maori_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_maori_z_gain, "t2_warm_maori_z_gain")
 
@@ -1366,7 +1363,7 @@ t2_warm_maori_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_maori_z_zero, "t2_warm_maori_z_zero")
 
@@ -1388,7 +1385,7 @@ t2_warm_mental_illness_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_mental_illness_z_gain, "t2_warm_mental_illness_z_gain")
 
@@ -1406,7 +1403,7 @@ t2_warm_mental_illness_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_mental_illness_z_zero, "t2_warm_mental_illness_z_zero")
 
@@ -1428,7 +1425,7 @@ t2_warm_muslims_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_muslims_z_gain, "t2_warm_muslims_z_gain")
 
@@ -1446,7 +1443,7 @@ t2_warm_muslims_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_muslims_z_zero, "t2_warm_muslims_z_zero")
 
@@ -1468,7 +1465,7 @@ t2_warm_nz_euro_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_nz_euro_z_gain, "t2_warm_nz_euro_z_gain")
 
@@ -1486,7 +1483,7 @@ t2_warm_nz_euro_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_nz_euro_z_zero, "t2_warm_nz_euro_z_zero")
 
@@ -1508,7 +1505,7 @@ t2_warm_overweight_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_overweight_z_gain, "t2_warm_overweight_z_gain")
 
@@ -1526,7 +1523,7 @@ t2_warm_overweight_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_overweight_z_zero, "t2_warm_overweight_z_zero")
 
@@ -1548,7 +1545,7 @@ t2_warm_pacific_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_pacific_z_gain, "t2_warm_pacific_z_gain")
 
@@ -1566,7 +1563,7 @@ t2_warm_pacific_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_pacific_z_zero, "t2_warm_pacific_z_zero")
 
@@ -1588,7 +1585,7 @@ t2_warm_refugees_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_refugees_z_gain, "t2_warm_refugees_z_gain")
 
@@ -1606,7 +1603,7 @@ t2_warm_refugees_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_warm_refugees_z_zero, "t2_warm_refugees_z_zero")
 
@@ -1628,7 +1625,7 @@ t2_perc_gend_discrim_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_perc_gend_discrim_z_gain, "t2_perc_gend_discrim_z_gain")
 
@@ -1646,7 +1643,7 @@ t2_perc_gend_discrim_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_perc_gend_discrim_z_zero, "t2_perc_gend_discrim_z_zero")
 
@@ -1667,7 +1664,7 @@ t2_perc_discrim_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_perc_discrim_z_gain, "t2_perc_discrim_z_gain")
 
@@ -1685,7 +1682,7 @@ t2_perc_discrim_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_perc_discrim_z_zero, "t2_perc_discrim_z_zero")
 
@@ -1710,7 +1707,7 @@ t2_perc_religious_discrim_z_gain <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_perc_religious_discrim_z_gain, "t2_perc_religious_discrim_z_gain")
 
@@ -1728,7 +1725,7 @@ t2_perc_religious_discrim_z_zero <- lmtp_tmle(
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
   learners_outcome = "SL.ranger",
-  parallel = n_cores-1
+  parallel = n_cores
 )         
 here_save(t2_perc_religious_discrim_z_zero, "t2_perc_religious_discrim_z_zero")
 
@@ -1752,7 +1749,7 @@ tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_warm_asians_z
 
 # chinese -----------------------------------------------------------------
 
@@ -1770,7 +1767,7 @@ tab_contrast_t2_warm_chinese_z <- margot_tab_lmtp(
 )
 
 output_contrast_t2_warm_chinese_z <- lmtp_evalue_tab(tab_contrast_t2_warm_chinese_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_contrast_t2_warm_chinese_z
 
 # immigrants --------------------------------------------------------------
 
@@ -1789,7 +1786,7 @@ tab_contrast_t2_warm_immigrants_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_immigrants_z <- lmtp_evalue_tab(tab_contrast_t2_warm_immigrants_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_warm_immigrants_z
 # indians -----------------------------------------------------------------
 
 
@@ -1807,6 +1804,7 @@ tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_indians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_indians_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_indians_z
 # elderly -----------------------------------------------------------------
 
 t2_warm_elderly_z_gain<- here_read("t2_warm_elderly_z_gain")
@@ -1823,6 +1821,7 @@ tab_contrast_t2_warm_elderly_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_elderly_z <- lmtp_evalue_tab(tab_contrast_t2_warm_elderly_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_elderly_z
 # maori -------------------------------------------------------------------
 
 t2_warm_maori_z_gain<- here_read("t2_warm_maori_z_gain")
@@ -1838,7 +1837,7 @@ tab_contrast_t2_warm_maori_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_maori_z <- lmtp_evalue_tab(tab_contrast_t2_warm_maori_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_warm_maori_z
 # mentally ill ------------------------------------------------------------
 
 t2_warm_mental_illness_z_gain<- here_read("t2_warm_mental_illness_z_gain")
@@ -1854,7 +1853,7 @@ tab_contrast_t2_warm_mental_illness_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_mental_illness_z <- lmtp_evalue_tab( tab_contrast_t2_warm_mental_illness_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_warm_mental_illness_z
 # muslims -----------------------------------------------------------------
 t2_warm_muslims_z_gain<- here_read("t2_warm_muslims_z_gain")
 t2_warm_muslims_z_zero<- here_read("t2_warm_muslims_z_zero")
@@ -1870,6 +1869,7 @@ tab_contrast_t2_warm_muslims_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_muslims_z <- lmtp_evalue_tab(tab_contrast_t2_warm_muslims_z ,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_muslims_z
 # nzeuro ------------------------------------------------------------------
 
 t2_warm_nz_euro_z_gain<- here_read("t2_warm_nz_euro_z_gain")
@@ -1885,6 +1885,7 @@ tab_contrast_t2_warm_nz_euro_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_nz_euro_z <- lmtp_evalue_tab(tab_contrast_t2_warm_nz_euro_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_nz_euro_z
 # overweight --------------------------------------------------------------
 
 
@@ -1902,6 +1903,7 @@ tab_contrast_t2_warm_overweight_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_overweight_z <- lmtp_evalue_tab(tab_contrast_t2_warm_overweight_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_overweight_z
 # pacific -----------------------------------------------------------------
 
 
@@ -1918,6 +1920,7 @@ tab_contrast_t2_warm_pacific_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_pacific_z
 # refugees ----------------------------------------------------------------
 
 
@@ -1935,6 +1938,7 @@ tab_contrast_t2_warm_refugees_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_refugees_z <- lmtp_evalue_tab( tab_contrast_t2_warm_refugees_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_refugees_z
 # perceive gender discrim -------------------------------------------------
 t2_perc_gend_discrim_z_gain<- here_read("t2_perc_gend_discrim_z_gain")
 t2_perc_gend_discrim_z_zero<- here_read("t2_perc_gend_discrim_z_zero")
@@ -1949,6 +1953,7 @@ tab_contrast_t2_perc_gend_discrim_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_perc_gend_discrim_z <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z ,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_perc_gend_discrim_z
 # perceive rel discrim ----------------------------------------------------
 t2_perc_religious_discrim_z_gain<- here_read("t2_perc_religious_discrim_z_gain")
 t2_perc_religious_discrim_z_zero<- here_read("t2_perc_religious_discrim_z_zero")
@@ -1963,7 +1968,7 @@ tab_contrast_t2_perc_religious_discrim_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_perc_religious_discrim_z
 # perceive ethnic discrim -------------------------------------------------
 
 t2_perc_discrim_z_gain<- here_read("t2_perc_discrim_z_gain")
@@ -1981,7 +1986,7 @@ tab_contrast_t2_perc_discrim_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_perc_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_perc_discrim_z
 
 
 # tables and graphs -------------------------------------------------------
@@ -2001,7 +2006,7 @@ tab_all_warm <- rbind(
   output_tab_contrast_t2_warm_pacific_z,
   output_tab_contrast_t2_warm_refugees_z)
 
-group_tab_all_warm <- group_tab(tab_all_warm)
+group_tab_all_warm <- group_tab(tab_all_warm, type = c("RD"))
 
 here_save(tab_all_warm, "tab_all_warm")
 here_save(group_tab_all_warm, "group_tab_all_warm")
@@ -2017,7 +2022,7 @@ tab_all_perceive <-
   )
 
 
-group_tab_all_perceive <- group_tab(tab_all_perceive)
+group_tab_all_perceive <- group_tab(tab_all_perceive, type = c("RD"))
 
 here_save(tab_all_perceive , "tab_all_perceive")
 here_save(group_tab_all_perceive, "group_tab_all_perceive")
@@ -2097,7 +2102,7 @@ ggsave(
 )
 
 
-
+plot_group_tab_all_perceive
 
 # read material -----------------------------------------------------------
 
