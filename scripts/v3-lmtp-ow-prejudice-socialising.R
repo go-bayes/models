@@ -1,4 +1,4 @@
-# v3-lmtp-ow-prejudice-church.R
+# v3-lmtp-ow-prejudice-socialising.R
 # joseph.bulbulia@gmail.com
 # march 17 2024
 
@@ -17,9 +17,9 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
 # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-)
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 # experimental functions (more functions)
 # source(
@@ -1737,10 +1737,10 @@ here_save(t2_perc_religious_discrim_z_zero, "t2_perc_religious_discrim_z_zero")
 
 
 # asians ------------------------------------------------------------------
+push_mods
 
-
-t2_warm_asians_z_gain<- read_here("t2_warm_asians_z_gain")
-t2_warm_asians_z_zero<- read_here("t2_warm_asians_z_zero")
+t2_warm_asians_z_gain<- here_read("t2_warm_asians_z_gain")
+t2_warm_asians_z_zero<- here_read("t2_warm_asians_z_zero")
 
 contrast_t2_warm_asians_z <-
   lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_zero, type = "additive")
@@ -1748,7 +1748,7 @@ contrast_t2_warm_asians_z <-
 tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
   contrast_t2_warm_asians_z,
   scale = "RD",
-  new_name = "community socialising: warm asians"
+  new_name = "socializing: warm asians"
 )
 
 output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1756,8 +1756,8 @@ output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asi
 
 # chinese -----------------------------------------------------------------
 
-t2_warm_chinese_z_gain<- read_here("t2_warm_chinese_z_gain")
-t2_warm_chinese_z_zero<- read_here("t2_warm_chinese_z_zero")
+t2_warm_chinese_z_gain<- here_read("t2_warm_chinese_z_gain")
+t2_warm_chinese_z_zero<- here_read("t2_warm_chinese_z_zero")
 
 
 contrast_t2_warm_chinese_z <-
@@ -1766,7 +1766,7 @@ contrast_t2_warm_chinese_z <-
 tab_contrast_t2_warm_chinese_z <- margot_tab_lmtp(
   contrast_t2_warm_chinese_z,
   scale = "RD",
-  new_name = "community socialising: warm chinese"
+  new_name = "socializing: warm chinese"
 )
 
 output_contrast_t2_warm_chinese_z <- lmtp_evalue_tab(tab_contrast_t2_warm_chinese_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1775,8 +1775,8 @@ output_contrast_t2_warm_chinese_z <- lmtp_evalue_tab(tab_contrast_t2_warm_chines
 # immigrants --------------------------------------------------------------
 
 
-t2_warm_immigrants_z_gain<- read_here("t2_warm_immigrants_z_gain")
-t2_warm_immigrants_z_zero<- read_here("t2_warm_immigrants_z_zero")
+t2_warm_immigrants_z_gain<- here_read("t2_warm_immigrants_z_gain")
+t2_warm_immigrants_z_zero<- here_read("t2_warm_immigrants_z_zero")
 
 
 contrast_t2_warm_immigrants_z <-
@@ -1785,7 +1785,7 @@ contrast_t2_warm_immigrants_z <-
 tab_contrast_t2_warm_immigrants_z <- margot_tab_lmtp(
   contrast_t2_warm_immigrants_z,
   scale = "RD",
-  new_name = "community socialising: warm immigrants"
+  new_name = "socializing: warm immigrants"
 )
 
 output_tab_contrast_t2_warm_immigrants_z <- lmtp_evalue_tab(tab_contrast_t2_warm_immigrants_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -1793,8 +1793,8 @@ output_tab_contrast_t2_warm_immigrants_z <- lmtp_evalue_tab(tab_contrast_t2_warm
 # indians -----------------------------------------------------------------
 
 
-t2_warm_indians_z_gain<- read_here("t2_warm_indians_z_gain")
-t2_warm_indians_z_zero<- read_here("t2_warm_indians_z_zero")
+t2_warm_indians_z_gain<- here_read("t2_warm_indians_z_gain")
+t2_warm_indians_z_zero<- here_read("t2_warm_indians_z_zero")
 
 
 contrast_t2_warm_indians_z <-
@@ -1803,14 +1803,14 @@ contrast_t2_warm_indians_z <-
 tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
   contrast_t2_warm_indians_z,
   scale = "RD",
-  new_name = "community socialising: warm indians"
+  new_name = "socializing: warm indians"
 )
 
 output_tab_contrast_t2_warm_indians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_indians_z,  delta = 1, sd = 1, scale = c("RD"))
 # elderly -----------------------------------------------------------------
 
-t2_warm_elderly_z_gain<- read_here("t2_warm_elderly_z_gain")
-t2_warm_elderly_z_zero<- read_here("t2_warm_elderly_z_zero")
+t2_warm_elderly_z_gain<- here_read("t2_warm_elderly_z_gain")
+t2_warm_elderly_z_zero<- here_read("t2_warm_elderly_z_zero")
 
 
 contrast_t2_warm_elderly_z <-
@@ -1819,14 +1819,14 @@ contrast_t2_warm_elderly_z <-
 tab_contrast_t2_warm_elderly_z <- margot_tab_lmtp(
   contrast_t2_warm_elderly_z,
   scale = "RD",
-  new_name = "community socialising: warm elderly"
+  new_name = "socializing: warm elderly"
 )
 
 output_tab_contrast_t2_warm_elderly_z <- lmtp_evalue_tab(tab_contrast_t2_warm_elderly_z,  delta = 1, sd = 1, scale = c("RD"))
 # maori -------------------------------------------------------------------
 
-t2_warm_maori_z_gain<- read_here("t2_warm_maori_z_gain")
-t2_warm_maori_z_zero<- read_here("t2_warm_maori_z_zero")
+t2_warm_maori_z_gain<- here_read("t2_warm_maori_z_gain")
+t2_warm_maori_z_zero<- here_read("t2_warm_maori_z_zero")
 
 contrast_t2_warm_maori_z <-
   lmtp_contrast(t2_warm_maori_z_gain, ref =  t2_warm_maori_z_zero, type = "additive")
@@ -1834,15 +1834,15 @@ contrast_t2_warm_maori_z <-
 tab_contrast_t2_warm_maori_z <- margot_tab_lmtp(
   contrast_t2_warm_maori_z,
   scale = "RD",
-  new_name = "community socialising: warm maori"
+  new_name = "socializing: warm maori"
 )
 
 output_tab_contrast_t2_warm_maori_z <- lmtp_evalue_tab(tab_contrast_t2_warm_maori_z,  delta = 1, sd = 1, scale = c("RD"))
 
 # mentally ill ------------------------------------------------------------
 
-t2_warm_mental_illness_z_gain<- read_here("t2_warm_mental_illness_z_gain")
-t2_warm_mental_illness_z_zero<- read_here("t2_warm_mental_illness_z_zero")
+t2_warm_mental_illness_z_gain<- here_read("t2_warm_mental_illness_z_gain")
+t2_warm_mental_illness_z_zero<- here_read("t2_warm_mental_illness_z_zero")
 
 contrast_t2_warm_mental_illness_z <-
   lmtp_contrast(t2_warm_mental_illness_z_gain, ref =  t2_warm_mental_illness_z_zero, type = "additive")
@@ -1850,14 +1850,14 @@ contrast_t2_warm_mental_illness_z <-
 tab_contrast_t2_warm_mental_illness_z <- margot_tab_lmtp(
   contrast_t2_warm_mental_illness_z,
   scale = "RD",
-  new_name = "community socialising: warm mental illness"
+  new_name = "socializing: warm mental illness"
 )
 
 output_tab_contrast_t2_warm_mental_illness_z <- lmtp_evalue_tab( tab_contrast_t2_warm_mental_illness_z,  delta = 1, sd = 1, scale = c("RD"))
 
 # muslims -----------------------------------------------------------------
-t2_warm_muslims_z_gain<- read_here("t2_warm_muslims_z_gain")
-t2_warm_muslims_z_zero<- read_here("t2_warm_muslims_z_zero")
+t2_warm_muslims_z_gain<- here_read("t2_warm_muslims_z_gain")
+t2_warm_muslims_z_zero<- here_read("t2_warm_muslims_z_zero")
 
 
 contrast_t2_warm_muslims_z <-
@@ -1866,14 +1866,14 @@ contrast_t2_warm_muslims_z <-
 tab_contrast_t2_warm_muslims_z <- margot_tab_lmtp(
   contrast_t2_warm_muslims_z,
   scale = "RD",
-  new_name = "community socialising: warm muslims"
+  new_name = "socializing: warm muslims"
 )
 
 output_tab_contrast_t2_warm_muslims_z <- lmtp_evalue_tab(tab_contrast_t2_warm_muslims_z ,  delta = 1, sd = 1, scale = c("RD"))
 # nzeuro ------------------------------------------------------------------
 
-t2_warm_nz_euro_z_gain<- read_here("t2_warm_nz_euro_z_gain")
-t2_warm_nz_euro_z_zero<- read_here("t2_warm_nz_euro_z_zero")
+t2_warm_nz_euro_z_gain<- here_read("t2_warm_nz_euro_z_gain")
+t2_warm_nz_euro_z_zero<- here_read("t2_warm_nz_euro_z_zero")
 
 contrast_t2_warm_nz_euro_z <-
   lmtp_contrast(t2_warm_nz_euro_z_gain, ref =  t2_warm_nz_euro_z_zero, type = "additive")
@@ -1881,15 +1881,15 @@ contrast_t2_warm_nz_euro_z <-
 tab_contrast_t2_warm_nz_euro_z <- margot_tab_lmtp(
   contrast_t2_warm_nz_euro_z,
   scale = "RD",
-  new_name = "community socialising: warm nz euro"
+  new_name = "socializing: warm nz euro"
 )
 
 output_tab_contrast_t2_warm_nz_euro_z <- lmtp_evalue_tab(tab_contrast_t2_warm_nz_euro_z,  delta = 1, sd = 1, scale = c("RD"))
 # overweight --------------------------------------------------------------
 
 
-t2_warm_overweight_z_gain<- read_here("t2_warm_overweight_z_gain")
-t2_warm_overweight_z_zero<- read_here("t2_warm_overweight_z_zero")
+t2_warm_overweight_z_gain<- here_read("t2_warm_overweight_z_gain")
+t2_warm_overweight_z_zero<- here_read("t2_warm_overweight_z_zero")
 
 
 contrast_t2_warm_overweight_z <-
@@ -1898,15 +1898,15 @@ contrast_t2_warm_overweight_z <-
 tab_contrast_t2_warm_overweight_z <- margot_tab_lmtp(
   contrast_t2_warm_overweight_z,
   scale = "RD",
-  new_name = "community socialising: warm overweight"
+  new_name = "socializing: warm overweight"
 )
 
 output_tab_contrast_t2_warm_overweight_z <- lmtp_evalue_tab(tab_contrast_t2_warm_overweight_z,  delta = 1, sd = 1, scale = c("RD"))
 # pacific -----------------------------------------------------------------
 
 
-t2_warm_pacific_z_gain<- read_here("t2_warm_pacific_z_gain")
-t2_warm_pacific_z_zero<- read_here("t2_warm_pacific_z_zero")
+t2_warm_pacific_z_gain<- here_read("t2_warm_pacific_z_gain")
+t2_warm_pacific_z_zero<- here_read("t2_warm_pacific_z_zero")
 
 contrast_t2_warm_pacific_z <-
   lmtp_contrast(t2_warm_pacific_z_gain, ref =  t2_warm_pacific_z_zero, type = "additive")
@@ -1914,15 +1914,15 @@ contrast_t2_warm_pacific_z <-
 tab_contrast_t2_warm_pacific_z <- margot_tab_lmtp(
   contrast_t2_warm_pacific_z,
   scale = "RD",
-  new_name = "community socialising: warm pacific"
+  new_name = "socializing: warm pacific"
 )
 
 output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
 # refugees ----------------------------------------------------------------
 
 
-t2_warm_refugees_z_gain<- read_here("t2_warm_refugees_z_gain")
-t2_warm_refugees_z_zero<- read_here("t2_warm_refugees_z_zero")
+t2_warm_refugees_z_gain<- here_read("t2_warm_refugees_z_gain")
+t2_warm_refugees_z_zero<- here_read("t2_warm_refugees_z_zero")
 
 
 contrast_t2_warm_refugees_z <-
@@ -1931,13 +1931,13 @@ contrast_t2_warm_refugees_z <-
 tab_contrast_t2_warm_refugees_z <- margot_tab_lmtp(
   contrast_t2_warm_refugees_z,
   scale = "RD",
-  new_name = "community socialising: warm refugees"
+  new_name = "socializing: warm refugees"
 )
 
 output_tab_contrast_t2_warm_refugees_z <- lmtp_evalue_tab( tab_contrast_t2_warm_refugees_z,  delta = 1, sd = 1, scale = c("RD"))
 # perceive gender discrim -------------------------------------------------
-t2_perc_gend_discrim_z_gain<- read_here("t2_perc_gend_discrim_z_gain")
-t2_perc_gend_discrim_z_zero<- read_here("t2_perc_gend_discrim_z_zero")
+t2_perc_gend_discrim_z_gain<- here_read("t2_perc_gend_discrim_z_gain")
+t2_perc_gend_discrim_z_zero<- here_read("t2_perc_gend_discrim_z_zero")
 
 contrast_t2_perc_gend_discrim_z <-
   lmtp_contrast(t2_perc_gend_discrim_z_gain, ref =  t2_perc_gend_discrim_z_zero, type = "additive")
@@ -1945,13 +1945,13 @@ contrast_t2_perc_gend_discrim_z <-
 tab_contrast_t2_perc_gend_discrim_z <- margot_tab_lmtp(
   contrast_t2_perc_gend_discrim_z,
   scale = "RD",
-  new_name = "community socialising: perceive gender discrim"
+  new_name = "socializing: perceive gender discrim"
 )
 
 output_tab_contrast_t2_perc_gend_discrim_z <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z ,  delta = 1, sd = 1, scale = c("RD"))
 # perceive rel discrim ----------------------------------------------------
-t2_perc_religious_discrim_z_gain<- read_here("t2_perc_religious_discrim_z_gain")
-t2_perc_religious_discrim_z_zero<- read_here("t2_perc_religious_discrim_z_zero")
+t2_perc_religious_discrim_z_gain<- here_read("t2_perc_religious_discrim_z_gain")
+t2_perc_religious_discrim_z_zero<- here_read("t2_perc_religious_discrim_z_zero")
 
 contrast_t2_perc_religious_discrim_z <-
   lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_zero, type = "additive")
@@ -1959,15 +1959,15 @@ contrast_t2_perc_religious_discrim_z <-
 tab_contrast_t2_perc_religious_discrim_z <- margot_tab_lmtp(
   contrast_t2_perc_religious_discrim_z,
   scale = "RD",
-  new_name = "community socialising: perceive religious discrim"
+  new_name = "socializing: perceive religious discrim"
 )
 
 output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
 
 # perceive ethnic discrim -------------------------------------------------
 
-t2_perc_discrim_z_gain<- read_here("t2_perc_discrim_z_gain")
-t2_perc_discrim_z_zero<- read_here("t2_perc_discrim_z_zero")
+t2_perc_discrim_z_gain<- here_read("t2_perc_discrim_z_gain")
+t2_perc_discrim_z_zero<- here_read("t2_perc_discrim_z_zero")
 
 
 
@@ -1977,7 +1977,7 @@ contrast_t2_perc_discrim_z <-
 tab_contrast_t2_perc_discrim_z <- margot_tab_lmtp(
   contrast_t2_perc_discrim_z,
   scale = "RD",
-  new_name = "community socialising: perceive ethnic discrim"
+  new_name = "socializing: perceive ethnic discrim"
 )
 
 output_tab_contrast_t2_perc_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2023,15 +2023,18 @@ here_save(tab_all_perceive , "tab_all_perceive")
 here_save(group_tab_all_perceive, "group_tab_all_perceive")
 
 
+
 # graphs ------------------------------------------------------------------
 
+
+title = "Weekly Community Socializing For At Least One Hour vs No Intervention"
 
 
 plot_group_tab_all_warm <- margot_plot(
   group_tab_all_warm,
   type = "RD",
-  title =  "Community time effect warmth to groups",
-  subtitle = "Contrast: weekly vs. none ",
+  title =  title,
+  subtitle = "Out-Group Warmth",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
@@ -2048,17 +2051,25 @@ plot_group_tab_all_warm <- margot_plot(
 
 plot_group_tab_all_warm
 
-here_save(plot_group_tab_all_warm, 'plot_group_tab_all_warm')
 
-
-
+ggsave(
+  plot_group_tab_all_warm,
+  path = here::here(here::here(push_mods)),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_group_tab_all_warm.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 300
+)
 
 
 plot_group_tab_all_perceive <- margot_plot(
   group_tab_all_perceive,
   type = "RD",
-  title = "Community time effect on perceived prejudice against self",
-  subtitle = "Contrast: weekly vs. none ",
+  title = title,
+  subtitle = "Perceived Discrimination",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
@@ -2073,10 +2084,17 @@ plot_group_tab_all_perceive <- margot_plot(
   x_lim_lo = -.5,
 )
 
-plot_group_tab_all_perceive
-
-here_save(plot_group_tab_all_perceive, 'plot_group_tab_all_perceive')
-
+ggsave(
+  plot_group_tab_all_perceive,
+  path = here::here(here::here(push_mods)),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_group_tab_all_perceive.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 300
+)
 
 
 

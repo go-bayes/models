@@ -12,9 +12,9 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
 # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-)
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 # experimental functions (more functions)
 # source(
@@ -34,7 +34,6 @@ pull_path <-
 # read data: note that you need use the arrow package in R
 
 dat <- arrow::read_parquet("/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data")
-
 
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
@@ -1931,10 +1930,8 @@ contrast_hours_charity_z <-
 tab_contrast_hours_charity_z <- margot_tab_lmtp(
   contrast_hours_charity_z,
   scale = "RD",
-  new_name = "socializing >=1 hour: hours volunteers"
+  new_name = "socializing: hours volunteers"
 )
-
-
 
 output_tab_contrast_hours_charity_z <-
   lmtp_evalue_tab(
@@ -1956,7 +1953,7 @@ contrast_charity_donate_z <-
 tab_contrast_charity_donate_z <- margot_tab_lmtp(
   contrast_charity_donate_z,
   scale = "RD",
-  new_name = "socializing >=1 hour: charity donations"
+  new_name = "socializing: charity donations"
 )
 
 
@@ -1972,7 +1969,7 @@ contrast_volunteers_binary   <-
 tab_contrast_volunteers_binary <- margot_tab_lmtp(
   contrast_volunteers_binary,
   scale = "RR",
-  new_name = "socializing >=1 hour: volunteers (binary)"
+  new_name = "socializing: volunteers (binary)"
 )
 tab_contrast_volunteers_binary
 
@@ -2039,7 +2036,7 @@ contrast_support_z <-
 tab_contrast_support_z <- margot_tab_lmtp(
   contrast_support_z,
   scale = "RD",
-  new_name = "socializing >=1 hour: social suport"
+  new_name = "socializing: social suport"
 )
 tab_contrast_support_z
 
@@ -2060,7 +2057,7 @@ contrast_belong_z <-
 tab_contrast_belong_z <- margot_tab_lmtp(
   contrast_belong_z,
   scale = "RD",
-  new_name = "socializing >=1 hour: social belonging"
+  new_name = "socializing: social belonging"
 )
 
 output_tab_contrast_belong_z<- lmtp_evalue_tab(tab_contrast_belong_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2077,7 +2074,7 @@ contrast_neighbourhood_community_z <-
 tab_contrast_neighbourhood_community_z <- margot_tab_lmtp(
   contrast_neighbourhood_community_z,
   scale = "RD",
-  new_name = "socializing >=1 hour: neighbourhood community"
+  new_name = "socializing: neighbourhood community"
 )
 
 output_tab_contrast_neighbourhood_community_z<- lmtp_evalue_tab(tab_contrast_neighbourhood_community_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2096,7 +2093,7 @@ contrast_family_time_binary <-
 tab_contrast_family_time_binary <- margot_tab_lmtp(
   contrast_family_time_binary,
   scale = "RR",
-  new_name = "socializing >=1 hour: family gives time"
+  new_name = "socializing: family gives time"
 )
 tab_contrast_family_time_binary
 
@@ -2113,7 +2110,7 @@ contrast_friends_time <-
 tab_contrast_friends_time <- margot_tab_lmtp(
   contrast_friends_time,
   scale = "RR",
-  new_name = "socializing >=1 hour: friends gives time"
+  new_name = "socializing: friends gives time"
 )
 
 
@@ -2134,7 +2131,7 @@ contrast_community_time <-
 tab_contrast_community_time <- margot_tab_lmtp(
   contrast_community_time,
   scale = "RR",
-  new_name = "socializing >=1 hour: community gives time"
+  new_name = "socializing: community gives time"
 )
 
 
@@ -2152,7 +2149,7 @@ contrast_family_money <-
 tab_contrast_family_money <- margot_tab_lmtp(
   contrast_family_money,
   scale = "RR",
-  new_name = "socializing >=1 hour: family gives money"
+  new_name = "socializing: family gives money"
 )
 
 
@@ -2171,7 +2168,7 @@ contrast_friends_money <-
 tab_contrast_friends_money <- margot_tab_lmtp(
   contrast_friends_money,
   scale = "RR",
-  new_name = "socializing >=1 hour: friends gives money"
+  new_name = "socializing: friends gives money"
 )
 
 output_tab_contrast_friends_money<- lmtp_evalue_tab(tab_contrast_friends_money,  delta = 1, sd = 1, scale = c("RR"))
@@ -2191,7 +2188,7 @@ contrast_community_money <-
 tab_contrast_community_money <- margot_tab_lmtp(
   contrast_community_money,
   scale = "RR",
-  new_name = "socializing >=1 hour: community gives money"
+  new_name = "socializing: community gives money"
 )
 
 output_tab_contrast_community_money<- lmtp_evalue_tab(tab_contrast_community_money,  delta = 1, sd = 1, scale = c("RR"))
@@ -2290,35 +2287,75 @@ group_tab_contrast_received_time
 group_tab_all_prosocial_rr
 # graphs ------------------------------------------------------------------
 
-conflicts_prefer(ggplot2::margin)
-plot_group_tab_all_prosocial_rr <- margot_plot(
-  group_tab_all_prosocial_rr,
-  type = "RR",
-  title = "Religious service effect on reported volunteering (binary)",
-  subtitle = "Contrast: >= weekly vs. none ",
+
+
+
+
+# conflicts_prefer(ggplot2::margin)
+# plot_group_tab_all_prosocial_rr <- margot_plot(
+#   group_tab_all_prosocial_rr,
+#   type = "RR",
+#   title = "Religious service effect on reported volunteering (binary)",
+#   subtitle = "Contrast: >= weekly vs. none ",
+#   xlab = "",
+#   ylab = "",
+#   estimate_scale = 1,
+#   base_size = 11,
+#   text_size = 4.5,
+#   point_size = 2.5,
+#   title_size = 20,
+#   subtitle_size = 14,
+#   legend_text_size = 8,
+#   legend_title_size = 10,
+#   x_offset = -.5,
+#   x_lim_lo = .5,
+#   x_lim_hi =  1.5
+# )
+# 
+# plot_group_tab_all_prosocial_rr
+
+title = "Weekly Community Socializing For At Least One Hour vs No Intervention"
+
+plot_group_tab_all_prosocial <- margot_plot(
+  group_tab_all_prosocial,
+  type = "RD",
+  title =title,
+  subtitle = "Self-Reported Prosociality",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 11,
+  base_size = 18,
   text_size = 4.5,
-  point_size = 2.5,
+  point_size = 3.5,
   title_size = 20,
-  subtitle_size = 14,
-  legend_text_size = 8,
+  subtitle_size = 16,
+  legend_text_size = 10,
   legend_title_size = 10,
   x_offset = -.5,
-  x_lim_lo = .5,
-  x_lim_hi =  1.5
+  x_lim_lo = -.5,
+  x_lim_hi =  .5
 )
 
-plot_group_tab_all_prosocial_rr
+here_save(plot_group_tab_all_prosocial, "plot_group_tab_all_prosocial")
+
+ggsave(
+  plot_group_tab_all_prosocial,
+  path = here::here(here::here(push_mods)),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_group_tab_all_prosocial.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 300
+)
 
 
 plot_group_tab_all_perceived_support <- margot_plot(
   group_tab_all_perceived_support,
   type = "RD",
-  title = "Weekly socialising for at least 1 hour effect on perceived social support/connection",
-  subtitle = "Contrast: >= weekly vs. none ",
+  title =title,
+  subtitle = "Perceived Social Support",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
@@ -2335,56 +2372,93 @@ plot_group_tab_all_perceived_support <- margot_plot(
 
 plot_group_tab_all_perceived_support
 
+here_save(plot_group_tab_all_perceived_support,"plot_group_tab_all_perceived_support")
+
+
+ggsave(
+  plot_group_tab_all_perceived_support,
+  path = here::here(here::here(push_mods)),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_group_tab_all_perceived_support.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 300
+)
 
 
 plot_group_tab_all_received_time <- margot_plot(
   group_tab_contrast_received_time,
   type = "RR",
-  title = "Weekly socialising for at least 1 hour effect on time received",
-  subtitle = "Contrast: >= weekly vs. none ",
+  title = title,
+  subtitle = "Support Received From Others: Time",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 14,
+  base_size = 18,
   text_size = 4.5,
-  point_size = 2.5,
+  point_size = 3.5,
   title_size = 20,
-  subtitle_size = 14,
+  subtitle_size = 16,
   legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -5,
-  x_lim_lo = -5,
-  x_lim_hi =  15.5
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  4
 )
 
 plot_group_tab_all_received_time
+here_save(plot_group_tab_all_received_time, "plot_group_tab_all_received_time")
+
+ggsave(
+  plot_group_tab_all_received_time,
+  path = here::here(here::here(push_mods)),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_group_tab_all_received_time.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 300
+)
 
 
 plot_group_tab_all_received_money <- margot_plot(
   group_tab_all_received_money,
   type = "RR",
-  title = "Weekly socialising for at least 1 hour on money received",
-  subtitle = "Contrast: weekly vs. none ",
+  title = title,
+  subtitle = "Support Received From Others: Money",
   xlab = "",
   ylab = "",
   estimate_scale = 1,
-  base_size = 14,
+  base_size = 18,
   text_size = 4.5,
-  point_size = 2.5,
+  point_size = 3.5,
   title_size = 20,
-  subtitle_size = 14,
+  subtitle_size = 16,
   legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -5,
-  x_lim_lo = -5,
-  x_lim_hi =  15.5
+  x_offset = 0,
+  x_lim_lo = 0,
+  x_lim_hi =  4
 )
 
 plot_group_tab_all_received_money
 
+here_save(plot_group_tab_all_received_money, "plot_group_tab_all_received_money")
 
-
-
+ggsave(
+  plot_group_tab_all_received_money,
+  path = here::here(here::here(push_mods)),
+  width = 16,
+  height = 9,
+  units = "in",
+  filename = "plot_group_tab_all_received_money.png",
+  device = 'png',
+  limitsize = FALSE,
+  dpi = 300
+)
 
 
 ### GET 
@@ -2400,3 +2474,4 @@ table_outcomes <- here_save("table_outcomes")
 
 graph_density_of_exposure_down<- here_read("graph_density_of_exposure_down")
 graph_density_of_exposure_up<- here_read("graph_density_of_exposure_up")
+graph_density_of_exposure_up
