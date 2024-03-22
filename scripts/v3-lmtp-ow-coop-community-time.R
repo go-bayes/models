@@ -637,7 +637,7 @@ summary(lm(charity_donate ~ religion_church_round, data = dt_18))
 summary(lm(hours_charity ~ religion_church_round, data = dt_18))
 
 
-summary(lm(charity_donate ~ hours_community_round, data = dt_18))
+summary(fit1<- lm(charity_donate ~ hours_community_round, data = dt_18))
 summary(lm(hours_charity ~ hours_community_round, data = dt_18))
 
 
@@ -658,7 +658,9 @@ fit_socialising_on_donate <-
     baseline_vars = base_var
   )
 
-parameters::model_parameters(fit_socialising_on_donate, ci_method="wald")[2, ]
+push_mods
+parameters::model_parameters(fit1, ci_method="wald")[2, ]
+
 
 fit_socialising_on_volunteer <-
   margot::regress_with_covariates(
@@ -898,7 +900,7 @@ graph_density_of_exposure_up <- margot::coloured_histogram_shift(
   dt_19,
   col_name = "hours_community_round",
   binwidth = .5, 
-  range_highlight = c(0,10)
+  range_highlight = c(0,.9)
 )
 graph_density_of_exposure_up
 
@@ -2463,10 +2465,12 @@ ggsave(
   dpi = 300
 )
 
-
+push_mods
 ### GET 
 
 transition_table_socialising_shift <- here_read("transition_table_socialising_shift")
+
+transition_table_socialising_shift
 transition_table_socialising<- here_read( "transition_table_socialising")
 n_participants <- here_read("n_participants")
 

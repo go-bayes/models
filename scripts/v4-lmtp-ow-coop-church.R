@@ -593,7 +593,7 @@ sd_volunteer <-
   sd(dt_outcome$hours_charity, na.rm = TRUE)
 
 
-sd_donations * .02
+sd_donations * .24
 
 # save for manuscript
 here_save(sd_donations, "sd_donations")
