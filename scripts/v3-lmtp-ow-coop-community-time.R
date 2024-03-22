@@ -550,6 +550,9 @@ out_social
 # transition table
 transition_table <-
   margot::transition_table(out_social)
+
+
+
 transition_table
 here_save(transition_table,
           "transition_table")
@@ -644,7 +647,7 @@ dt_18_miss <- dt_18 |> select(-alert_level_combined_lead)
 naniar::vis_miss(dt_18_miss, warn_large_data = F)
 
 
-
+push_mods
 
 # Then, call the function without quotes around `baseline_vars`:
 fit_socialising_on_donate <-
@@ -655,8 +658,7 @@ fit_socialising_on_donate <-
     baseline_vars = base_var
   )
 
-parameters::model_parameters(fit_socialising_on_donate)[2, ]
-
+parameters::model_parameters(fit_socialising_on_donate, ci_method="wald")[2, ]
 
 fit_socialising_on_volunteer <-
   margot::regress_with_covariates(
@@ -896,11 +898,11 @@ graph_density_of_exposure_up <- margot::coloured_histogram_shift(
   dt_19,
   col_name = "hours_community_round",
   binwidth = .5, 
-  range_highlight = c(0,.9)
+  range_highlight = c(0,10)
 )
 graph_density_of_exposure_up
 
-
+push_mods
 graph_density_of_exposure_down <- margot::coloured_histogram_shift(
   dt_19,
   shift = "down",
@@ -909,7 +911,8 @@ graph_density_of_exposure_down <- margot::coloured_histogram_shift(
   range_highlight = c(1,10)
 )
 graph_density_of_exposure_up
-
+graph_density_of_exposure_up
+push_mods
 here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
 here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
 

@@ -769,12 +769,23 @@ graph_density_of_exposure <-
     dt_19,
     col_name = "hours_community_round",
     binwidth = 1,
-    range_highlight = c(0, 1),
+    range_highlight = c(0, 10),
     shift = "up"
   )
 
-graph_density_of_exposure
 
+graph_density_of_exposure_up <-
+  margot::coloured_histogram_shift(
+    dt_19,
+    col_name = "hours_community_round",
+    binwidth = .5,
+    range_highlight = c(0, 10),
+    shift = "up"
+  )
+
+
+here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
+graph_density_of_exposure_up
 
 ggsave(
   graph_density_of_exposure,
@@ -782,7 +793,7 @@ ggsave(
   width = 12,
   height = 8,
   units = "in",
-  filename = "graph_density_of_exposure.jpg",
+  filename = "graph_density_of_exposure_up.",
   device = 'jpeg',
   limitsize = FALSE,
   dpi = 600

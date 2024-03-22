@@ -584,6 +584,7 @@ mean_volunteer <-
 
 mean_donations
 mean_volunteer
+push_mods
 
 
 sd_donations <-
@@ -591,6 +592,8 @@ sd_donations <-
 sd_volunteer <-
   sd(dt_outcome$hours_charity, na.rm = TRUE)
 
+
+sd_donations * .02
 
 # save for manuscript
 here_save(sd_donations, "sd_donations")
@@ -622,11 +625,10 @@ table(dt_18$censored)
 dat_long$charity_donate_log
 
 # check association only
-summary(lm(charity_donate ~ religion_church_round, data = dt_18))
+summary (fit1<- lm(charity_donate ~ religion_church_round, data = dt_18))
 summary(lm(hours_charity ~ religion_church_round, data = dt_18))
 
-
-summary(lm(charity_donate ~ hours_community_round, data = dt_18))
+summary(lm(fit1<-charity_donate ~ hours_community_round, data = dt_18))
 summary(lm(hours_charity ~ hours_community_round, data = dt_18))
 
 
@@ -653,7 +655,8 @@ fit_church_on_volunteer <-
     exposure = "religion_church_round",
     baseline_vars = base_var
   )
-parameters::model_parameters(fit_church_on_volunteer)[2, ]
+parameters::model_parameters(fit1, ci_method="wald")[2, ]
+
 push_mods
 
 
@@ -825,14 +828,13 @@ dt_19 <- dat_long |>
 
 library(ggplot2)
 library(dplyr)
-
 #
 # # generate bar plot
 graph_density_of_exposure_up <- margot::coloured_histogram_shift(
   dt_19,
   col_name = "religion_church_round",
-  binwidth = 1, 
-  range_highlight = c(0,4)
+  binwidth = .5, 
+  range_highlight = c(0,3.9)
 )
 graph_density_of_exposure_up
 
