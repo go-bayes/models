@@ -2023,7 +2023,6 @@ t2_friends_money_binary_null<- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  folds = 10,
   k = 1, 
   outcome_type = "binomial",
   weights = df_clean$t0_sample_weights,
