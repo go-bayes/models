@@ -1069,7 +1069,7 @@ print(W)
 #   
 #   #  trt is a variable name passed as a string to the function
 #   
-#   ifelse(trt == "t1_religion_religious",
+#   ifelse(trt == "t1_religion_church_round",
 #          mtp_one_contrast_zero(data, trt),
 #          data[[trt]])
 # }
@@ -1077,32 +1077,32 @@ print(W)
 
 
 
-# gain_A <- function(data, trt){
-#   ifelse( data[[trt]] < 4, 4,  data[[trt]] )
-# }
-
-
-gain_A <- function(data, trt) {
-  # make zero at baseline
-  mtp_base_A <- function(data, trt) {
-    ifelse(data[[trt]] < 4, 4, data[[trt]])
-  }
-  
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base_A(data, trt))
-  }
-  
-  # shift to at least 4 at time 1
-  mtp_one_contrast_A <- function(data, trt) {
-    ifelse(data[[trt]] < 4, 4,  data[[trt]])
-  }
-  
-  #  trt is a variable name passed as a string to the function
-  
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast_A(data, trt),
-         data[[trt]])
+gain_A <- function(data, trt){
+  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
 }
+
+# 
+# gain_A <- function(data, trt) {
+#   # make zero at baseline
+#   mtp_base_A <- function(data, trt) {
+#     ifelse(data[[trt]] < 4, 4, data[[trt]])
+#   }
+#   
+#   if (trt == "t0_religion_church_round") {
+#     return(mtp_base_A(data, trt))
+#   }
+#   
+#   # shift to at least 4 at time 1
+#   mtp_one_contrast_A <- function(data, trt) {
+#     ifelse(data[[trt]] < 4, 4,  data[[trt]])
+#   }
+#   
+#   #  trt is a variable name passed as a string to the function
+#   
+#   ifelse(trt == "t1_religion_church_round",
+#          mtp_one_contrast_A(data, trt),
+#          data[[trt]])
+# }
 
 zero_A <- function(data, trt){
   ifelse( data[[trt]] > 0, 0,  data[[trt]] )
@@ -1161,7 +1161,7 @@ t2_warm_asians_z_test_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1201,7 +1201,7 @@ t2_warm_asians_z_test_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1222,7 +1222,7 @@ t2_warm_asians_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1258,7 +1258,7 @@ t2_warm_asians_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1278,7 +1278,7 @@ t2_warm_chinese_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1316,7 +1316,7 @@ t2_warm_chinese_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1337,7 +1337,7 @@ t2_warm_immigrants_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1375,7 +1375,7 @@ t2_warm_immigrants_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1397,7 +1397,7 @@ t2_warm_indians_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1434,7 +1434,7 @@ t2_warm_indians_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1455,7 +1455,7 @@ t2_warm_elderly_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1493,7 +1493,7 @@ t2_warm_elderly_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1515,7 +1515,7 @@ t2_warm_maori_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1553,7 +1553,7 @@ t2_warm_maori_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1575,7 +1575,7 @@ t2_warm_mental_illness_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1613,7 +1613,7 @@ t2_warm_mental_illness_z_null<- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1636,7 +1636,7 @@ t2_warm_muslims_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1673,7 +1673,7 @@ t2_warm_muslims_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1696,7 +1696,7 @@ t2_warm_nz_euro_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1733,7 +1733,7 @@ t2_warm_nz_euro_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1756,7 +1756,7 @@ t2_warm_overweight_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1792,7 +1792,7 @@ t2_warm_overweight_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1814,7 +1814,7 @@ t2_warm_pacific_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1850,7 +1850,7 @@ t2_warm_pacific_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1875,7 +1875,7 @@ t2_warm_refugees_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1911,7 +1911,7 @@ t2_warm_refugees_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1933,7 +1933,7 @@ t2_perc_gend_discrim_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1970,7 +1970,7 @@ t2_perc_gend_discrim_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -1992,7 +1992,7 @@ t2_perc_discrim_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -2030,7 +2030,7 @@ t2_perc_discrim_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -2054,7 +2054,7 @@ t2_perc_religious_discrim_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",
@@ -2092,7 +2092,7 @@ t2_perc_religious_discrim_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=1, 
+  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = "SL.ranger",

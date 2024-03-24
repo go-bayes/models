@@ -1023,7 +1023,7 @@ print(W)
 #   
 #   #  trt is a variable name passed as a string to the function
 #   
-#   ifelse(trt == "t1_religion_religious",
+#   ifelse(trt == "t1_religion_church_round",
 #          mtp_one_contrast_A(data, trt),
 #          data[[trt]])
 # }
@@ -1051,7 +1051,7 @@ print(W)
 #   
 #   #  trt is a variable name passed as a string to the function
 #   
-#   ifelse(trt == "t1_religion_religious",
+#   ifelse(trt == "t1_religion_church_round",
 #          mtp_one_contrast_zero(data, trt),
 #          data[[trt]])
 # }

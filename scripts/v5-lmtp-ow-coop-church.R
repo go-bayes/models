@@ -1202,10 +1202,34 @@ print(W)
 # 
 #   #  trt is a variable name passed as a string to the function
 # 
-#   ifelse(trt == "t1_religion_religious",
+#   ifelse(trt == "t1_religion_church_round",
 #          mtp_one_contrast_A(data, trt),
 #          data[[trt]])
 # }
+
+
+tt_A <- function(data, trt) {
+  # make zero at baseline
+  mtp_base_A <- function(data, trt) {
+    data[[trt]]
+  }
+
+  if (trt == "t0_religion_church_round") {
+    return(mtp_base_A(data, trt))
+  }
+
+  # shift to at least 4 at time 1
+  mtp_one_A <- function(data, trt) {dd
+    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+   }
+
+  #  trt is a variable name passed as a string to the function
+    if (trt == "t1_religion_church_round"){
+        return( mtp_one_A(data, trt))
+    }
+}
+
+
 # # 
 # zero_A <- function(data, trt) {
 #   
