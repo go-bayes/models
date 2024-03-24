@@ -1183,30 +1183,30 @@ W
 # check
 print(W)
 
+# # 
+# # 
+# gain_A <- function(data, trt) {
+#   # make zero at baseline
+#   mtp_base_A <- function(data, trt) {
+#     ifelse(data[[trt]] < 4, 4, data[[trt]])
+#   }
 # 
+#   if (trt == "t0_religion_church_round") {
+#     return(mtp_base_A(data, trt))
+#   }
 # 
-gain_A <- function(data, trt) {
-  # make zero at baseline
-  mtp_base_A <- function(data, trt) {
-    ifelse(data[[trt]] < 4, 4, data[[trt]])
-  }
-
-  if (trt == "t0_religion_church_round") {
-    return(mtp_base_A(data, trt))
-  }
-
-  # shift to at least 4 at time 1
-  mtp_one_contrast_A <- function(data, trt) {
-    ifelse(data[[trt]] < 4, 4,  data[[trt]])
-  }
-
-  #  trt is a variable name passed as a string to the function
-
-  ifelse(trt == "t1_religion_religious",
-         mtp_one_contrast_A(data, trt),
-         data[[trt]])
-}
+#   # shift to at least 4 at time 1
+#   mtp_one_contrast_A <- function(data, trt) {
+#     ifelse(data[[trt]] < 4, 4,  data[[trt]])
+# #   }
 # 
+#   #  trt is a variable name passed as a string to the function
+# 
+#   ifelse(trt == "t1_religion_religious",
+#          mtp_one_contrast_A(data, trt),
+#          data[[trt]])
+# }
+# # 
 # zero_A <- function(data, trt) {
 #   
 #   # make zero at baseline
@@ -1226,15 +1226,16 @@ gain_A <- function(data, trt) {
 #   }
 
 
-
-gain_A <- function(data, trt){
-  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
+# 
+gain_A <- function(data, trt) {
+  ifelse(data[[trt]] <= 4, 4,  data[[trt]])
 }
 
 zero_A <- function(data, trt){
   ifelse( data[[trt]] > 0, 0,  data[[trt]] )
 }
 
+gain_A
 
 # BONUS: progressr progress bars!
 progressr::handlers(global = TRUE)
@@ -1439,7 +1440,7 @@ t2_volunteers_binary_null <- lmtp_tmle(
 here_save(t2_volunteers_binary_null, "t2_volunteers_binary_null")
 
 
-
+gain_A
 # church donations --------------------------------------------------------
 t2_charity_donate_z_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
@@ -2104,70 +2105,70 @@ here_save(t2_community_money_binary_null,
 # results -----------------------------------------------------------------
 
 t2_volunteers_binary_gain <- here_read("t2_volunteers_binary_gain")
-t2_volunteers_binary_zero <- here_read("t2_volunteers_binary_zero")
+# t2_volunteers_binary_zero <- here_read("t2_volunteers_binary_zero")
 t2_volunteers_binary_null <- here_read("t2_volunteers_binary_null")
-
-
+t2_volunteers_binary_gain
+t2_volunteers_binary_null
 
 t2_hours_charity_z_gain <-
   here_read("t2_hours_charity_z_gain") # note spelling
-t2_hours_charity_z_zero <- here_read("t2_hours_charity_z_zero")
+# t2_hours_charity_z_zero <- here_read("t2_hours_charity_z_zero")
 t2_hours_charity_z_null<- here_read("t2_hours_charity_z_null")
 
 
 
 t2_charity_donate_z_gain <- here_read("t2_charity_donate_z_gain")
-t2_charity_donate_z_zero <- here_read("t2_charity_donate_z_zero")
+# t2_charity_donate_z_zero <- here_read("t2_charity_donate_z_zero")
 
 
 t2_support_z_gain <- here_read("t2_support_z_gain")
-t2_support_z_zero <- here_read("t2_support_z_zero")
+# t2_support_z_zero <- here_read("t2_support_z_zero")
 t2_support_z_null<- here_read("t2_support_z_null")
 
 
 
 t2_belong_z_gain <- here_read("t2_belong_z_gain")
-t2_belong_z_zero <- here_read("t2_belong_z_zero")
+# t2_belong_z_zero <- here_read("t2_belong_z_zero")
 t2_belong_z_null <- here_read("t2_belong_z_null")
 
 
 
 t2_neighbourhood_community_z_gain <-
   here_read("t2_neighbourhood_community_z_gain")
-t2_neighbourhood_community_z_zero <-
-  here_read("t2_neighbourhood_community_z_zero")
+# t2_neighbourhood_community_z_zero <-
+#   here_read("t2_neighbourhood_community_z_zero")
 t2_neighbourhood_community_z_null <-
   here_read("t2_neighbourhood_community_z_null")
 
 
 t2_family_time_binary_gain <-
   here_read("t2_family_time_binary_gain")
-t2_family_time_binary_zero <-
-  here_read("t2_family_time_binary_zero")
+# t2_family_time_binary_zero <-
+#   here_read("t2_family_time_binary_zero")
 t2_family_time_binary_null <-
   here_read("t2_family_time_binary_null")
 
 
 t2_friends_time_binary_gain <-
   here_read("t2_friends_time_binary_gain")
-t2_friends_time_binary_zero <-
-  here_read("t2_friends_time_binary_zero")
+# t2_friends_time_binary_zero <-
+#   here_read("t2_friends_time_binary_zero")
 t2_friends_time_binary_null <-
   here_read("t2_friends_time_binary_null")
 
 
 t2_community_time_binary_gain <-
   here_read("t2_community_time_binary_gain")
-t2_community_time_binary_zero <-
-  here_read("t2_community_time_binary_zero")
+# t2_community_time_binary_zero <-
+#   here_read("t2_community_time_binary_zero")
 t2_community_time_binary_null <-
   here_read("t2_community_time_binary_null")
 
 
 t2_family_money_binary_gain <-
   here_read("t2_family_money_binary_gain")
-t2_family_money_binary_zero <-
-  here_read("t2_family_money_binary_zero")
+# t2_family_money_binary_zero <-
+#   here_read("t2_family_money_binary_zero")
 t2_family_money_binary_null <-
   here_read("t2_family_money_binary_null")
 
@@ -2175,16 +2176,16 @@ t2_family_money_binary_null <-
 
 t2_friends_money_binary_gain <-
   here_read("t2_friends_money_binary_gain")
-t2_friends_money_binary_zero <-
-  here_read("t2_friends_money_binary_zero")
+# t2_friends_money_binary_zero <-
+#   here_read("t2_friends_money_binary_zero")
 t2_friends_money_binary_null <-
   here_read("t2_friends_money_binary_null")
 
 
 t2_community_money_binary_gain <-
   here_read("t2_community_money_binary_gain")
-t2_community_money_binary_zero <-
-  here_read("t2_community_money_binary_zero")
+# t2_community_money_binary_zero <-
+#   here_read("t2_community_money_binary_zero")
 t2_community_money_binary_null <-
   here_read("t2_community_money_binary_null")
 
