@@ -61,7 +61,7 @@ f <- function(data, trt) {
 }
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
-SL_folds = 5
+SL_folds = 10
 
 #this will allow you to track progress
 progressr::handlers(global = TRUE)
@@ -84,9 +84,6 @@ library(SuperLearner)
 library(ranger)
 library(xgboost)
 library(glmnet)
-
-# boost speed
-SL.xgboost = list(tree_method = 'gpu_hist')
 
 
 # check options
@@ -342,7 +339,7 @@ colnames(dat)
 
 
 dt_positivity_full <- dat_long|>
-  filter(wave == 0 | wave == 1) |> 
+  filter(wave == 2018| wave == 2019) |> 
   select(wave, id, trust_science_our_society_places_too_much_emphasis_reversed) 
 
 dt_positivity_full
