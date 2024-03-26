@@ -58,14 +58,14 @@ library(future)
 plan(multisession)
 n_cores <- parallel::detectCores() - 2 # save two cores for other work while these models run
 
+# min of 10
 n_cores
-
 
 # super learner libraries
 # these are useful for high-dimensional data
 sl_lib <- c("SL.glmnet",
-            "SL.ranger",
-            "SL.xgboost")
+            "SL.ranger", # forests
+            "SL.xgboost") # grandient boost
 
 # libraries
 library(SuperLearner)
@@ -878,7 +878,7 @@ t2_env_climate_chg_real_z_null <- lmtp_sdr(
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib,
-  parallel =n_cores
+  parallel = n_cores
 )
 here_save(t2_env_climate_chg_real_z_null, "t2_env_climate_chg_real_z_null")
 
