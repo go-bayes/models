@@ -20,7 +20,7 @@ pull_path <-
     "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
   )
 
-# for saving models. # set path fo your computer
+# for saving models. # INKUK set path fo your computer
 push_mods <-
   fs::path_expand(
     "/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-ow-env-science"
@@ -41,7 +41,7 @@ push_mods
 
 # for modified treatment policies
 library("lmtp")
-push_mods
+# push_mods
 
 # set exposure here
 nzavs_exposure <-
@@ -72,9 +72,10 @@ set.seed(0112358)
 # set cores for estimation
 library(future)
 plan(multisession)
-n_cores <- parallel::detectCores()
+n_cores <- parallel::detectCores() - 2 # save two cores for other work while these models run
 
 # super learner libraries
+# these are useful for high-dimensional data
 sl_lib <- c("SL.glmnet",
             "SL.ranger",
             "SL.xgboost")
