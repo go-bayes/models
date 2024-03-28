@@ -3,6 +3,7 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
+listWrappers()
 
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
@@ -90,7 +91,6 @@ dat <- as.data.frame(dat)
 dat <- haven::zap_formats(dat)
 dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
-
 
 str(dat)
 
