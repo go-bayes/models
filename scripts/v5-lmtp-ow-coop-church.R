@@ -1441,7 +1441,6 @@ t2_volunteers_binary_gain <- lmtp_tmle(
 
 here_save(t2_volunteers_binary_gain, "t2_volunteers_binary_gain")
 
-
 t2_volunteers_binary_zero <- lmtp_tmle(
   outcome = "t2_volunteers_binary",
   baseline = names_base,
@@ -2302,23 +2301,21 @@ output_tab_contrast_charity_donate_z_null
 
 
 # volunteerbinary ---------------------------------------------------------
+t2_volunteers_binary_gain
+t2_volunteers_binary_zero
+
+contrast_volunteers_binary   <-
+  lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
+
+tab_contrast_volunteers_binary <- margot_tab_lmtp(
+  contrast_volunteers_binary,
+  scale = "RR",
+  new_name = "relig service: volunteers (binary)"
+)
+
+output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
 
 
-# output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
-# 
-# contrast_volunteers_binary   <-
-#   lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
-# 
-# tab_contrast_volunteers_binary <- margot_tab_lmtp(
-#   contrast_volunteers_binary,
-#   scale = "RR",
-#   new_name = "relig service: volunteers (binary)"
-# )
-# 
-# output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
-# 
-# 
-# output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
 
 # 
 # 
@@ -2663,12 +2660,12 @@ here_save(group_tab_all_prosocial, "group_tab_all_prosocial")
 here_save(tab_all_prosocial_null, "tab_all_prosocial_null")
 here_save(group_tab_all_prosocial_null, "group_tab_all_prosocial_null")
 # 
-# tab_all_prosocial_rr <- output_tab_contrast_volunteers_binary
-# group_tab_all_prosocial_rr <- group_tab(tab_all_prosocial_rr, type = "RR")
+tab_all_prosocial_rr <- output_tab_contrast_volunteers_binary
+group_tab_all_prosocial_rr <- group_tab(tab_all_prosocial_rr, type = "RR")
 # 
-# here_save(tab_all_prosocial_rr, "tab_all_prosocial_rr")
-# here_save(group_tab_all_prosocial_rr, "group_tab_all_prosocial_rr")
-
+here_save(tab_all_prosocial_rr, "tab_all_prosocial_rr")
+here_save(group_tab_all_prosocial_rr, "group_tab_all_prosocial_rr")
+group_tab_all_prosocial_rr
 
 tab_all_perceived_support <- rbind(
   output_tab_contrast_neighbourhood_community_z,
