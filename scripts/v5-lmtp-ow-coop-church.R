@@ -1422,44 +1422,44 @@ here_save(t2_hours_charity_z_null, "t2_hours_charity_z_null")
 
 
 # charity binary ----------------------------------------------------------
-# 
-# t2_volunteers_binary_gain <- lmtp_tmle(
-#   outcome = "t2_volunteers_binary",
-#   baseline = names_base,
-#   shift = gain_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
-# )
-# 
-# here_save(t2_volunteers_binary_gain, "t2_volunteers_binary_gain")
-# 
-# 
-# t2_volunteers_binary_zero <- lmtp_tmle(
-#   outcome = "t2_volunteers_binary",
-#   baseline = names_base,
-#   shift = zero_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
-# )
-# 
-# here_save(t2_volunteers_binary_zero, "t2_volunteers_binary_zero")
-# 
+
+t2_volunteers_binary_gain <- lmtp_tmle(
+  outcome = "t2_volunteers_binary",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "binomial",
+  weights = df_clean$t0_sample_weights,
+  learners_trt= sl_lib,
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+here_save(t2_volunteers_binary_gain, "t2_volunteers_binary_gain")
+
+
+t2_volunteers_binary_zero <- lmtp_tmle(
+  outcome = "t2_volunteers_binary",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "binomial",
+  weights = df_clean$t0_sample_weights,
+  learners_trt= sl_lib,
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+here_save(t2_volunteers_binary_zero, "t2_volunteers_binary_zero")
+
 # 
 # t2_volunteers_binary_null <- lmtp_tmle(
 #   outcome = "t2_volunteers_binary",
@@ -1482,6 +1482,7 @@ here_save(t2_hours_charity_z_null, "t2_hours_charity_z_null")
 # 
 # gain_A
 # church donations --------------------------------------------------------
+
 t2_charity_donate_z_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
