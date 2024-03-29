@@ -3,6 +3,7 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
+listWrappers()
 
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
@@ -90,7 +91,6 @@ dat <- as.data.frame(dat)
 dat <- haven::zap_formats(dat)
 dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
-
 
 str(dat)
 
@@ -1422,44 +1422,43 @@ here_save(t2_hours_charity_z_null, "t2_hours_charity_z_null")
 
 
 # charity binary ----------------------------------------------------------
-# 
-# t2_volunteers_binary_gain <- lmtp_tmle(
-#   outcome = "t2_volunteers_binary",
-#   baseline = names_base,
-#   shift = gain_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
-# )
-# 
-# here_save(t2_volunteers_binary_gain, "t2_volunteers_binary_gain")
-# 
-# 
-# t2_volunteers_binary_zero <- lmtp_tmle(
-#   outcome = "t2_volunteers_binary",
-#   baseline = names_base,
-#   shift = zero_A,
-#   data = df_clean,
-#   trt = A,
-#   cens = C,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "binomial",
-#   weights = df_clean$t0_sample_weights,
-#   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
-# )
-# 
-# here_save(t2_volunteers_binary_zero, "t2_volunteers_binary_zero")
-# 
+
+t2_volunteers_binary_gain <- lmtp_tmle(
+  outcome = "t2_volunteers_binary",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "binomial",
+  weights = df_clean$t0_sample_weights,
+  learners_trt= sl_lib,
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+here_save(t2_volunteers_binary_gain, "t2_volunteers_binary_gain")
+
+t2_volunteers_binary_zero <- lmtp_tmle(
+  outcome = "t2_volunteers_binary",
+  baseline = names_base,
+  shift = zero_A,
+  data = df_clean,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "binomial",
+  weights = df_clean$t0_sample_weights,
+  learners_trt= sl_lib,
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+here_save(t2_volunteers_binary_zero, "t2_volunteers_binary_zero")
+
 # 
 # t2_volunteers_binary_null <- lmtp_tmle(
 #   outcome = "t2_volunteers_binary",
@@ -1482,6 +1481,7 @@ here_save(t2_hours_charity_z_null, "t2_hours_charity_z_null")
 # 
 # gain_A
 # church donations --------------------------------------------------------
+
 t2_charity_donate_z_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
@@ -2301,23 +2301,21 @@ output_tab_contrast_charity_donate_z_null
 
 
 # volunteerbinary ---------------------------------------------------------
+t2_volunteers_binary_gain
+t2_volunteers_binary_zero
+
+contrast_volunteers_binary   <-
+  lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
+
+tab_contrast_volunteers_binary <- margot_tab_lmtp(
+  contrast_volunteers_binary,
+  scale = "RR",
+  new_name = "relig service: volunteers (binary)"
+)
+
+output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
 
 
-# output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
-# 
-# contrast_volunteers_binary   <-
-#   lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
-# 
-# tab_contrast_volunteers_binary <- margot_tab_lmtp(
-#   contrast_volunteers_binary,
-#   scale = "RR",
-#   new_name = "relig service: volunteers (binary)"
-# )
-# 
-# output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
-# 
-# 
-# output_tab_contrast_volunteers_binary <- lmtp_evalue_tab(tab_contrast_volunteers_binary,  delta = 1, sd = 1, scale = c("RR"))
 
 # 
 # 
@@ -2662,12 +2660,12 @@ here_save(group_tab_all_prosocial, "group_tab_all_prosocial")
 here_save(tab_all_prosocial_null, "tab_all_prosocial_null")
 here_save(group_tab_all_prosocial_null, "group_tab_all_prosocial_null")
 # 
-# tab_all_prosocial_rr <- output_tab_contrast_volunteers_binary
-# group_tab_all_prosocial_rr <- group_tab(tab_all_prosocial_rr, type = "RR")
+tab_all_prosocial_rr <- output_tab_contrast_volunteers_binary
+group_tab_all_prosocial_rr <- group_tab(tab_all_prosocial_rr, type = "RR")
 # 
-# here_save(tab_all_prosocial_rr, "tab_all_prosocial_rr")
-# here_save(group_tab_all_prosocial_rr, "group_tab_all_prosocial_rr")
-
+here_save(tab_all_prosocial_rr, "tab_all_prosocial_rr")
+here_save(group_tab_all_prosocial_rr, "group_tab_all_prosocial_rr")
+group_tab_all_prosocial_rr
 
 tab_all_perceived_support <- rbind(
   output_tab_contrast_neighbourhood_community_z,
