@@ -516,7 +516,7 @@ baseline_vars
 
 # just core baseline variables
 base_var <-
-  setdiff(baseline_vars, c("censored", "sample_weights"))
+  setdiff(baseline_vars, c("censored", "sample_weights", outcome_vars))
 base_var
 
 
@@ -658,7 +658,7 @@ fit_church_on_volunteer <-
     exposure = "religion_church_round",
     baseline_vars = base_var
   )
-parameters::model_parameters(fit1, ci_method="wald")[2, ]
+parameters::model_parameters(fit_church_on_volunteer, ci_method="wald")[2, ]
 
 push_mods
 
@@ -673,10 +673,7 @@ library(gtsummary)
 
 
 # get names
-base_var <-
-  setdiff(baseline_vars, c("censored", "sample_weights"))
 base_var
-
 
 # prepare df
 selected_base_cols <-
@@ -1295,10 +1292,29 @@ sl_lib
 # summary( lm( t2_charity_donate_z ~ t1_religion_church_round  + 
 #                t0_charity_donate_z + t0_religion_church_round, df_clean ) )
 
+## SELECT AND RENAME -- REDUCE DIMENSIONS
+select_and_rename_cols <- function(names_base, baseline_vars, outcome) {
+  # Select columns that match with baseline_vars
+  selected_cols <- names_base[grepl(paste(baseline_vars, collapse = "|"), names_base)]
+  
+  # Rename the outcome variable prefix from t2 to t0
+  outcome_renamed <- gsub("t2_", "t0_", outcome)
+  # Append the renamed outcome to selected columns
+  final_cols <- c(selected_cols, outcome_renamed)
+  
+  return(final_cols)
+}
+
+
+names_base_t2_hours_charity_z<- select_and_rename_cols(names_base = names_base,  
+                                                       baseline_vars = base_var, 
+                                                       outcome =  "t2_hours_charity_z")
+
+
 t2_charity_donate_z_test_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base,
-  shift = zero_A,
+  baseline = names_base_t2_hours_charity_z,
+  shift = gain_A,
   data = df_clean_slice,
   trt = A,
   cens = C,
@@ -1364,6 +1380,17 @@ t2_charity_donate_z_test_gain
 # models ------------------------------------------------------------------
 
 library(SuperLearner)
+
+
+
+
+
+names_base_t2_hours_charity_z<- select_and_rename_cols(names_base = names_base,  
+                                                     baseline_vars = base_var, 
+                                                     outcome =  "t2_hours_charity_z")
+
+
+
 
 t2_hours_charity_z_gain <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
@@ -1481,6 +1508,8 @@ here_save(t2_volunteers_binary_zero, "t2_volunteers_binary_zero")
 # 
 # gain_A
 # church donations --------------------------------------------------------
+
+
 
 t2_charity_donate_z_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
