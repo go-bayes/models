@@ -73,7 +73,7 @@ sl_lib <- c("SL.glmnet",
 
 
 # large data
-sl_lib_ranger <- c("SL.ranger") #
+#sl_lib_ranger <- c("SL.ranger") #
 
 # check
 push_mods
@@ -1145,7 +1145,7 @@ library(ranger)
 #                          outcome = "t2_hours_charity_z")
 # 
 # names_base_t2_hours_charity_z
-m_hours_charity_z_test
+#m_hours_charity_z_test
 
 # sl_lib <- c("SL.glmnet",
 #             "SL.ranger", #
@@ -1924,7 +1924,6 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 
 # t2_perc_gend_discrim_z -------------------------------------------------------
 
-
 t2_perc_gend_discrim_z_gain <- lmtp_tmle(
   outcome = "t2_perc_gend_discrim_z",
   baseline = names_base,
@@ -1934,7 +1933,6 @@ t2_perc_gend_discrim_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1971,7 +1969,6 @@ t2_perc_gend_discrim_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -2055,7 +2052,6 @@ t2_perc_religious_discrim_z_gain <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -2093,7 +2089,6 @@ t2_perc_religious_discrim_z_null <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -2247,8 +2242,8 @@ output_tab_contrast_t2_warm_indians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_in
 # elderly -----------------------------------------------------------------
 
 t2_warm_elderly_z_gain<- here_read("t2_warm_elderly_z_gain")
-t2_warm_elderly_z_null<- here_read("t2_warm_elderly_z_null")
-#t2_warm_elderly_z_zero<- here_read("t2_warm_elderly_z_zero")
+# t2_warm_elderly_z_null<- here_read("t2_warm_elderly_z_null")
+t2_warm_elderly_z_zero<- here_read("t2_warm_elderly_z_zero")
 
 
 contrast_t2_warm_elderly_z <-
@@ -2459,7 +2454,7 @@ tab_contrast_t2_warm_pacific_z <- margot_tab_lmtp(
   new_name = "relig service: warm pacific"
 )
 
-# output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
 # 
 # 
 # contrast_t2_warm_pacific_z_null <-
@@ -2612,7 +2607,7 @@ output_tab_contrast_t2_perc_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_d
 
 # 
 tab_all_warm <- rbind(
- # output_tab_contrast_t2_warm_asians_z,
+  output_tab_contrast_t2_warm_asians_z,
   output_contrast_t2_warm_chinese_z,
   output_tab_contrast_t2_warm_immigrants_z,
   output_tab_contrast_t2_warm_indians_z,
@@ -2720,7 +2715,7 @@ plot_group_tab_all_warm <- margot_plot(
   estimate_scale = 1,
   base_size = 18,
   text_size = 4.5,
-  point_size = 2.5,
+  point_size = .5,
   title_size = 20,
   subtitle_size = 14,
   legend_text_size = 8,
