@@ -92,7 +92,10 @@ dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
 
 
-str(dat)
+# fix male error
+dat$male <- 1- dat$male
+
+table(dat$male)
 
 # Time 10 [2018/2019]	FamilyTime.T10	Please estimate how much help you have received from the following sources in the last week?
 #   Time 10 [2018/2019]	FriendsTime.T10	Please estimate how much help you have received from the following sources in the last week?
@@ -580,7 +583,6 @@ dt_outcome <-
   dat_long |>
   filter(wave == 2020)
 
-dt_outcome$religion_church_round
 mean_donations <-
   mean(dt_outcome$charity_donate, na.rm = TRUE)
 mean_volunteer <-
@@ -651,6 +653,8 @@ fit_church_on_donate <-
   )
 parameters::model_parameters(fit_church_on_donate)[2, ]
 
+here_save(fit_church_on_donate,"fit_church_on_donate")
+
 fit_church_on_volunteer <-
   regress_with_covariates(
     dt_18,
@@ -658,10 +662,11 @@ fit_church_on_volunteer <-
     exposure = "religion_church_round",
     baseline_vars = base_var
   )
-parameters::model_parameters(fit1, ci_method="wald")[2, ]
+parameters::model_parameters(fit_church_on_volunteer, ci_method="wald")[2, ]
 
-push_mods
+here_save(fit_church_on_volunteer,"fit_church_on_volunteer")
 
+( .24 * 60 ) * 4
 
 # tables ------------------------------------------------------------------
 library(gtsummary)
@@ -672,15 +677,10 @@ library(gtsummary)
 
 
 
-# get names
-base_var <-
-  setdiff(baseline_vars, c("censored", "sample_weights"))
-base_var
-
 
 # prepare df
 selected_base_cols <-
-  dt_18 |> select(all_of(base_var)) #
+  dt_18 |> select(all_of(base_var), -alert_level_combined_lead) #
 
 
 #check
@@ -736,6 +736,7 @@ selected_exposure_cols <-
 # check
 str(selected_exposure_cols)
 
+str( table( dat$gender ) )
 
 library(gtsummary)
 
@@ -846,7 +847,7 @@ graph_density_of_exposure_down <- margot::coloured_histogram_shift(
   dt_19,
   shift = "down",
   col_name = "religion_church_round",
-  binwidth = 1, 
+  binwidth = .5, 
   range_highlight = c(1,8)
 )
 graph_density_of_exposure_up
@@ -1144,6 +1145,9 @@ here_save(df_clean, "df_clean")
 
 # imputed data already from previous study
 df_clean <- readRDS(here::here(push_mods_orig, "df_clean"))
+
+miss_graph <-naniar::vis_miss(df_clean, warn_large_data = FALSE)
+here_save(miss_graph, "miss_graph")
 
 colnames(df_clean)
 str(df_clean)
@@ -2290,14 +2294,14 @@ output_tab_contrast_charity_donate_z_null
 
 # results volunteers binary -----------------------------------------------
 
-# contrast_volunteers_binary   <-
-#   lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
-# 
-# tab_contrast_volunteers_binary <- margot_tab_lmtp(
-#   contrast_volunteers_binary,
-#   scale = "RR",
-#   new_name = "relig service: volunteers (binary)"
-# )
+contrast_volunteers_binary   <-
+  lmtp_contrast(t2_volunteers_binary_gain , ref =  t2_volunteers_binary_zero, type = "rr")
+
+tab_contrast_volunteers_binary <- margot_tab_lmtp(
+  contrast_volunteers_binary,
+  scale = "RR",
+  new_name = "relig service: volunteers (binary)"
+)
 # 
 
 
@@ -2747,8 +2751,8 @@ group_tab_all_prosocial<- here_read("group_tab_all_prosocial")
 group_tab_all_prosocial_null<- here_read("group_tab_all_prosocial_null")
 
 # # 
-# tab_all_prosocial_rr <- here_read("tab_all_prosocial_rr")
-# group_tab_all_prosocial_rr <- here_read("group_tab_all_prosocial_rr")
+tab_all_prosocial_rr <- here_read("tab_all_prosocial_rr")
+group_tab_all_prosocial_rr <- here_read("group_tab_all_prosocial_rr")
 
 tab_all_perceived_support <- here_read("tab_all_perceived_support")
 tab_all_perceived_support_null <- here_read("tab_all_perceived_support_null")
