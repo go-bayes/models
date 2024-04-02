@@ -2416,13 +2416,14 @@ t2_community_money_binary_null <-
 contrast_hours_charity_z <-
   lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
 
+contrast_hours_charity_z
 
 tab_contrast_hours_charity_z <- margot_tab_lmtp(
   contrast_hours_charity_z,
   scale = "RD",
   new_name = "relig service: hours volunteer"
 )
-
+tab_contrast_hours_charity_z
 
 
 output_tab_contrast_hours_charity_z <-
@@ -2437,7 +2438,7 @@ output_tab_contrast_hours_charity_z
 
 
 contrast_hours_charity_z_null <-
-  lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "additive")
+  lmtp::lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "additive")
 
 
 tab_contrast_hours_charity_z_null <- margot_tab_lmtp(
@@ -2447,6 +2448,7 @@ tab_contrast_hours_charity_z_null <- margot_tab_lmtp(
 )
 
 
+tab_contrast_hours_charity_z_null
 
 output_tab_contrast_hours_charity_z_null <-
   lmtp_evalue_tab(
@@ -2497,9 +2499,9 @@ tab_contrast_charity_donate_z <- margot_tab_lmtp(
   new_name = "relig service: donations"
 )
 
-
-
 output_tab_contrast_charity_donate_z<- lmtp_evalue_tab(tab_contrast_charity_donate_z,  delta = 1, sd = 1, scale = c("RD"))
+
+
 
 
 contrast_charity_donate_z_null <-
@@ -2515,6 +2517,7 @@ tab_contrast_charity_donate_z_null <- margot_tab_lmtp(
 
 
 output_tab_contrast_charity_donate_z_null<- lmtp_evalue_tab(tab_contrast_charity_donate_z_null,  delta = 1, sd = 1, scale = c("RD"))
+
 
 output_tab_contrast_charity_donate_z
 output_tab_contrast_charity_donate_z_null
@@ -3201,6 +3204,8 @@ here_save(group_tab_contrast_received_time, "group_tab_contrast_received_time")
 here_save(tab_contrast_received_time_null, "tab_contrast_received_time_null")
 here_save(tab_contrast_received_time_null_zero, "tab_contrast_received_time_null_zero")
 here_save(group_tab_contrast_received_time_null_zero, "group_tab_contrast_received_time_null_zero")
+
+
 
 
 # import to manuscript -------------------------------------------------------
