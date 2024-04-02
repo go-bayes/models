@@ -650,26 +650,58 @@ naniar::vis_miss(dt_18_miss, warn_large_data = F)
 
 
 # base_vars set above
-fit_church_on_donate <-
-  regress_with_covariates(
+fit_church_on_charity_donate <-
+  margot::regress_with_covariates(
     dt_18,
     outcome = "charity_donate",
     exposure = "religion_church_round",
     baseline_vars = base_var
   )
-parameters::model_parameters(fit_church_on_donate)[2, ]
+parameters::model_parameters(fit_church_on_charity_donate, ci_method="wald")[2, ]
 
-fit_church_on_volunteer <-
-  regress_with_covariates(
+here_save(fit_church_on_charity_donate, "fit_church_on_charity_donate")
+
+fit_church_on_hours_charity <-
+  margot::regress_with_covariates(
     dt_18,
     outcome = "hours_charity",
     exposure = "religion_church_round",
     baseline_vars = base_var
   )
-parameters::model_parameters(fit_church_on_volunteer, ci_method="wald")[2, ]
+parameters::model_parameters(fit_church_on_hours_charity, ci_method="wald")[2, ]
+here_save(fit_church_on_hours_charity, "fit_church_on_hours_charity")
 
-push_mods
 
+here_save(fit_church_on_hours_charity, "fit_church_on_hours_charity")
+
+fit_church_on_community_time_binary <-
+  margot::regress_with_covariates(
+    dt_18,
+    outcome = "community_time_binary",
+    exposure = "religion_church_round",
+    baseline_vars = base_var,
+    family = "binomial"
+  )
+parameters::model_parameters(fit_church_on_community_time_binary, ci_method="wald")[2, ]
+here_save(fit_church_on_community_time_binary, "fit_church_on_community_time_binary")
+
+
+fit_church_on_community_money_binary <-
+  margot::regress_with_covariates(
+    dt_18,
+    outcome = "community_money_binary",
+    exposure = "religion_church_round",
+    baseline_vars = base_var,
+    family = "binomial"
+  )
+parameters::model_parameters(fit_church_on_community_money_binary, ci_method="wald")[2, ]
+
+here_save(fit_church_on_community_money_binary, "fit_church_on_community_money_binary")
+
+fit_church_on_charity_donate<- here_read('fit_church_on_charity_donate')
+fit_church_on_hours_charity<- here_read('fit_church_on_hours_charity')
+fit_church_on_community_time_binary<- here_read('fit_church_on_community_time_binary')
+fit_church_on_community_money_binary<- here_read('fit_church_on_community_money_binary')
 
 # tables ------------------------------------------------------------------
 library(gtsummary)
@@ -1016,7 +1048,7 @@ head(prep_coop_all$loggedEvents, 10)
 
 # read function
 prep_coop_all <-
-  here_read("prep_coop_all")
+  readRDS(here::here(push_mods_orig, "prep_coop_all"))
 
 head(prep_coop_all)
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
