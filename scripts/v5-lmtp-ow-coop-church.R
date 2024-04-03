@@ -2414,7 +2414,7 @@ t2_community_money_binary_null <-
 # results hours volunteer ---------------------------------------------------
 
 contrast_hours_charity_z <-
-  lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
+  lmtp::lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "additive")
 
 contrast_hours_charity_z
 
@@ -2435,6 +2435,17 @@ output_tab_contrast_hours_charity_z <-
   )
 output_tab_contrast_hours_charity_z
 
+
+# test --------------------------------------------------------------------
+
+
+## test -- this works! :) 
+library(margot)
+test <- margot::margot_lmtp_evalue(contrast_hours_charity_z,  scale = "RD",
+                             new_name = "relig service: hours volunteer")
+
+
+# end ---------------------------------------------------------------------
 
 
 contrast_hours_charity_z_null <-
@@ -2591,7 +2602,7 @@ output_tab_contrast_charity_donate_z_null_zero
 # output_tab_contrast_volunteers_binary_null
 # support -----------------------------------------------------------------
 
-contrast_support_z <-
+contrast_support_z <- 
   lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_zero, type = "additive")
 
 tab_contrast_support_z <- margot_tab_lmtp(
@@ -3204,7 +3215,6 @@ here_save(group_tab_contrast_received_time, "group_tab_contrast_received_time")
 here_save(tab_contrast_received_time_null, "tab_contrast_received_time_null")
 here_save(tab_contrast_received_time_null_zero, "tab_contrast_received_time_null_zero")
 here_save(group_tab_contrast_received_time_null_zero, "group_tab_contrast_received_time_null_zero")
-
 
 
 
