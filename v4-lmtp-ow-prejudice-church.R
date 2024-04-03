@@ -7,7 +7,7 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
-
+#devtools::install_github("go-bayes/margot")
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
@@ -2175,7 +2175,7 @@ here_save(t2_perc_religious_discrim_z_null, "t2_perc_religious_discrim_z_null")
 
 # asians ------------------------------------------------------------------
 
-
+library(margot)
 t2_warm_asians_z_gain<- here_read("t2_warm_asians_z_gain")
 t2_warm_asians_z_zero<- here_read("t2_warm_asians_z_zero")
 t2_warm_asians_z_null<- here_read("t2_warm_asians_z_null")
