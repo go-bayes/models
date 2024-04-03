@@ -515,6 +515,8 @@ base_var <-
   setdiff(baseline_vars, c("censored", "sample_weights"))
 base_var
 
+here_save(base_var, "base_var")
+here_save(baseline_vars, "baseline_vars")
 
 #community at baseline
 n_participants <-
@@ -1157,7 +1159,8 @@ names_base
 here_save(names_base, "names_base")
 names_base <- here_read("names_base")
 
-push_mods
+base_var <- here_read("base_var")
+baseline_vars <- here_read("baseline_vars")
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
 
