@@ -21,20 +21,20 @@ source("/Users/joseph/GIT/templates/functions/funs.R")
 # source(
 #   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
 # )
-
-library(arrow)
 # arrow::install_arrow()
 
 ## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE.
 pull_path <-
   fs::path_expand(
     #"/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
-    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data"
+    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data_qs"
   )
 
 # read data: note that you need use the arrow package in R
 
-dat <- arrow::read_parquet("/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data")
+#dat <- arrow::read_parquet("/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data")
+
+dat <- qs::qread(here::here(pull_path))
 
 
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
@@ -57,6 +57,12 @@ push_mods <-  fs::path_expand(
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
+
+# total nzavs participants
+n_total <- skimr::n_unique(dat$id)
+
+
+margot::here_save(n_total, "n_total")
 
 # set exposure here
 nzavs_exposure <- "religion_church_round"
@@ -557,10 +563,18 @@ dt_positivity_full <- dat_long |>
 out <-
   msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
 
+
+library(margot)
+citation(package = "margot")
+
+
 out_church_2 <-
   msm::statetable.msm(religion_church_shift, id, data = dt_positivity_full)
 
-out
+out <-margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_round", id_var = "id")
+
+out_church_2 <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_shift", id_var = "id")
+  
 out_church_2
 
 t_tab_2_labels <- c("< weekly", ">= weekly")
@@ -629,7 +643,6 @@ baseline_vars
 
 dt_18 <- dat_long|>
   filter(wave == 2018) 
-
 
 table(dt_18$censored)
 
@@ -1113,6 +1126,9 @@ df_clean <- df_wide_censored %>%
     across(
       .cols = where(is.numeric) &
         !t0_censored &
+       # !t0_nzsei_13_l & 
+        !t0_sample_weights & 
+        !t0_sample_frame_opt_in & 
         !t0_volunteers_binary &
         !t0_family_time_binary &
         !t0_friends_time_binary &
@@ -1142,6 +1158,9 @@ df_clean <- df_wide_censored %>%
   #        -t0_hours_charity) |>
   select(
     where(is.factor),
+    t0_sample_weights,
+    t0_sample_frame_opt_in,
+    #t0_nzsei_13_l,
     t0_hours_community_round,
     t0_volunteers_binary,
     t0_family_time_binary,
@@ -1180,7 +1199,7 @@ here_save(df_clean, "df_clean")
 
 
 # imputed data already from previous study
-df_clean <- readRDS(here::here(push_mods_orig, "df_clean"))
+df_clean <- here_read("df_clean")
 colnames(df_clean)
 str(df_clean)
 # names of vars for modelling
@@ -1204,6 +1223,88 @@ names_outcomes
 
 here_save(names_outcomes, "names_outcomes")
 names_outcomes <- here_read("names_outcomes")
+
+
+
+# check imbalance ---------------------------------------------------------
+
+df_clean_no_na_treatment <- df_clean |> filter(!is.na(t1_religion_church_round))
+
+
+# save
+
+# match_ebal_health <- here_read("match_ebal_health")
+# # use energy balance, and only engergy balance if the exposure is continuous.
+# match_energy_health <- match_mi_general(data = mice_health_mids, 
+#                                         X = X, 
+#                                         baseline_vars = baseline_vars_health, 
+#                                         estimand = estimand,  
+#                                         # focal = "< >", for ATT
+#                                         method = "energy", 
+#                                         sample_weights = "sample_weights")
+# 
+# # save
+# here_save(match_energy_health, "match_energy_health")
+
+
+# checks results
+# ebal method
+bal.tab(match_ebal)
+love.plot(match_ebal, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =3) 
+
+# consider results 
+sum_ebal_health <- summary(match_ebal_health)
+sum_ebal_health
+plot(sum_ebal_health)
+
+# energy method
+#graph
+bal.tab(match_energy_health)
+love.plot(match_energy_health, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2)) 
+
+# consider results 
+sum_energy_health <- summary(match_energy_health)
+sum_energy_health
+plot(sum_ebal_health)
+
+
+# cbps score method
+#graph
+bal.tab(match_energy_health)
+summary(match_cbps_health)
+plot(sum_cbps_health)
+
+love.plot(match_cbps_health, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
+love_plot_match_cbps_health
+
+# consider results 
+sum_cbps_health <- summary(match_cbps_health)
+sum_cbps_health
+plot(sum_cbps_health)
+
+
+
+# For trimmed weights e.g.
+#trim if needed (weights > 10 might be a problem)
+match_ebal_health_trim <- WeightIt::trim(match_ebal_health, at = .99)
+#bal.tab(match_ebal_trim_health)
+summary_ebal_trim<- summary(match_ebal_health_trim)
+plot(summary_ebal_trim)
+
+
+love.plot(match_ebal_health_trim, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
+
+here_save(match_ebal_health_trim, "match_ebal_health_trim")
+match_ebal_health_trim <- here_read( "match_ebal_health_trim")
+
+
+
+# set variable names ------------------------------------------------------
+
 
 
 #### SET VARIABLE NAMES
