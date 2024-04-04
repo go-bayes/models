@@ -37,6 +37,8 @@ pull_path <-
 dat <- qs::qread(here::here(pull_path))
 
 
+
+
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 
@@ -104,15 +106,14 @@ dat <- as.data.frame(dat)
 dat <- haven::zap_formats(dat)
 dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
-
 str(dat)
-
 # Time 10 [2018/2019]	FamilyTime.T10	Please estimate how much help you have received from the following sources in the last week?
 #   Time 10 [2018/2019]	FriendsTime.T10	Please estimate how much help you have received from the following sources in the last week?
 #   Time 10 [2018/2019]	CommunityTime.T10	Please estimate how much help you have received from the following sources in the last week?
 #   Time 10 [2018/2019]	FamilyMoney.T10	Please estimate how much help you have received from the following sources in the last week?
 # #   Time 10 [2018/2019]	FriendsMoney.T10	Please estimate how much help you have received from the following sources in the last week?
 #   Time 10 [2018/2019]	CommunityMoney.T10	Please estimate how much help you have received from the following sources in the last week?
+
 dat_long_full <- dat |>
   dplyr::filter(id %in% ids_2018 &
                   wave %in% c(2018, 2019, 2020)) |>
@@ -243,6 +244,7 @@ dat_long_full <- dat |>
     "hours_community",
     "hours_friends",
     "hours_family",
+    "hours_religious_community",
     #Hours - Looking after children
     # "religion_perceive_religious_discrim",
     #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
@@ -344,7 +346,7 @@ dat_long_full <- dat |>
     "alert_level_combined"
   ) |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-  mutate(hours_community_round = round(ifelse(hours_community >= 10, 10, hours_community), 0)) |>
+#  mutate(hours_community_round = round(ifelse(hours_community >= 10, 10, hours_community), 0)) |>
   mutate(
     #initialize 'censored'
     censored = ifelse(lead(year_measured) == 1, 1, 0),
@@ -378,9 +380,10 @@ dat_long_full <- dat |>
     hours_exercise_log = log(hours_exercise + 1),
     hours_children_log = log(hours_children + 1),
     # total_siblings_log = log(total_siblings + 1),
-    # hours_community_log = log(hours_community + 1),
+    hours_community_log = log(hours_community + 1),
     hours_friends_log  = log(hours_friends + 1),
-    hours_family_log = log(hours_family + 1)#,
+    hours_family_log = log(hours_family + 1),
+    hours_religious_community_log =  log(hours_religious_community + 1)
     #  children_num_log = log(children_num + 1)
   ) |>
   dplyr::select(
@@ -391,8 +394,8 @@ dat_long_full <- dat |>
       hours_exercise,
       hours_children,
       have_siblings,
-      children_num,
-      total_siblings
+  #    children_num,
+  #    total_siblings
     )
   ) |>
   droplevels() |>
@@ -407,6 +410,7 @@ dat_long_full <- dat |>
     friends_money_binary = as.integer(ifelse(friends_money > 0, 1, 0)),
     community_money_binary = as.integer(ifelse(community_money> 0, 1, 0))
   ) |>  #shorter name
+  dplyr::rename(short_form_health = sfhealth) |> 
   dplyr::select(
     -c(
       religion_church,
@@ -418,7 +422,8 @@ dat_long_full <- dat |>
       hours_friends,
       community_money,
       friends_money,
-      family_money
+      family_money,
+      hours_religious_community
     )
   ) |>
   arrange(id, wave) |>
@@ -565,7 +570,7 @@ out <-
 
 
 library(margot)
-citation(package = "margot")
+
 
 
 out_church_2 <-
@@ -655,11 +660,15 @@ summary(lm(hours_charity ~ religion_church_round, data = dt_18))
 summary(lm(fit1<-charity_donate ~ hours_community_round, data = dt_18))
 summary(lm(hours_charity ~ hours_community_round, data = dt_18))
 
+table(is.na( dt_18$hours_religious_community))
 
-# 
+
+
 dt_18_miss <- dt_18 |> select(-alert_level_combined_lead)
 
 naniar::vis_miss(dt_18_miss, warn_large_data = F)
+
+table((dt_18_miss$hours_religious_community))
 
 
 # base_vars set above
@@ -730,14 +739,14 @@ base_var
 
 # prepare df
 selected_base_cols <-
-  dt_18 |> select(all_of(base_var)) #
+  dt_18 |> select(all_of(base_var))
 
 
 #check
 colnames(selected_base_cols)
 
 #chck
-selected_base_cols
+#selected_base_cols <- setdiff(selected_base_cols)
 # baseline table
 
 library(gtsummary)
@@ -837,11 +846,11 @@ selected_outcome_cols <-
     Social_belonging = belong,
     Annual_charity = charity_donate,
     Volunteering_hours = hours_charity,
-    Community_gives_money = community_money_binary,
-    Community_gives_time = community_time_binary,
-    Family_gives_money = family_money_binary,
-    Family_gives_time = family_time_binary,
-    Friends_give_money = friends_money_binary,
+    Community_gives_money_binary = community_money_binary,
+    Community_gives_time_binary = community_time_binary,
+    Family_gives_money_binary = family_money_binary,
+    Family_gives_time_binary = family_time_binary,
+    Friends_give_money_binary = friends_money_binary,
     Friends_give_time = friends_time_binary,
     Social_support = support,
     Sense_neighbourhood_community = neighbourhood_community
@@ -1208,6 +1217,7 @@ str(df_clean)
 names_base <-
   df_clean |> select(starts_with("t0"),
                      -t0_sample_weights,
+                     -t0_volunteers_binary, # redundant
                      -t0_censored) |> colnames()
 
 names_base
@@ -1230,76 +1240,64 @@ names_outcomes <- here_read("names_outcomes")
 
 df_clean_no_na_treatment <- df_clean |> filter(!is.na(t1_religion_church_round))
 
+df_clean_no_na_treatment_base <- df_clean |> filter(!is.na(t0_religion_church_round)) 
+
+
+names_base_base <- setdiff(names_base, "t0_religion_church_round")
+
+match_ebal_base<- match_mi_general(data = df_clean_no_na_treatment_base,
+                              X = "t0_religion_church_round",
+                              baseline_vars = names_base_base,
+                              estimand = "ATE",
+                              #  focal = 0, #for ATT
+                              method = "ebal",
+                              sample_weights = "sample_weights")
+
+love_plot_base <- love.plot(match_ebal_base, binary = "std", thresholds = c(m = .1),
+                       wrap = 50, position = "bottom", size = 3,  limits = list(m = c(-.5, 1))) 
+
+# love_plot_base
+here_save(love_plot_base, "love_plot_base")
+
+summary_match_ebal_base <- summary(match_ebal_base)
+summary_match_ebal_base
+here_save(summary_match_ebal, "summary_match_ebal")
+
+
+match_ebal<- match_mi_general(data = df_clean_no_na_treatment,
+                                        X = "t1_religion_church_round",
+                                        baseline_vars = names_base,
+                                        estimand = "ATE",
+                                      #  focal = 0, #for ATT
+                                        method = "ebal",
+                                        sample_weights = "sample_weights")
 
 # save
-
-# match_ebal_health <- here_read("match_ebal_health")
-# # use energy balance, and only engergy balance if the exposure is continuous.
-# match_energy_health <- match_mi_general(data = mice_health_mids, 
-#                                         X = X, 
-#                                         baseline_vars = baseline_vars_health, 
-#                                         estimand = estimand,  
-#                                         # focal = "< >", for ATT
-#                                         method = "energy", 
-#                                         sample_weights = "sample_weights")
-# 
-# # save
-# here_save(match_energy_health, "match_energy_health")
+here_save(match_ebal, "match_ebal")
 
 
-# checks results
-# ebal method
+
 bal.tab(match_ebal)
-love.plot(match_ebal, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =3) 
+love_plot <- love.plot(match_ebal, binary = "std", thresholds = c(m = .1),
+          wrap = 50, position = "bottom", size = 3,  limits = list(m = c(-.5, 1))) 
+
+here_save(love_plot, "love_plot")
 
 # consider results 
-sum_ebal_health <- summary(match_ebal_health)
-sum_ebal_health
-plot(sum_ebal_health)
+summary_match_ebal <- summary(match_ebal)
+summary_match_ebal
+here_save(summary_match_ebal, "summary_match_ebal")
 
-# energy method
-#graph
-bal.tab(match_energy_health)
-love.plot(match_energy_health, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2)) 
-
-# consider results 
-sum_energy_health <- summary(match_energy_health)
-sum_energy_health
-plot(sum_ebal_health)
-
-
-# cbps score method
-#graph
-bal.tab(match_energy_health)
-summary(match_cbps_health)
-plot(sum_cbps_health)
-
-love.plot(match_cbps_health, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5))) 
-love_plot_match_cbps_health
-
-# consider results 
-sum_cbps_health <- summary(match_cbps_health)
-sum_cbps_health
-plot(sum_cbps_health)
+plot(summary_match_ebal)
 
 
 
 # For trimmed weights e.g.
 #trim if needed (weights > 10 might be a problem)
-match_ebal_health_trim <- WeightIt::trim(match_ebal_health, at = .99)
+match_ebal_trim <- WeightIt::trim(match_ebal, at = .99)
 #bal.tab(match_ebal_trim_health)
-summary_ebal_trim<- summary(match_ebal_health_trim)
-plot(summary_ebal_trim)
-
-
-love.plot(match_ebal_health_trim, binary = "std", thresholds = c(m = .1),
-          wrap = 50, position = "bottom", size =2, limits = list(m = c(-.5, .5)))
-
-here_save(match_ebal_health_trim, "match_ebal_health_trim")
-match_ebal_health_trim <- here_read( "match_ebal_health_trim")
+summary_match_ebal_trim<- summary(match_ebal_trim)
+plot(summary_match_ebal_trim)
 
 
 
@@ -1312,12 +1310,22 @@ match_ebal_health_trim <- here_read( "match_ebal_health_trim")
 A <- c("t0_religion_church_round", "t1_religion_church_round")
 C <- c("t0_censored", "t1_censored")
 
-#L <- list(c("L1"), c("L2"))
-W <-  c(paste(names_base, collapse = ", "))
-names_base
-W
+# redundant because estimate of A is always included: 
+# https://muse.jhu.edu/article/883479
+# 
+# 
+# A list of lists is returned with the names of the variables in Ht to be used for estimation of the outcome regression and the treatment mechanism at every time t. Notice that variables A1 and A2 are included in the list of variables used for estimation of the treatment mechamism (trt). This is due to the fact that the nuisance parameter for the treatment mechanism is the density ratio rt, which is a function of A1 and A2.
+# The density ratio is estimated based on a classification trick using an auxiliary variable Λ as a pseudo outcome and the treatment as a predictor. We now briefly describe how this density ratio estimation is done; the process is fully automated and hidden from the software user. Specifically, the TMLE and SDR estimation methods require estimation of the ratio of the densities of Adt and At, conditional on the history Ht, defined as rt above. This is achieved through computing the odds in a classification problem in an augmented dataset with 2n observations where the outcome is the auxiliary variable Λ (defined below) and the predictors are the variables At and Ht. In the 2n augmented data set, the data structure at time t is redefined as
+# inline graphic
+# where Λλ,i = λi indexes duplicate values. For all duplicated observations λ ∈ {0, 1} with the same i, Hλ,i,t is the same. For λ = 0, Aλ,i,t equals the observed exposure values Ai,t, whereas for λ = 1, Aλ,i,t equals the exposure values under the MTP d, namely Adt. The [End Page 111] classification approach to density ratio estimation proceeds by estimating the conditional probability that ∆ = 1 in this dataset, and dividing it by the corresponding estimate of the conditional probability that ∆ = 0. Specifically, denoting pλ the distribution of the data in the augmented dataset, we have:
+#   inline graphic
+# Further details on this algorithm may be found in our technical paper (Díaz et al., 2021).
+
+# L <- list(c("t0_religion_church_round"), c("t1_religion_church_round"))
+# W <- names_base_base
+
 # check
-print(W)
+
 # # 
 #
 # gain_A <- function(data, trt) {
@@ -1425,42 +1433,6 @@ library(SuperLearner)
 library(xgboost)
 sl_lib
 
-
-select_and_rename_cols <- function(names_base, baseline_vars, outcome, from_prefix = "t2", to_prefix = "t0") {
-  # Input validation
-  if (!is.character(names_base) || !is.character(baseline_vars) || !is.character(outcome)) {
-    stop("All inputs must be character vectors.")
-  }
-  if (!is.character(from_prefix) || !is.character(to_prefix)) {
-    stop("`from_prefix` and `to_prefix` must be character strings.")
-  }
-  if (length(outcome) != 1) {
-    stop("`outcome` must be a single character string.")
-  }
-
-  # Select columns that match with baseline_vars
-  selected_cols <- names_base[grepl(paste(baseline_vars, collapse = "|"), names_base)]
-  
-  if (length(selected_cols) == 0) {
-    warning("No matching baseline variables found in `names_base`.")
-  }
-  
-  # Detect and replace the specified prefix in the outcome variable
-  outcome_renamed <- gsub(paste0("^", from_prefix, "_"), paste0(to_prefix, "_"), outcome)
-  
-  # Check if the renaming process might have generated a duplicate name in the final set
-  if (outcome_renamed %in% selected_cols) {
-    stop("Renaming `outcome` results in a duplicate name in the selected columns.")
-  }
-  
-  # Append the renamed outcome to selected columns
-  final_cols <- c(selected_cols, outcome_renamed)
-  
-  return(final_cols)
-}
-
-
-
 #names_t2_hours_charity_z<- select_and_rename_cols(names_base = names_base, baseline_vars = base_var, outcom = "t2_hours_charity_z")
 
 # summary( lm( t2_charity_donate_z ~ t1_religion_church_round  + 
@@ -1479,13 +1451,12 @@ select_and_rename_cols <- function(names_base, baseline_vars, outcome, from_pref
 #   return(final_cols)
 # }
 
-names_base
 
 # redundant
 names_base_t2_hours_charity_z<- setdiff(names_base, "t0_volunteers_binary")
 
 
-t2_charity_donate_z_test_zero <- lmtp_tmle(
+t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base_t2_hours_charity_z,
   shift = gain_A,
@@ -1502,17 +1473,32 @@ t2_charity_donate_z_test_zero <- lmtp_tmle(
   parallel = n_cores
 )
 
-t2_charity_donate_z_test_zero
+t2_charity_donate_z_test_gain_orig
 
-t2_charity_donate_z_test_tt
-t2_charity_donate_z_test_gain
-t2_charity_donate_z_test_zero
-
+#  As can be verified here: 
+# t2_charity_donate_z_test_gain_time_vary <- lmtp_tmle(
+#   outcome = "t2_charity_donate_z",
+#   data = df_clean_slice,
+#   baseline = W,
+# #  time_vary = L,
+#   shift = gain_A,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean_slice$t0_sample_weights,
+#   learners_trt= sl_lib,
+#   # ranger much faster
+#   learners_outcome= sl_lib,
+#   parallel = n_cores
+# )
+# t2_charity_donate_z_test_gain_time_vary
 
 
 t2_charity_donate_z_test_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base_t2_hours_charity_z,
+  baseline = names_base_base,
   shift = gain_A,
   data = df_clean_slice,
   trt = A,
