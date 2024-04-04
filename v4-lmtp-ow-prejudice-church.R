@@ -7,7 +7,7 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
-
+#devtools::install_github("go-bayes/margot")
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
@@ -2175,10 +2175,10 @@ here_save(t2_perc_religious_discrim_z_null, "t2_perc_religious_discrim_z_null")
 
 # asians ------------------------------------------------------------------
 
-
+library(margot)
 t2_warm_asians_z_gain<- here_read("t2_warm_asians_z_gain")
 t2_warm_asians_z_zero<- here_read("t2_warm_asians_z_zero")
-#t2_warm_asians_z_null<- here_read("t2_warm_asians_z_null")
+t2_warm_asians_z_null<- here_read("t2_warm_asians_z_null")
 
 
 
@@ -2193,26 +2193,26 @@ tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
 
 output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
 
-# 
-# 
-# contrast_t2_warm_asians_z_null <-
-#   lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_null, type = "additive")
-# 
-# tab_contrast_t2_warm_asians_z_null <- margot_tab_lmtp(
-#   contrast_t2_warm_asians_z_null,
-#   scale = "RD",
-#   new_name = "relig service: warm asians"
-# )
-# 
-# output_tab_contrast_t2_warm_asians_z_null <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z_null,  delta = 1, sd = 1, scale = c("RD"))
-# output_tab_contrast_t2_warm_asians_z_null
+
+
+contrast_t2_warm_asians_z_null <-
+  lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_null, type = "additive")
+
+tab_contrast_t2_warm_asians_z_null <- margot_tab_lmtp(
+  contrast_t2_warm_asians_z_null,
+  scale = "RD",
+  new_name = "relig service: warm asians"
+)
+
+output_tab_contrast_t2_warm_asians_z_null <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z_null,  delta = 1, sd = 1, scale = c("RD"))
+output_tab_contrast_t2_warm_asians_z_null
 
 
 # chinese -----------------------------------------------------------------
 
 t2_warm_chinese_z_gain<- here_read("t2_warm_chinese_z_gain")
 t2_warm_chinese_z_zero<- here_read("t2_warm_chinese_z_zero")
-#t2_warm_chinese_z_null<- here_read("t2_warm_chinese_z_null")
+t2_warm_chinese_z_null<- here_read("t2_warm_chinese_z_null")
 
 
 contrast_t2_warm_chinese_z <-
