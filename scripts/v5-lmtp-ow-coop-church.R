@@ -244,7 +244,7 @@ dat_long_full <- dat |>
     "hours_community",
     "hours_friends",
     "hours_family",
-    "hours_religious_community",
+   # "hours_religious_community",
     #Hours - Looking after children
     # "religion_perceive_religious_discrim",
     #	I feel that I am often discriminated against because of my religious/spiritual beliefs.
@@ -382,8 +382,8 @@ dat_long_full <- dat |>
     # total_siblings_log = log(total_siblings + 1),
     hours_community_log = log(hours_community + 1),
     hours_friends_log  = log(hours_friends + 1),
-    hours_family_log = log(hours_family + 1),
-    hours_religious_community_log =  log(hours_religious_community + 1)
+    hours_family_log = log(hours_family + 1)#,
+  #  hours_religious_community_log =  log(hours_religious_community + 1)
     #  children_num_log = log(children_num + 1)
   ) |>
   dplyr::select(
@@ -422,8 +422,8 @@ dat_long_full <- dat |>
       hours_friends,
       community_money,
       friends_money,
-      family_money,
-      hours_religious_community
+      family_money#,
+  #    hours_religious_community
     )
   ) |>
   arrange(id, wave) |>
@@ -614,8 +614,12 @@ mean_donations <-
 mean_volunteer <-
   mean(dt_outcome$hours_charity, na.rm = TRUE)
 
+
 mean_donations
+margot::here_save(mean_donations, "mean_donations")
 mean_volunteer
+margot::here_save(mean_volunteer, "mean_volunteer")
+
 push_mods
 
 
@@ -650,53 +654,52 @@ baseline_vars
 dt_18 <- dat_long|>
   filter(wave == 2018) 
 
+
 table(dt_18$censored)
 
 dat_long$charity_donate_log
 
 # check association only
-summary (fit1<- lm(charity_donate ~ religion_church_round, data = dt_18))
-summary(lm(hours_charity ~ religion_church_round, data = dt_18))
+#dt_18_miss$sample_weights
 
-summary(lm(fit1<-charity_donate ~ hours_community_round, data = dt_18))
-summary(lm(hours_charity ~ hours_community_round, data = dt_18))
-
-table(is.na( dt_18$hours_religious_community))
-
-
-
-dt_18_miss <- dt_18 |> select(-alert_level_combined_lead)
+dt_18_miss <- dt_18 |> select(-alert_level_combined_lead) |> 
+  mutate(hours_charity_z = scale(hours_charity))
 
 naniar::vis_miss(dt_18_miss, warn_large_data = F)
 
 table((dt_18_miss$hours_religious_community))
+dev.off()
 
-
+summary(fit1 <- lm(charity_donate ~ religion_church_round, data = dt_18_miss))
+base_var
+base_2 <- setdiff(base_var, "alert_level_combined_lead")
 # base_vars set above
 fit_church_on_charity_donate <-
   margot::regress_with_covariates(
-    dt_18,
+    dt_18_miss,
     outcome = "charity_donate",
     exposure = "religion_church_round",
-    baseline_vars = base_var
+    baseline_vars = base_2,
+    sample_weights = "sample_weights"
   )
-parameters::model_parameters(fit_church_on_charity_donate, ci_method="wald")[2, ]
+parameters::model_parameters(fit_church_on_charity_donate, ci_method="wald")[2, ] 
 
 here_save(fit_church_on_charity_donate, "fit_church_on_charity_donate")
 
+#fit_church_on_hours_charity
+#(0.198274  + 0.168511) * 60
+
 fit_church_on_hours_charity <-
   margot::regress_with_covariates(
-    dt_18,
+    dt_18_miss,
     outcome = "hours_charity",
     exposure = "religion_church_round",
-    baseline_vars = base_var
+    baseline_vars = base_2,
+    sample_weights = "sample_weights"
   )
 parameters::model_parameters(fit_church_on_hours_charity, ci_method="wald")[2, ]
 here_save(fit_church_on_hours_charity, "fit_church_on_hours_charity")
-
-
-here_save(fit_church_on_hours_charity, "fit_church_on_hours_charity")
-
+ 
 fit_church_on_community_time_binary <-
   margot::regress_with_covariates(
     dt_18,
@@ -725,6 +728,22 @@ fit_church_on_charity_donate<- here_read('fit_church_on_charity_donate')
 fit_church_on_hours_charity<- here_read('fit_church_on_hours_charity')
 fit_church_on_community_time_binary<- here_read('fit_church_on_community_time_binary')
 fit_church_on_community_money_binary<- here_read('fit_church_on_community_money_binary')
+
+
+# run once then comment out
+
+# lm_coef_fit_church_on_charity_donate <- tbl_regression(fit_church_on_charity_donate)
+# b_church_on_charity_donate <-inline_text(lm_coef_fit_church_on_charity_donate, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# # #
+#  b_church_on_charity_donate
+# here_save(b_church_on_charity_donate, "b_church_on_charity_donate")
+# 
+# lm_coef_fit_church_on_hours_charity <- tbl_regression(fit_church_on_hours_charity)
+# lm_coef_fit_church_on_hours_charity
+# b_church_on_hours_charity <-inline_text(lm_coef_fit_church_on_hours_charity, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# b_church_on_hours_charity
+# # b_church_on_charity_donate
+# here_save(b_church_on_hours_charity, "b_church_on_hours_charity")
 
 # tables ------------------------------------------------------------------
 library(gtsummary)
@@ -2408,13 +2427,17 @@ here_save(t2_community_money_binary_zero,
 # results -----------------------------------------------------------------
 
 
-# results -----------------------------------------------------------------
-push_mods
-t2_volunteers_binary_gain <- here_read("t2_volunteers_binary_gain")
-t2_volunteers_binary_zero <- here_read("t2_volunteers_binary_zero")
-t2_volunteers_binary_null <- here_read("t2_volunteers_binary_null")
-t2_volunteers_binary_gain
-t2_volunteers_binary_null
+# # results -----------------------------------------------------------------
+# push_mods
+# t2_volunteers_binary_gain <- here_read("t2_volunteers_binary_gain")
+# t2_volunteers_binary_zero <- here_read("t2_volunteers_binary_zero")
+# t2_volunteers_binary_null <- here_read("t2_volunteers_binary_null")
+# t2_volunteers_binary_gain
+# t2_volunteers_binary_null
+t2_hours_charity_z_gain$theta * sd_volunteer
+t2_hours_charity_z_zero$theta * sd_volunteer
+t2_hours_charity_z_null$theta * sd_volunteer
+
 
 t2_hours_charity_z_gain <-
   here_read("t2_hours_charity_z_gain") # note spelling
@@ -2599,12 +2622,12 @@ tab_contrast_charity_donate_z <- margot_lmtp_tab(
 )
 
 output_tab_contrast_charity_donate_z<- lmtp_evalue_tab(tab_contrast_charity_donate_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_charity_donate_z
 
 
 
 contrast_charity_donate_z_null <-
-  lmtp_contrast(t2_charity_donate_z_gain , ref =  t2_hours_charity_z_null, type = "additive")
+  lmtp_contrast(t2_charity_donate_z_gain , ref =  t2_charity_donate_z_null, type = "additive")
 
 
 tab_contrast_charity_donate_z_null <- margot_lmtp_tab(
@@ -2624,7 +2647,7 @@ output_tab_contrast_charity_donate_z_null
 
 
 contrast_charity_donate_z_null_zero <-
-  lmtp_contrast(t2_charity_donate_z_zero , ref =  t2_hours_charity_z_null, type = "additive")
+  lmtp_contrast(t2_charity_donate_z_zero , ref =  t2_charity_donate_z_null, type = "additive")
 
 
 ## null zero
@@ -2709,7 +2732,7 @@ contrast_support_z_null <-
 tab_contrast_support_z_null <- margot_lmtp_tab(
   contrast_support_z_null,
   scale = "RD",
-  new_name = "social suport"
+  new_name = "social support"
 )
 
 output_tab_contrast_support_z_null<- lmtp_evalue_tab(tab_contrast_support_z_null,  delta = 1, sd = 1, scale = c("RD"))
@@ -2724,7 +2747,7 @@ contrast_support_z_null_zero <-
 tab_contrast_support_z_null_zero <- margot_lmtp_tab(
   contrast_support_z_null_zero,
   scale = "RD",
-  new_name = "social suport"
+  new_name = "social support"
 )
 
 output_tab_contrast_support_z_null_zero<- lmtp_evalue_tab(tab_contrast_support_z_null_zero,  delta = 1, sd = 1, scale = c("RD"))
@@ -2858,6 +2881,7 @@ tab_contrast_family_time_binary <- margot_lmtp_tab(
   scale = "RR",
   new_name = "family gives time"
 )
+
 tab_contrast_family_time_binary
 
 output_tab_contrast_family_time<- lmtp_evalue_tab(tab_contrast_family_time_binary,  delta = 1, sd = 1, scale = c("RR"))
@@ -2910,7 +2934,7 @@ contrast_friends_time <-
 tab_contrast_friends_time <- margot_lmtp_tab(
   contrast_friends_time,
   scale = "RR",
-  new_name = "friends gives time"
+  new_name = "friends give time"
 )
 
 
@@ -3067,7 +3091,7 @@ contrast_friends_money <-
 tab_contrast_friends_money <- margot_lmtp_tab(
   contrast_friends_money,
   scale = "RR",
-  new_name = "friends gives money"
+  new_name = "friends give money"
 )
 
 output_tab_contrast_friends_money<- lmtp_evalue_tab(tab_contrast_friends_money,  delta = 1, sd = 1, scale = c("RR"))
@@ -3083,7 +3107,7 @@ contrast_friends_money_null <-
 tab_contrast_friends_money_null <- margot_lmtp_tab(
   contrast_friends_money_null,
   scale = "RR",
-  new_name = "friends gives money"
+  new_name = "friends give money"
 )
 
 output_tab_contrast_friends_money_null<- lmtp_evalue_tab(tab_contrast_friends_money_null,  delta = 1, sd = 1, scale = c("RR"))
@@ -3174,7 +3198,7 @@ tab_all_prosocial <- rbind( output_tab_contrast_charity_donate_z,
                             output_tab_contrast_hours_charity_z)
 
 group_tab_all_prosocial <- group_tab(tab_all_prosocial, type = "RD")
-
+group_tab_all_prosocial
 
 
 
@@ -3801,3 +3825,4 @@ graph_density_of_exposure_down
 table_exposures <- here_read("table_exposures")
 table_baseline <- here_read("table_baseline")
 table_outcomes <- here_read("table_outcomes")
+
