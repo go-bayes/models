@@ -5,7 +5,13 @@
 ### ALWAYS RESTART R IN A FRESH SESSION ####
 listWrappers()
 
+push_mods <-  fs::path_expand(
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-coop-church-v5"
+)
+
 library(margot)
+library(lmtp)
+library(tidyverse)
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
@@ -47,9 +53,6 @@ push_mods_orig <-  fs::path_expand(
   "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-coop-church-v4"
 )
 
-push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-coop-church-v5"
-)
 
 ## note that this has the model results with all covariates (with convergence problems). so "v5" is **older**
 # push_mods <-  fs::path_expand(
@@ -1238,7 +1241,10 @@ names_base <-
   df_clean |> select(starts_with("t0"),
                      -t0_sample_weights,
                      -t0_volunteers_binary, # redundant
-                     -t0_censored) |> colnames()
+                     -t0_censored,
+                     -t0_alert_level_combined_lead) |> colnames()
+
+names_base
 
 names_base
 
@@ -1249,10 +1255,13 @@ push_mods
 names_outcomes <-
   df_clean |> select(starts_with("t2")) |> colnames()
 
-names_outcomes
+
+
 
 here_save(names_outcomes, "names_outcomes")
 names_outcomes <- here_read("names_outcomes")
+names_outcomes
+
 
 
 
@@ -1322,13 +1331,50 @@ plot(summary_match_ebal_trim)
 
 
 # set variable names ------------------------------------------------------
+##  Different confounding control test
 
+outcome_vars_base <- sub("^t2_", "", names_outcomes)
+outcome_vars_base
+outcome_vars_base <- setdiff(outcome_vars_base, c('volunteers_binary','volunteers_binary_z'))
+outcome_vars_base
+
+vars_to_exclude <- paste0("t0_", c( outcome_vars_base, "alert_level_combined_lead"))
+vars_to_exclude
+names_base_exp <- df_clean %>%
+  select(starts_with("t0_")) %>%
+  select(-all_of(vars_to_exclude)) |> colnames()
+
+
+names_exposure_exp <- df_clean %>%
+  select(starts_with("t0_")) %>%
+  select(all_of(vars_to_exclude)) |> colnames()
+
+# confounding control, baseline
+names_base_exp
+
+# confounding control, exposure
+names_exposure_exp
 
 
 #### SET VARIABLE NAMES
 #  model
+L <- list(c(names_base_exp), c(names_base_exp, names_exposure_exp))
+L
+
+L2 <- list(c(names_base_exp), c(names_exposure_exp))
+L2
+
+
+names_exposure_exp
+L3 <- list(c(names_exposure_exp), c(names_exposure_exp, "t0_alert_level_combined_lead"))
+L3
+
 A <- c("t0_religion_church_round", "t1_religion_church_round")
 C <- c("t0_censored", "t1_censored")
+
+L <- list(c(names_base_exp), c(names_base_exp, names_exposure_exp))
+L
+
 
 # redundant because estimate of A is always included: 
 # https://muse.jhu.edu/article/883479
@@ -1340,6 +1386,26 @@ C <- c("t0_censored", "t1_censored")
 # where Λλ,i = λi indexes duplicate values. For all duplicated observations λ ∈ {0, 1} with the same i, Hλ,i,t is the same. For λ = 0, Aλ,i,t equals the observed exposure values Ai,t, whereas for λ = 1, Aλ,i,t equals the exposure values under the MTP d, namely Adt. The [End Page 111] classification approach to density ratio estimation proceeds by estimating the conditional probability that ∆ = 1 in this dataset, and dividing it by the corresponding estimate of the conditional probability that ∆ = 0. Specifically, denoting pλ the distribution of the data in the augmented dataset, we have:
 #   inline graphic
 # Further details on this algorithm may be found in our technical paper (Díaz et al., 2021).
+out
+
+# ##  Different confounding control test
+# vars_to_exclude <- paste0("t0_", outcome_vars_base)
+# 
+# names_base_exp <- df_clean %>%
+#   select(starts_with("t0_")) %>%
+#   select(-all_of(vars_to_exclude)) |> colnames()
+# 
+# 
+# names_exposure_exp <- df_clean %>%
+#   select(starts_with("t0_")) %>%
+#   select(all_of(vars_to_exclude)) |> colnames()
+# 
+# # confounding control, baseline
+# names_base_exp
+# 
+# # confounding control, exposure
+# names_exposure_exp
+# 
 
 # L <- list(c("t0_religion_church_round"), c("t1_religion_church_round"))
 # W <- names_base_base
@@ -1478,10 +1544,108 @@ names_base_t2_hours_charity_z<- setdiff(names_base, "t0_volunteers_binary")
 
 t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base_t2_hours_charity_z,
+ # baseline = names_base_t2_hours_charity_z,
   shift = gain_A,
   data = df_clean_slice,
   trt = A,
+  time_vary = L,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt= sl_lib,
+  # ranger much faster
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+t2_charity_donate_z_test_gain_orig
+
+
+t2_charity_donate_z_test_gain_orig_2 <- lmtp_sdr(
+  outcome = "t2_charity_donate_z",
+ baseline = names_base,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+#  time_vary = L,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt= sl_lib,
+  # ranger much faster
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+t2_charity_donate_z_test_gain_orig_2
+
+
+L2 <- list(c(names_base_exp), c(names_exposure_exp))
+
+
+L3
+t2_charity_donate_z_test_gain_orig_3 <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
+  baseline = names_base_exp,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+  time_vary = L3,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt= sl_lib,
+  # ranger much faster
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+# same as 1 really
+t2_charity_donate_z_test_gain_orig_3
+
+
+
+
+
+L4 <- list(c(NULL), c("t0_charity_donate_z", "t0_alert_level_combined_lead"))
+
+
+t2_charity_donate_z_test_gain_orig_4 <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
+  baseline = names_base_exp,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+  time_vary = L4,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt= sl_lib,
+  # ranger much faster
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
+# same as 1 really
+t2_charity_donate_z_test_gain_orig_4
+
+
+
+t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
+  # baseline = names_base_t2_hours_charity_z,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1553,6 +1717,36 @@ library(SuperLearner)
 # names_base_t2_hours_charity_z<- setdiff(names_base_t2_hours_charity_z, "t0_volunteers_binary")
 
 # remove duplicate measure
+
+# Test 
+
+L_tv <- list(c(NULL), c("t0_charity_donate_z", "t0_alert_level_combined_lead"))
+
+t2_hours_charity_z_gain_tv <- lmtp_tmle(
+  outcome = "t2_hours_charity_z",
+  baseline = names_base_exp,
+  shift = gain_A,
+  data = df_clean,
+  trt = A,
+  time_vary = L_tv,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean$t0_sample_weights,
+  learners_trt= sl_lib,
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+t2_hours_charity_z_gain_tv
+here_save(t2_hours_charity_z_gain_tv, "t2_hours_charity_z_gain_tv")
+
+push_mods
+
+t2_hours_charity_z_gain <- here_read("t2_hours_charity_z_gain")
+t2_hours_charity_z_gain
+t2_hours_charity_z_gain_tv
+
 names_base_t2_hours_charity_z<- setdiff(names_base, "t0_volunteers_binary")
 
 
