@@ -7,7 +7,7 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
-
+#devtools::install_github("go-bayes/margot")
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
@@ -38,10 +38,18 @@ pull_path <-
 dat <- arrow::read_parquet(pull_path)
 
 
+
+# fix male code
+table( dat$male )
+dat$male = 1 - dat$male
+
+table( dat$male )
+
+
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-church-prej"
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-church-prej-v4"
 )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
@@ -62,8 +70,11 @@ set.seed(0112358)
 
 library(future)
 library(ranger)
+library(biglasso)
+library(randomForest)
 plan(multisession)
 n_cores <- parallel::detectCores()
+listWrappers()
 
 
 # super learner libraries
@@ -145,7 +156,7 @@ dat_long_full <- dat |>
     # see NZAVS,
     "have_siblings",
     #Do you have siblings?
-   # "total_siblings",
+    # "total_siblings",
     # sum siblings
     # "number_sisters_older",
     # #How many older sisters do you have?
@@ -229,8 +240,8 @@ dat_long_full <- dat |>
     #"children_num",
     # How many children have you given birth to, fathered, or adopted?
     #"hours_children",
-   # "hours_community",
-   # "hours_friends",
+    # "hours_community",
+    # "hours_friends",
     #"hours_family",
     #Hours - Looking after children
     # "religion_perceive_religious_discrim",
@@ -328,7 +339,7 @@ dat_long_full <- dat |>
     # Know that people around me share my attitudes and beliefs.
     #"family_money",
     #"friends_money",
-   # "community_money",
+    # "community_money",
     "alert_level_combined_lead",
     "alert_level_combined"
   ) |>
@@ -358,7 +369,7 @@ dat_long_full <- dat |>
     urban = as.numeric(urban)) |>
   ungroup() |>
   dplyr::mutate(
-  #  friends_money = ifelse(friends_money < 0, 0, friends_money),
+    #  friends_money = ifelse(friends_money < 0, 0, friends_money),
     # someone gave neg number
     hours_work_log = log(hours_work + 1),
     hours_housework_log = log(hours_housework + 1),
@@ -383,8 +394,8 @@ dat_long_full <- dat |>
   #     children_num,
   #     total_siblings
   #   )
-  # ) |>
-  droplevels() |>
+# ) |>
+droplevels() |>
   dplyr::rename(sample_weights = w_gend_age_ethnic,
                 sample_origin =  sample_origin_names_combined) |>
   # dplyr::mutate(
@@ -398,19 +409,19 @@ dat_long_full <- dat |>
   # ) |>  #shorter name
   # dplyr::select(
   #   -c(
-  #     religion_church,
-  #     family_time,
-  #     friends_time,
-  #     community_time,
-  #     hours_community,
-  #     hours_family,
-  #     hours_friends,
-  #     community_money,
-  #     friends_money,
-  #     family_money
-  #   )
-  # ) |>
-  arrange(id, wave) |>
+#     religion_church,
+#     family_time,
+#     friends_time,
+#     community_time,
+#     hours_community,
+#     hours_family,
+#     hours_friends,
+#     community_money,
+#     friends_money,
+#     family_money
+#   )
+# ) |>
+arrange(id, wave) |>
   droplevels() |>
   data.frame() |>
   droplevels() |>
@@ -440,7 +451,7 @@ dplyr::mutate(# religion_church_binary = as.factor(religion_church_binary),
     born_nz = as.numeric(as.character(born_nz)),
     censored = as.numeric(as.character(censored)),
     employed = as.numeric(as.character(employed))#,
-  #  hlth_disability = as.numeric(as.character(hlth_disability))
+    #  hlth_disability = as.numeric(as.character(hlth_disability))
   ) |>
   droplevels() |>
   arrange(id, wave) |>
@@ -463,28 +474,6 @@ dat_long_colnames <- sort(dat_long_colnames)
 
 dat_long_colnames
 
-# baseline vars -----------------------------------------------------------
-
-baseline_vars <-
-  setdiff(dat_long_colnames,
-          c("id","wave"))
-
-# c(outcome_vars, 'id', 'wave'))
-baseline_vars
-baseline_vars <- sort(baseline_vars)
-
-baseline_vars
-
-# just core baseline variables
-base_var <-
-  setdiff(baseline_vars, c("censored", "sample_weights"))
-base_var
-
-push_mods
-here_save(base_var, "base_var")
-here_save(baseline_vars, "baseline_vars")
-
-push_mods
 # set baseline exposure and outcomes --------------------------------------
 
 exposure_var = c("religion_church_round",
@@ -514,6 +503,28 @@ outcome_vars = c(
 )
 
 
+# baseline vars -----------------------------------------------------------
+
+baseline_vars <-
+  setdiff(dat_long_colnames,
+          c("id","wave"))
+
+# c(outcome_vars, 'id', 'wave'))
+baseline_vars
+baseline_vars <- sort(baseline_vars)
+
+baseline_vars
+
+# just core baseline variables
+base_var <-
+  setdiff(baseline_vars, c("censored", "sample_weights", outcome_vars))
+base_var
+
+push_mods
+here_save(base_var, "base_var")
+here_save(baseline_vars, "baseline_vars")
+
+push_mods
 
 #community at baseline
 n_participants <-
@@ -1152,17 +1163,38 @@ library(ranger)
 #             "SL.xgboost") #
 library(ranger)
 
+baseline_vars
 
-t2_warm_asians_z_test_gain <- lmtp_tmle(
+
+select_and_rename_cols <- function(names_base, baseline_vars, outcome) {
+  # Select columns that match with baseline_vars
+  selected_cols <- names_base[grepl(paste(baseline_vars, collapse = "|"), names_base)]
+
+  # Rename the outcome variable prefix from t2 to t0
+  outcome_renamed <- gsub("t2_", "t0_", outcome)
+  # Append the renamed outcome to selected columns
+  final_cols <- c(selected_cols, outcome_renamed)
+
+  return(final_cols)
+}
+
+base_var
+
+names_base_t2_warm_asians_z<- select_and_rename_cols(names_base = names_base,  
+                                                     baseline_vars = base_var, 
+                                                     outcome =  "t2_warm_asians_z")
+
+names_base_t2_warm_asians_z
+
+t2_warm_asians_z_test_gain <- lmtp_sdr(
   outcome = "t2_warm_asians_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_asians_z,
   shift = gain_A,
   data = df_clean_slice,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1172,9 +1204,9 @@ t2_warm_asians_z_test_gain <- lmtp_tmle(
 )
 
 t2_warm_asians_z_test_gain
+sl_lib
 
-
-t2_warm_asians_z_test_zero <- lmtp_tmle(
+t2_warm_asians_z_test_zero <- lmtp_sdr(
   outcome = "t2_warm_asians_z",
   baseline = names_base,
   shift = zero_A,
@@ -1195,7 +1227,7 @@ t2_warm_asians_z_test_zero
 zero_A
 
 
-t2_warm_asians_z_test_null <- lmtp_tmle(
+t2_warm_asians_z_test_null <- lmtp_sdr(
   outcome = "t2_warm_asians_z",
   baseline = names_base,
   shift = NULL,
@@ -1213,11 +1245,19 @@ t2_warm_asians_z_test_null <- lmtp_tmle(
 )
 t2_warm_asians_z_test_null
 
+
+
+## MODELS
+
 # warm asians -------------------------------------------------------------
 
-t2_warm_asians_z_gain <- lmtp_tmle(
+names_base_t2_warm_asians_z<- select_and_rename_cols(names_base = names_base,  
+                                                     baseline_vars = base_var, 
+                                                     outcome =  "t2_warm_asians_z")
+
+t2_warm_asians_z_gain <- lmtp_sdr(
   outcome = "t2_warm_asians_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_asians_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
@@ -1233,9 +1273,9 @@ t2_warm_asians_z_gain <- lmtp_tmle(
 here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
 
 # 
-t2_warm_asians_z_zero <- lmtp_tmle(
+t2_warm_asians_z_zero <- lmtp_sdr(
   outcome = "t2_warm_asians_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_asians_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1250,16 +1290,16 @@ t2_warm_asians_z_zero <- lmtp_tmle(
 )
 here_save(t2_warm_asians_z_zero, "t2_warm_asians_z_zero")
 
-t2_warm_asians_z_null <- lmtp_tmle(
+t2_warm_asians_z_null <- lmtp_sdr(
   outcome = "t2_warm_asians_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_asians_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
+ 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1270,16 +1310,20 @@ here_save(t2_warm_asians_z_null, "t2_warm_asians_z_null")
 
 
 # warm_chinese ------------------------------------------------------------
-t2_warm_chinese_z_gain <- lmtp_tmle(
+
+names_base_t2_warm_chinese_z<- select_and_rename_cols(names_base = names_base,  
+                                                     baseline_vars = base_var, 
+                                                     outcome =  "t2_warm_chinese_z")
+
+t2_warm_chinese_z_gain <- lmtp_sdr(
   outcome = "t2_warm_chinese_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_chinese_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1289,9 +1333,9 @@ t2_warm_chinese_z_gain <- lmtp_tmle(
 here_save(t2_warm_chinese_z_gain, "t2_warm_chinese_z_gain")
 
 # 
-t2_warm_chinese_z_zero <- lmtp_tmle(
+t2_warm_chinese_z_zero <- lmtp_sdr(
   outcome = "t2_warm_chinese_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_chinese_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1308,16 +1352,15 @@ here_save(t2_warm_chinese_z_zero, "t2_warm_chinese_z_zero")
 
 
 
-t2_warm_chinese_z_null <- lmtp_tmle(
+t2_warm_chinese_z_null <- lmtp_sdr(
   outcome = "t2_warm_chinese_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_chinese_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1328,17 +1371,21 @@ here_save(t2_warm_chinese_z_null, "t2_warm_chinese_z_null")
 
 
 # t2_warm_immigrants_z ---------------------------------------------------------
+names_base_t2_warm_immigrants_z <- select_and_rename_cols(names_base = names_base,  
+                                                      baseline_vars = base_var, 
+                                                      outcome =  "t2_warm_immigrants_z")
 
-t2_warm_immigrants_z_gain <- lmtp_tmle(
+
+
+t2_warm_immigrants_z_gain <- lmtp_sdr(
   outcome = "t2_warm_immigrants_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_immigrants_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1348,9 +1395,9 @@ t2_warm_immigrants_z_gain <- lmtp_tmle(
 here_save(t2_warm_immigrants_z_gain, "t2_warm_immigrants_z_gain")
 
 # 
-t2_warm_immigrants_z_zero <- lmtp_tmle(
+t2_warm_immigrants_z_zero <- lmtp_sdr(
   outcome = "t2_warm_immigrants_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_immigrants_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1367,16 +1414,15 @@ here_save(t2_warm_immigrants_z_zero, "t2_warm_immigrants_z_zero")
 # 
 
 
-t2_warm_immigrants_z_null <- lmtp_tmle(
+t2_warm_immigrants_z_null <- lmtp_sdr(
   outcome = "t2_warm_immigrants_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_immigrants_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1388,17 +1434,22 @@ here_save(t2_warm_immigrants_z_null, "t2_warm_immigrants_z_null")
 
 
 # t2_warm_indians_z ------------------------------------------------------------
+names_base_t2_warm_indians_z <- select_and_rename_cols(names_base = names_base,  
+                                                          baseline_vars = base_var, 
+                                                          outcome =  "t2_warm_indians_z")
 
-t2_warm_indians_z_gain <- lmtp_tmle(
+
+
+
+t2_warm_indians_z_gain <- lmtp_sdr(
   outcome = "t2_warm_indians_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_indians_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1408,9 +1459,9 @@ t2_warm_indians_z_gain <- lmtp_tmle(
 here_save(t2_warm_indians_z_gain, "t2_warm_indians_z_gain")
 # 
 # 
-t2_warm_indians_z_zero <- lmtp_tmle(
+t2_warm_indians_z_zero <- lmtp_sdr(
   outcome = "t2_warm_indians_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_indians_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1426,16 +1477,15 @@ t2_warm_indians_z_zero <- lmtp_tmle(
 here_save(t2_warm_indians_z_zero, "t2_warm_indians_z_zero")
 
 
-t2_warm_indians_z_null <- lmtp_tmle(
+t2_warm_indians_z_null <- lmtp_sdr(
   outcome = "t2_warm_indians_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_indians_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1447,16 +1497,19 @@ here_save(t2_warm_indians_z_null, "t2_warm_indians_z_null")
 
 # t2_warm_elderly_z ------------------------------------------------------------
 
-t2_warm_elderly_z_gain <- lmtp_tmle(
+names_base_t2_warm_elderly_z <- select_and_rename_cols(names_base = names_base,  
+                                                       baseline_vars = base_var, 
+                                                       outcome =  "t2_warm_elderly_z")
+
+t2_warm_elderly_z_gain <- lmtp_sdr(
   outcome = "t2_warm_elderly_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_elderly_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1466,9 +1519,9 @@ t2_warm_elderly_z_gain <- lmtp_tmle(
 here_save(t2_warm_elderly_z_gain, "t2_warm_elderly_z_gain")
 # 
 # 
-t2_warm_elderly_z_zero <- lmtp_tmle(
+t2_warm_elderly_z_zero <- lmtp_sdr(
   outcome = "t2_warm_elderly_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_elderly_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1485,16 +1538,15 @@ here_save(t2_warm_elderly_z_zero, "t2_warm_elderly_z_zero")
 
 
 
-t2_warm_elderly_z_null <- lmtp_tmle(
+t2_warm_elderly_z_null <- lmtp_sdr(
   outcome = "t2_warm_elderly_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_elderly_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1505,18 +1557,20 @@ here_save(t2_warm_elderly_z_null, "t2_warm_elderly_z_null")
 
 
 # t2_warm_maori_z --------------------------------------------------------------
+names_base_t2_warm_maori_z <- select_and_rename_cols(names_base = names_base,  
+                                                       baseline_vars = base_var, 
+                                                       outcome =  "t2_warm_maori_z")
 
 
-t2_warm_maori_z_gain <- lmtp_tmle(
+t2_warm_maori_z_gain <- lmtp_sdr(
   outcome = "t2_warm_maori_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_maori_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1526,9 +1580,9 @@ t2_warm_maori_z_gain <- lmtp_tmle(
 here_save(t2_warm_maori_z_gain, "t2_warm_maori_z_gain")
 
 # 
-t2_warm_maori_z_zero <- lmtp_tmle(
+t2_warm_maori_z_zero <- lmtp_sdr(
   outcome = "t2_warm_maori_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_maori_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1545,16 +1599,15 @@ here_save(t2_warm_maori_z_zero, "t2_warm_maori_z_zero")
 
 
 
-t2_warm_maori_z_null <- lmtp_tmle(
+t2_warm_maori_z_null <- lmtp_sdr(
   outcome = "t2_warm_maori_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_maori_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1565,18 +1618,20 @@ here_save(t2_warm_maori_z_null, "t2_warm_maori_z_null")
 
 
 # t2_warm_mental_illness_z -----------------------------------------------------
+names_base_t2_warm_mental_illness_z <- select_and_rename_cols(names_base = names_base,  
+                                                     baseline_vars = base_var, 
+                                                     outcome =  "t2_warm_mental_illness_z")
 
 
-t2_warm_mental_illness_z_gain <- lmtp_tmle(
+t2_warm_mental_illness_z_gain <- lmtp_sdr(
   outcome = "t2_warm_mental_illness_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_mental_illness_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1586,9 +1641,9 @@ t2_warm_mental_illness_z_gain <- lmtp_tmle(
 here_save(t2_warm_mental_illness_z_gain, "t2_warm_mental_illness_z_gain")
 # 
 # 
-t2_warm_mental_illness_z_zero <- lmtp_tmle(
+t2_warm_mental_illness_z_zero <- lmtp_sdr(
   outcome = "t2_warm_mental_illness_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_mental_illness_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1605,16 +1660,15 @@ here_save(t2_warm_mental_illness_z_zero, "t2_warm_mental_illness_z_zero")
 
 
 
-t2_warm_mental_illness_z_null<- lmtp_tmle(
+t2_warm_mental_illness_z_null<- lmtp_sdr(
   outcome = "t2_warm_mental_illness_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_mental_illness_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1626,18 +1680,20 @@ here_save(t2_warm_mental_illness_z_null, "t2_warm_mental_illness_z_null")
 
 
 # t2_warm_muslims_z ------------------------------------------------------------
+names_base_t2_warm_muslims_z <- select_and_rename_cols(names_base = names_base,  
+                                                              baseline_vars = base_var, 
+                                                              outcome =  "t2_warm_muslims_z")
 
 
-t2_warm_muslims_z_gain <- lmtp_tmle(
+t2_warm_muslims_z_gain <- lmtp_sdr(
   outcome = "t2_warm_muslims_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_muslims_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1647,9 +1703,9 @@ t2_warm_muslims_z_gain <- lmtp_tmle(
 here_save(t2_warm_muslims_z_gain, "t2_warm_muslims_z_gain")
 # 
 # 
-t2_warm_muslims_z_zero <- lmtp_tmle(
+t2_warm_muslims_z_zero <- lmtp_sdr(
   outcome = "t2_warm_muslims_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_muslims_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1665,16 +1721,15 @@ t2_warm_muslims_z_zero <- lmtp_tmle(
 here_save(t2_warm_muslims_z_zero, "t2_warm_muslims_z_zero")
 
 
-t2_warm_muslims_z_null <- lmtp_tmle(
+t2_warm_muslims_z_null <- lmtp_sdr(
   outcome = "t2_warm_muslims_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_muslims_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1685,19 +1740,21 @@ here_save(t2_warm_muslims_z_null, "t2_warm_muslims_z_null")
 
 
 # t2_warm_nz_euro_z ------------------------------------------------------------
+names_base_t2_warm_nz_euro_z <- select_and_rename_cols(names_base = names_base,  
+                                                       baseline_vars = base_var, 
+                                                       outcome =  "t2_warm_nz_euro_z")
 
 
 
-t2_warm_nz_euro_z_gain <- lmtp_tmle(
+t2_warm_nz_euro_z_gain <- lmtp_sdr(
   outcome = "t2_warm_nz_euro_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_nz_euro_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1707,9 +1764,9 @@ t2_warm_nz_euro_z_gain <- lmtp_tmle(
 here_save(t2_warm_nz_euro_z_gain, "t2_warm_nz_euro_z_gain")
 # 
 # 
-t2_warm_nz_euro_z_zero <- lmtp_tmle(
+t2_warm_nz_euro_z_zero <- lmtp_sdr(
   outcome = "t2_warm_nz_euro_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_nz_euro_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1725,16 +1782,15 @@ t2_warm_nz_euro_z_zero <- lmtp_tmle(
 here_save(t2_warm_nz_euro_z_zero, "t2_warm_nz_euro_z_zero")
 
 
-t2_warm_nz_euro_z_null <- lmtp_tmle(
+t2_warm_nz_euro_z_null <- lmtp_sdr(
   outcome = "t2_warm_nz_euro_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_nz_euro_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1746,18 +1802,21 @@ here_save(t2_warm_nz_euro_z_null, "t2_warm_nz_euro_z_null")
 
 
 # t2_warm_overweight_z ---------------------------------------------------------
+names_base_t2_warm_overweight_z <- select_and_rename_cols(names_base = names_base,  
+                                                       baseline_vars = base_var, 
+                                                       outcome =  "t2_warm_overweight_z")
 
 
-t2_warm_overweight_z_gain <- lmtp_tmle(
+
+t2_warm_overweight_z_gain <- lmtp_sdr(
   outcome = "t2_warm_overweight_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_overweight_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1767,9 +1826,9 @@ t2_warm_overweight_z_gain <- lmtp_tmle(
 here_save(t2_warm_overweight_z_gain, "t2_warm_overweight_z_gain")
 # 
 # 
-t2_warm_overweight_z_zero <- lmtp_tmle(
+t2_warm_overweight_z_zero <- lmtp_sdr(
   outcome = "t2_warm_overweight_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_overweight_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1784,16 +1843,15 @@ t2_warm_overweight_z_zero <- lmtp_tmle(
 )
 here_save(t2_warm_overweight_z_zero, "t2_warm_overweight_z_zero")
 
-t2_warm_overweight_z_null <- lmtp_tmle(
+t2_warm_overweight_z_null <- lmtp_sdr(
   outcome = "t2_warm_overweight_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_overweight_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1804,18 +1862,19 @@ here_save(t2_warm_overweight_z_null, "t2_warm_overweight_z_null")
 
 
 # t2_warm_pacific_z ------------------------------------------------------------
+names_base_t2_warm_pacific_z <- select_and_rename_cols(names_base = names_base,  
+                                                          baseline_vars = base_var, 
+                                                          outcome =  "t2_warm_pacific_z")
 
-
-t2_warm_pacific_z_gain <- lmtp_tmle(
+t2_warm_pacific_z_gain <- lmtp_sdr(
   outcome = "t2_warm_pacific_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_pacific_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1825,9 +1884,9 @@ t2_warm_pacific_z_gain <- lmtp_tmle(
 here_save(t2_warm_pacific_z_gain, "t2_warm_pacific_z_gain")
 
 # 
-t2_warm_pacific_z_zero <- lmtp_tmle(
+t2_warm_pacific_z_zero <- lmtp_sdr(
   outcome = "t2_warm_pacific_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_pacific_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1842,16 +1901,15 @@ t2_warm_pacific_z_zero <- lmtp_tmle(
 )
 here_save(t2_warm_pacific_z_zero, "t2_warm_pacific_z_zero")
 
-t2_warm_pacific_z_null <- lmtp_tmle(
+t2_warm_pacific_z_null <- lmtp_sdr(
   outcome = "t2_warm_pacific_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_pacific_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1866,17 +1924,20 @@ here_save(t2_warm_pacific_z_null, "t2_warm_pacific_z_null")
 
 
 # t2_warm_refugees_z -----------------------------------------------------------
+names_base_t2_warm_refugees_z <- select_and_rename_cols(names_base = names_base,  
+                                                       baseline_vars = base_var, 
+                                                       outcome =  "t2_warm_refugees_z")
 
-t2_warm_refugees_z_gain <- lmtp_tmle(
+
+t2_warm_refugees_z_gain <- lmtp_sdr(
   outcome = "t2_warm_refugees_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_refugees_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1886,9 +1947,9 @@ t2_warm_refugees_z_gain <- lmtp_tmle(
 here_save(t2_warm_refugees_z_gain, "t2_warm_refugees_z_gain")
 
 
-t2_warm_refugees_z_zero <- lmtp_tmle(
+t2_warm_refugees_z_zero <- lmtp_sdr(
   outcome = "t2_warm_refugees_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_refugees_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1903,16 +1964,15 @@ t2_warm_refugees_z_zero <- lmtp_tmle(
 )
 here_save(t2_warm_refugees_z_zero, "t2_warm_refugees_z_zero")
 
-t2_warm_refugees_z_null <- lmtp_tmle(
+t2_warm_refugees_z_null <- lmtp_sdr(
   outcome = "t2_warm_refugees_z",
-  baseline = names_base,
+  baseline = names_base_t2_warm_refugees_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -1923,10 +1983,14 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 
 
 # t2_perc_gend_discrim_z -------------------------------------------------------
+names_base_t2_perc_gend_discrim_z <- select_and_rename_cols(names_base = names_base,  
+                                                        baseline_vars = base_var, 
+                                                        outcome =  "t2_perc_gend_discrim_z")
 
-t2_perc_gend_discrim_z_gain <- lmtp_tmle(
+
+t2_perc_gend_discrim_z_gain <- lmtp_sdr(
   outcome = "t2_perc_gend_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_gend_discrim_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
@@ -1942,9 +2006,9 @@ t2_perc_gend_discrim_z_gain <- lmtp_tmle(
 here_save(t2_perc_gend_discrim_z_gain, "t2_perc_gend_discrim_z_gain")
 
 # 
-t2_perc_gend_discrim_z_zero <- lmtp_tmle(
+t2_perc_gend_discrim_z_zero <- lmtp_sdr(
   outcome = "t2_perc_gend_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_gend_discrim_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -1960,9 +2024,9 @@ t2_perc_gend_discrim_z_zero <- lmtp_tmle(
 here_save(t2_perc_gend_discrim_z_zero, "t2_perc_gend_discrim_z_zero")
 
 
-t2_perc_gend_discrim_z_null <- lmtp_tmle(
+t2_perc_gend_discrim_z_null <- lmtp_sdr(
   outcome = "t2_perc_gend_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_gend_discrim_z,
   shift = NULL,
   data = df_clean,
   trt = A,
@@ -1979,18 +2043,19 @@ here_save(t2_perc_gend_discrim_z_null, "t2_perc_gend_discrim_z_null")
 
 
 # t2_perc_discrim_z ------------------------------------------------------------
+names_base_t2_perc_discrim_z <- select_and_rename_cols(names_base = names_base,  
+                                                            baseline_vars = base_var, 
+                                                            outcome =  "t2_perc_discrim_z")
 
-
-t2_perc_discrim_z_gain <- lmtp_tmle(
+t2_perc_discrim_z_gain <- lmtp_sdr(
   outcome = "t2_perc_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_discrim_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -2000,9 +2065,9 @@ t2_perc_discrim_z_gain <- lmtp_tmle(
 here_save(t2_perc_discrim_z_gain, "t2_perc_discrim_z_gain")
 
 # 
-t2_perc_discrim_z_zero <- lmtp_tmle(
+t2_perc_discrim_z_zero <- lmtp_sdr(
   outcome = "t2_perc_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_discrim_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -2019,16 +2084,15 @@ here_save(t2_perc_discrim_z_zero, "t2_perc_discrim_z_zero")
 
 
 
-t2_perc_discrim_z_null <- lmtp_tmle(
+t2_perc_discrim_z_null <- lmtp_sdr(
   outcome = "t2_perc_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_discrim_z,
   shift = NULL,
   data = df_clean,
   trt = A,
   cens = C,
   mtp = TRUE,
   folds = 10,
-  k=3, 
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
   learners_trt = sl_lib,
@@ -2039,13 +2103,15 @@ here_save(t2_perc_discrim_z_null, "t2_perc_discrim_z_null")
 
 
 # t2_perc_religious_discrim_z --------------------------------------------------
+names_base_t2_perc_religious_discrim_z <- select_and_rename_cols(names_base = names_base,  
+                                                       baseline_vars = base_var, 
+                                                       outcome =  "t2_perc_religious_discrim_z")
 
 
 
-
-t2_perc_religious_discrim_z_gain <- lmtp_tmle(
+t2_perc_religious_discrim_z_gain <- lmtp_sdr(
   outcome = "t2_perc_religious_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_religious_discrim_z,
   shift = gain_A,
   data = df_clean,
   trt = A,
@@ -2062,9 +2128,9 @@ here_save(t2_perc_religious_discrim_z_gain, "t2_perc_religious_discrim_z_gain")
 t2_perc_religious_discrim_z_gain
 
 # 
-t2_perc_religious_discrim_z_zero <- lmtp_tmle(
+t2_perc_religious_discrim_z_zero <- lmtp_sdr(
   outcome = "t2_perc_religious_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_religious_discrim_z,
   shift = zero_A,
   data = df_clean,
   trt = A,
@@ -2080,9 +2146,9 @@ t2_perc_religious_discrim_z_zero <- lmtp_tmle(
 here_save(t2_perc_religious_discrim_z_zero, "t2_perc_religious_discrim_z_zero")
 
 
-t2_perc_religious_discrim_z_null <- lmtp_tmle(
+t2_perc_religious_discrim_z_null <- lmtp_sdr(
   outcome = "t2_perc_religious_discrim_z",
-  baseline = names_base,
+  baseline = names_base_t2_perc_religious_discrim_z,
   shift = NULL,
   data = df_clean,
   trt = A,
@@ -2109,7 +2175,7 @@ here_save(t2_perc_religious_discrim_z_null, "t2_perc_religious_discrim_z_null")
 
 # asians ------------------------------------------------------------------
 
-
+library(margot)
 t2_warm_asians_z_gain<- here_read("t2_warm_asians_z_gain")
 t2_warm_asians_z_zero<- here_read("t2_warm_asians_z_zero")
 t2_warm_asians_z_null<- here_read("t2_warm_asians_z_null")
@@ -2127,8 +2193,8 @@ tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
 
 output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
 
-# 
-# 
+
+
 contrast_t2_warm_asians_z_null <-
   lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_null, type = "additive")
 
@@ -2226,7 +2292,7 @@ tab_contrast_t2_warm_indians_z<- margot_tab_lmtp(
 
 output_tab_contrast_t2_warm_indians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_indians_z,  delta = 1, sd = 1, scale = c("RD"))
 
-# 
+
 contrast_t2_warm_indians_z_null <-
   lmtp_contrast(t2_warm_indians_z_gain, ref =  t2_warm_indians_z_null, type = "additive")
 
@@ -2259,7 +2325,7 @@ output_tab_contrast_t2_warm_elderly_z <- lmtp_evalue_tab(tab_contrast_t2_warm_el
 
 
 
-
+# 
 contrast_t2_warm_elderly_z_null <-
   lmtp_contrast(t2_warm_elderly_z_gain, ref =  t2_warm_elderly_z_null, type = "additive")
 
@@ -2293,7 +2359,7 @@ tab_contrast_t2_warm_maori_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_maori_z <- lmtp_evalue_tab(tab_contrast_t2_warm_maori_z,  delta = 1, sd = 1, scale = c("RD"))
 
 # 
-
+# 
 contrast_t2_warm_maori_z_null <-
   lmtp_contrast(t2_warm_maori_z_gain, ref =  t2_warm_maori_z_null, type = "additive")
 
@@ -2313,6 +2379,9 @@ t2_warm_mental_illness_z_gain<- here_read("t2_warm_mental_illness_z_gain")
 t2_warm_mental_illness_z_zero<- here_read("t2_warm_mental_illness_z_zero")
 t2_warm_mental_illness_z_null<- here_read("t2_warm_mental_illness_z_null")
 
+t2_warm_mental_illness_z_gain
+t2_warm_mental_illness_z_zero
+t2_warm_mental_illness_z_null
 
 contrast_t2_warm_mental_illness_z <-
   lmtp_contrast(t2_warm_mental_illness_z_gain, ref =  t2_warm_mental_illness_z_zero, type = "additive")
@@ -2324,7 +2393,7 @@ tab_contrast_t2_warm_mental_illness_z <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_mental_illness_z <- lmtp_evalue_tab( tab_contrast_t2_warm_mental_illness_z,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_warm_mental_illness_z
 # 
 # 
 contrast_t2_warm_mental_illness_z_null <-
@@ -2337,7 +2406,7 @@ tab_contrast_t2_warm_mental_illness_z_null <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_mental_illness_z_null <- lmtp_evalue_tab( tab_contrast_t2_warm_mental_illness_z_null,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_warm_mental_illness_z_null
 
 # muslims -----------------------------------------------------------------
 t2_warm_muslims_z_gain<- here_read("t2_warm_muslims_z_gain")
@@ -2357,7 +2426,7 @@ tab_contrast_t2_warm_muslims_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_muslims_z <- lmtp_evalue_tab(tab_contrast_t2_warm_muslims_z ,  delta = 1, sd = 1, scale = c("RD"))
 
 
-
+# 
 contrast_t2_warm_muslims_z_null <-
   lmtp_contrast(t2_warm_muslims_z_gain, ref =  t2_warm_muslims_z_null, type = "additive")
 
@@ -2490,7 +2559,7 @@ tab_contrast_t2_warm_refugees_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_refugees_z <- lmtp_evalue_tab( tab_contrast_t2_warm_refugees_z,  delta = 1, sd = 1, scale = c("RD"))
 
 # 
-
+# 
 contrast_t2_warm_refugees_z_null <-
   lmtp_contrast(t2_warm_refugees_z_gain, ref =  t2_warm_refugees_z_null, type = "additive")
 
@@ -2556,9 +2625,6 @@ output_tab_contrast_t2_perc_religious_discrim_z
 contrast_t2_perc_religious_discrim_z_null <-
   lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_null, type = "additive")
 
-t2_perc_religious_discrim_z_gain
-t2_perc_religious_discrim_z_null
-t2_perc_religious_discrim_z_zero
 
 tab_contrast_t2_perc_religious_discrim_z_null<- margot_tab_lmtp(
   contrast_t2_perc_religious_discrim_z_null,
@@ -2645,10 +2711,10 @@ here_save(tab_all_perceive , "tab_all_perceive")
 here_save(group_tab_all_perceive, "group_tab_all_perceive")
 
 
-
+# 
 
 tab_all_warm_null <- rbind(
- # output_tab_contrast_t2_warm_asians_z_null,
+  output_tab_contrast_t2_warm_asians_z_null,
   output_tab_contrast_t2_warm_chinese_z_null,
   output_tab_contrast_t2_warm_immigrants_z_null,
   output_tab_contrast_t2_warm_indians_z_null,
@@ -2684,7 +2750,7 @@ here_save(group_tab_all_perceive, "group_tab_all_perceive")
 
 
 
-
+#
 tab_all_perceive_null <-
   rbind(
     output_tab_contrast_t2_perc_gend_discrim_z_null,
@@ -2730,7 +2796,7 @@ plot_group_tab_all_warm <- margot_plot(
 
 plot_group_tab_all_warm
 
-
+push_mods
 ggsave(
   plot_group_tab_all_warm,
   path = here::here(here::here(push_mods)),
@@ -2743,7 +2809,7 @@ ggsave(
   dpi = 300
 )
 
-
+# 
 plot_group_tab_all_warm_null <- margot_plot(
   group_tab_all_warm_null,
   type = "RD",
@@ -2764,10 +2830,10 @@ plot_group_tab_all_warm_null <- margot_plot(
   x_lim_hi = .5
 
 )
-
+# 
 plot_group_tab_all_warm_null
-
-
+# 
+# 
 ggsave(
   plot_group_tab_all_warm_null,
   path = here::here(here::here(push_mods)),
@@ -2817,7 +2883,7 @@ ggsave(
 )
 
 
-
+# 
 plot_group_tab_all_perceive_null <- margot_plot(
   group_tab_all_perceive_null,
   type = "RD",
@@ -2838,18 +2904,18 @@ plot_group_tab_all_perceive_null <- margot_plot(
 )
 
 plot_group_tab_all_perceive_null
-
-ggsave(
-  plot_group_tab_all_perceive_null,
-  path = here::here(here::here(push_mods)),
-  width = 16,
-  height = 9,
-  units = "in",
-  filename = "plot_group_tab_all_perceive.png",
-  device = 'png',
-  limitsize = FALSE,
-  dpi = 300
-)
+ 
+# ggsave(
+#   plot_group_tab_all_perceive_null,
+#   path = here::here(here::here(push_mods)),
+#   width = 16,
+#   height = 9,
+#   units = "in",
+#   filename = "plot_group_tab_all_perceive.png",
+#   device = 'png',
+#   limitsize = FALSE,
+#   dpi = 300
+# )
 
 
 # read material -----------------------------------------------------------

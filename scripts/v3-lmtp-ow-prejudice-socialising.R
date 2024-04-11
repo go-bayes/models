@@ -73,7 +73,7 @@ sl_lib <- c("SL.glmnet",
 
 
 # large data
-sl_lib_ranger <- c("SL.ranger") #
+#sl_lib_ranger <- c("SL.ranger") #
 
 # check
 push_mods
@@ -1006,27 +1006,27 @@ print(W)
 # 
 # 
 # 
-# gain_A <- function(data, trt) {
-#   # make zero at baseline
-#   mtp_base_A <- function(data, trt) {
-#     ifelse(data[[trt]] <= 4, 4,  data[[trt]]))
-#   }
-#   
-#   if (trt == "t0_religion_church_round") {
-#     return(mtp_base_A(data, trt))
-#   }
-#   
-#   # shift to at least 4 at time 1
-#   mtp_one_contrast_A <- function(data, trt) {
-#     ifelse(data[[trt]] <= 4, 4,  data[[trt]])
-#   }
-#   
-#   #  trt is a variable name passed as a string to the function
-#   
-#   ifelse(trt == "t1_religion_church_round",
-#          mtp_one_contrast_A(data, trt),
-#          data[[trt]])
-# }
+gain_A <- function(data, trt) {
+  # make zero at baseline
+  mtp_base_A <- function(data, trt) {
+    ifelse(data[[trt]] <= 4, 4,  data[[trt]]))
+  }
+
+  if (trt == "t0_religion_church_round") {
+    return(mtp_base_A(data, trt))
+  }
+
+  # shift to at least 4 at time 1
+  mtp_one_contrast_A <- function(data, trt) {
+    ifelse(data[[trt]] <= 4, 4,  data[[trt]])
+  }
+
+  #  trt is a variable name passed as a string to the function
+
+  ifelse(trt == "t1_religion_church_round",
+         mtp_one_contrast_A(data, trt),
+         data[[trt]])
+}
 
 # 
 # 
@@ -1056,11 +1056,11 @@ print(W)
 #          data[[trt]])
 # }
 
-
-gain_A <- function(data, trt)  data[[trt]] + 1
-
-
-zero_A <- NULL
+# 
+# gain_A <- function(data, trt)  data[[trt]] + 1
+# 
+# 
+# zero_A <- NULL
 
 # BONUS: progressr progress bars!
 progressr::handlers(global = TRUE)
