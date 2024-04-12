@@ -93,16 +93,23 @@ push_mods
 
 # check colnames
 colnames(dat)
+name_exposure_raw <- "religion_church"
+# Obtain IDs for individuals who participated in 2018 and have no missing baseline exposure
+ids_2018 <- dat %>%
+  filter(year_measured == 1, wave == 2018) %>%
+  filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
+  pull(id)
 
-# get ids
-ids_2018 <- dat |>
-  filter(year_measured == 1,
-         wave == 2018) |>
-  filter(!is.na(religion_church)) |> # no miss baseline exposure
-  pull(id)  
+# Obtain IDs for individuals who participated in 2019
+ids_2019 <- dat %>%
+  filter(year_measured == 1, wave == 2019) %>%
+  filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
+  pull(id)
 
-# check n
-length(ids_2018)
+# Intersect IDs from 2018 and 2019 to ensure participation in both years
+ids_2018_2019 <- intersect(ids_2018, ids_2019)
+
+
 
 # filter the original dataset for these IDs three waves
 dat <- as.data.frame(dat)
@@ -118,7 +125,7 @@ str(dat)
 #   Time 10 [2018/2019]	CommunityMoney.T10	Please estimate how much help you have received from the following sources in the last week?
 
 dat_long_full <- dat |>
-  dplyr::filter(id %in% ids_2018 &
+  dplyr::filter(id %in% ids_2018_2019 &
                   wave %in% c(2018, 2019, 2020)) |>
   arrange(id, wave) |>
   select(
@@ -342,7 +349,7 @@ dat_long_full <- dat |>
     "family_money",
     "friends_money",
     "community_money",
-    # "alert_level_combined_lead",
+    "alert_level_combined_lead",
     "alert_level_combined"
   ) |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
@@ -458,7 +465,7 @@ mutate(
 
 
 # baseline vars -----------------------------------------------------------
-dat_long <- dat_long_full 
+dat_long <- dat_long_full
 str(dat_long)
 # check
 table(dat_long$censored)
@@ -474,7 +481,6 @@ dat_long_colnames
 # set baseline exposure and outcomes --------------------------------------
 
 exposure_var = c("religion_church_round",
-                 "alert_level_combined",
                  "censored"#,
                  # "hours_community_round"
 ) #
@@ -515,7 +521,7 @@ dat_long_colnames <- colnames(dat_long)
 #
 baseline_vars <-
   setdiff(dat_long_colnames,
-          c("id","wave"))
+          c("id","wave", "alert_level_combined"))
 
 # c(outcome_vars, 'id', 'wave'))
 baseline_vars
@@ -525,7 +531,7 @@ baseline_vars
 
 # just core baseline variables
 base_var <-
-  setdiff(baseline_vars, c("censored", "sample_weights", "alert_level_combined", outcome_vars))
+  setdiff(baseline_vars, c("censored", "sample_weights", "alert_level_combined_lead", outcome_vars))
 base_var
 
 
@@ -534,7 +540,7 @@ n_participants <-
   n_unique(dat_long$id) #47202 # reports hours with
 
 # check
-n_participants
+n_participants #33198
 
 margot::here_save(n_participants, "n_participants")
 
@@ -563,16 +569,8 @@ out <-
 
 library(margot)
 
-
-
-out_church_2 <-
-  msm::statetable.msm(religion_church_shift, id, data = dt_positivity_full)
-
 out <-margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_round", id_var = "id")
 
-out_church_2 <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_shift", id_var = "id")
-
-out_church_2
 
 # t_tab_2_labels <- c("< weekly", ">= weekly")
 # transition table
@@ -746,13 +744,12 @@ fit_church_on_hours_charity<- margot::here_read('fit_church_on_hours_charity')
 fit_church_on_community_time_binary<- margot::here_read('fit_church_on_community_time_binary')
 fit_church_on_community_money_binary<- margot::here_read('fit_church_on_community_money_binary')
 
-group_tab_all_received_money
 
 # run once then comment out
 
 # lm_coef_fit_church_on_charity_donate <- tbl_regression(fit_church_on_charity_donate)
 # b_church_on_charity_donate <-inline_text(lm_coef_fit_church_on_charity_donate, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
-# # #
+# # # #
 #  b_church_on_charity_donate
 # here_save(b_church_on_charity_donate, "b_church_on_charity_donate")
 # 
@@ -766,19 +763,13 @@ group_tab_all_received_money
 # tables ------------------------------------------------------------------
 library(gtsummary)
 
-
-
 # table baseline ----------------------------------------------------------
-
-
-
 # get names
 base_var
 
 # prepare df
 selected_base_cols <-
   dt_18 |> select(all_of(base_var))
-
 
 #check
 colnames(selected_base_cols)
@@ -788,7 +779,6 @@ colnames(selected_base_cols)
 # baseline table
 
 library(gtsummary)
-
 table_baseline <- selected_base_cols |> 
   janitor::clean_names(case = "title") |> 
   tbl_summary(
@@ -1068,8 +1058,11 @@ my_data_filtered <- haven::zap_formats(dat_long_df)
 my_data_filtered <- haven::zap_label(dat_long_df)
 my_data_filtered <- haven::zap_widths(dat_long_df)
 
+# needs to be a data frame
 dat_long_df <- data.frame(dat_long)
 
+# check before committing
+colnames(dat_long_df)
 
 prep_coop_all <-
   margot_wide_impute_baseline(
@@ -1119,7 +1112,7 @@ dev.off()
 
 table(prep_coop_all$t0_censored)
 head(prep_coop_all$t0_sam)
-
+colnames(prep_coop_all)
 #check must be a dataframe
 str(prep_coop_all)
 nrow(prep_coop_all)
@@ -1190,10 +1183,10 @@ df_clean <- df_wide_censored %>%
         !t0_friends_money_binary &
         !t0_community_money_binary &
         !t0_religion_church_round &
-        !t0_alert_level_combined &
+        !t0_alert_level_combined_lead &
         #  !t0_charity_donate & !t0_sample_weights &
         !t1_religion_church_round &
-        !t1_alert_level_combined &
+    #    !t1_alert_level_combined &
         !t1_censored &
         # !t2_charity_donate &!t2_volunteers_binary &
         !t2_family_time_binary &
@@ -1215,7 +1208,7 @@ df_clean <- df_wide_censored %>%
     t0_rural_gch_2018_l,
     t0_nzsei_13_l,
     t0_sample_frame_opt_in,
-    t0_alert_level_combined,
+    t0_alert_level_combined_lead,
     #  t0_volunteers_binary,
     t0_family_time_binary,
     t0_friends_time_binary,
@@ -1227,7 +1220,7 @@ df_clean <- df_wide_censored %>%
     # t0_total_siblings,
     t0_religion_church_round,
     t0_censored,
-    t1_alert_level_combined,
+  #  t1_alert_level_combined,
     t1_religion_church_round,
     #t1_hours_community_round,
     t1_censored,
@@ -1285,34 +1278,37 @@ names_base
 df_clean$t0_sample_weights
 # check imbalance ---------------------------------------------------------
 
-df_clean_no_na_treatment <- df_clean |> filter(!is.na(t1_religion_church_round))
+df_clean_no_na_treatment_one <- df_clean |> filter(!is.na(t1_religion_church_round))
 
-df_clean_no_na_treatment_base <- df_clean |> filter(!is.na(t0_religion_church_round)) 
-
-names_base_base
-names_base_base <- setdiff(names_base, "t0_religion_church_round")
-
-match_ebal_base<- margot::match_mi_general(data = df_clean_no_na_treatment_base,
-                                           X = "t0_religion_church_round",
-                                           baseline_vars = names_base_base,
-                                           estimand = "ATE",
-                                           #  focal = 0, #for ATT
-                                           method = "ebal",
-                                           sample_weights = "t0_sample_weights")
-
-love_plot_base <- love.plot(match_ebal_base, binary = "std", thresholds = c(m = .1),
-                            wrap = 50, position = "bottom", size = 3,  limits = list(m = c(-.5, 1))) 
+# df_clean_no_na_treatment_base <- df_clean |> filter(!is.na(t0_religion_church_round)) 
+# 
+# 
+# 
+# names_base_base <- setdiff(names_base, "t0_religion_church_round")
+# names_base_base
+# 
+# 
+# match_ebal_base<- margot::match_mi_general(data = df_clean_no_na_treatment_base,
+#                                            X = "t0_religion_church_round",
+#                                            baseline_vars = names_base_base,
+#                                            estimand = "ATE",
+#                                            #  focal = 0, #for ATT
+#                                            method = "ebal",
+#                                            sample_weights = "t0_sample_weights")
+# 
+# love_plot_base <- love.plot(match_ebal_base, binary = "std", thresholds = c(m = .1),
+#                             wrap = 50, position = "bottom", size = 3,  limits = list(m = c(-.5, 1))) 
 
 # love_plot_base
-love_plot_base
-here_save(love_plot_base, "love_plot_base")
+# love_plot_base
+# here_save(love_plot_base, "love_plot_base")
 
-summary_match_ebal_base <- summary(match_ebal_base)
-summary_match_ebal_base
-here_save(summary_match_ebal, "summary_match_ebal")
+# summary_match_ebal_base <- summary(match_ebal_base)
+# summary_match_ebal_base
+# here_save(summary_match_ebal, "summary_match_ebal")
 
 
-match_ebal<- match_mi_general(data = df_clean_no_na_treatment,
+match_ebal_one<- match_mi_general(data = df_clean_no_na_treatment,
                               X = "t1_religion_church_round",
                               baseline_vars = names_base,
                               estimand = "ATE",
@@ -1320,22 +1316,22 @@ match_ebal<- match_mi_general(data = df_clean_no_na_treatment,
                               method = "ebal",
                               sample_weights = "t0_sample_weights")
 
-match_ebal
+match_ebal_one
 # save
-here_save(match_ebal, "match_ebal")
+here_save(match_ebal_one, "match_ebal_one")
 
 
 
-bal.tab(match_ebal)
-love_plot <- love.plot(match_ebal, binary = "std", thresholds = c(m = .1),
+bal.tab(match_ebal_one)
+love_plot_one <- love.plot(match_ebal_one, binary = "std", thresholds = c(m = .1),
                        wrap = 50, position = "bottom", size = 3,  limits = list(m = c(-.5, 1))) 
-love_plot
-here_save(love_plot, "love_plot")
+love_plot_one
+here_save(love_plot_one, "love_plot_one")
 
 # consider results 
-summary_match_ebal <- summary(match_ebal)
-summary_match_ebal
-here_save(summary_match_ebal, "summary_match_ebal")
+summary_match_ebal_one <- summary(match_ebal_one)
+summary_match_ebal_one
+here_save(summary_match_ebal_one, "summary_match_ebal_one")
 
 plot(summary_match_ebal)
 
@@ -1343,7 +1339,7 @@ plot(summary_match_ebal)
 
 # For trimmed weights e.g.
 #trim if needed (weights > 10 might be a problem)
-match_ebal_trim <- WeightIt::trim(match_ebal, at = .99)
+match_ebal_trim <- WeightIt::trim(match_ebal_one, at = .99)
 #bal.tab(match_ebal_trim_health)
 summary_match_ebal_trim<- summary(match_ebal_trim)
 plot(summary_match_ebal_trim)
@@ -1356,9 +1352,14 @@ plot(summary_match_ebal_trim)
 
 #### SET VARIABLE NAMES
 #  model
-A <- c("t0_religion_church_round", "t1_religion_church_round")
-C <- c("t0_censored", "t1_censored")
-L <- list(c("t0_alert_level_combined"), c("t1_alert_level_combined")) # COULD PUT NULL HERE
+# A <- c("t0_religion_church_round", "t1_religion_church_round")
+# C <- c("t0_censored", "t1_censored")
+# L <- list(c("t0_alert_level_combined"), c("t1_alert_level_combined")) # COULD PUT NULL HERE
+# 
+names_base
+A <- c("t1_religion_church_round")
+C <- c("t1_censored")
+#L <- list(c("t0_alert_level_combined"), c("t1_alert_level_combined")) # COULD PUT NULL HERE
 
 
 # redundant because estimate of A is always included: 
@@ -1464,8 +1465,8 @@ progressr::handlers(global = TRUE)
 
 library(future)
 plan(multisession)
-n_cores <-
-  parallel::detectCores()-2
+# n_cores <-
+#   parallel::detectCores()-2
 
 
 # church: charity models ----------------------------------------------------------
@@ -1504,16 +1505,13 @@ sl_lib
 
 
 # redundant
-names_base_t2_hours_charity_z<- setdiff(names_base, "t0_volunteers_binary")
-
 
 t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base_t2_hours_charity_z,
+  baseline = names_base,
   shift = gain_A,
   data = df_clean_slice,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1526,12 +1524,31 @@ t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
 )
 t2_charity_donate_z_test_gain_orig
 
+
+t2_charity_donate_z_test_gain_five <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt= sl_lib,
+  # ranger much faster
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+t2_charity_donate_z_test_gain_five
+
 #  As can be verified here: 
 # t2_charity_donate_z_test_gain_time_vary <- lmtp_tmle(
 #   outcome = "t2_charity_donate_z",
 #   data = df_clean_slice,
 #   baseline = W,
-# #  time_vary = L,
+# #
 #   shift = gain_A,
 #   trt = A,
 #   cens = C,
@@ -1553,7 +1570,6 @@ t2_charity_donate_z_test_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean_slice,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1565,7 +1581,6 @@ t2_charity_donate_z_test_gain <- lmtp_tmle(
   parallel = n_cores
 )
 t2_charity_donate_z_test_gain
-time_vary = L,
 
 
 lmtp_contrast(t2_charity_donate_z_test_gain, ref = t2_charity_donate_z_test_zero, type = "additive")
@@ -1577,7 +1592,6 @@ t2_charity_donate_z_test_gain
 # models ------------------------------------------------------------------
 
 library(SuperLearner)
-df_clean$vu
 # do for all
 # names_base_t2_hours_charity_z<- select_and_rename_cols(names_base = names_base,  
 #                                                      baseline_vars = base_var, 
@@ -1587,7 +1601,7 @@ df_clean$vu
 # names_base_t2_hours_charity_z<- setdiff(names_base_t2_hours_charity_z, "t0_volunteers_binary")
 # # remove duplicate measure
 # names_base_t2_hours_charity_z<- setdiff(names_base, "t0_volunteers_binary")
-names_base
+
 
 t2_hours_charity_z_gain <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
@@ -1595,7 +1609,6 @@ t2_hours_charity_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1614,7 +1627,6 @@ t2_hours_charity_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1634,7 +1646,6 @@ t2_hours_charity_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1665,7 +1676,6 @@ t2_charity_donate_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1684,7 +1694,6 @@ t2_charity_donate_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1704,7 +1713,6 @@ t2_charity_donate_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1743,7 +1751,6 @@ t2_support_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1759,7 +1766,6 @@ t2_support_z_zero <- lmtp_tmle(
   outcome = "t2_support_z",
   baseline = names_base,
   shift = zero_A,
-  time_vary = L,
   data = df_clean,
   trt = A,
   cens = C,
@@ -1782,7 +1788,6 @@ t2_support_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1808,7 +1813,6 @@ t2_family_time_binary_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1827,7 +1831,6 @@ t2_family_time_binary_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1847,7 +1850,6 @@ t2_family_time_binary_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1878,7 +1880,6 @@ t2_friends_time_binary_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1898,7 +1899,6 @@ t2_friends_time_binary_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1919,7 +1919,6 @@ t2_friends_time_binary_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1931,7 +1930,6 @@ t2_friends_time_binary_null <- lmtp_tmle(
 )
 
 here_save(t2_friends_time_binary_null, "t2_friends_time_binary_null")
-t2_friends_time_binary_null
 # 
 
 # church: community time help received --------------------------------------------
@@ -1948,7 +1946,6 @@ t2_community_time_binary_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1970,7 +1967,6 @@ t2_community_time_binary_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -1991,7 +1987,6 @@ t2_community_time_binary_null<- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2023,7 +2018,6 @@ t2_family_money_binary_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2045,7 +2039,6 @@ t2_family_money_binary_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2066,7 +2059,7 @@ t2_family_money_binary_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
+
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2095,7 +2088,7 @@ t2_friends_money_binary_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
+
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2116,7 +2109,7 @@ t2_friends_money_binary_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
+
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2138,7 +2131,7 @@ t2_friends_money_binary_null<- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
+
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2166,7 +2159,7 @@ t2_community_money_binary_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
+
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2186,7 +2179,7 @@ t2_community_money_binary_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-  time_vary = L,
+
   cens = C,
   mtp = TRUE,
   folds = 10,
@@ -2207,7 +2200,7 @@ t2_community_money_binary_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-  time_vary = L,
+
   cens = C,
   mtp = TRUE,
   folds = 10,
