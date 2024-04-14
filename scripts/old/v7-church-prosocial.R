@@ -663,6 +663,7 @@ baseline_vars
 
 # check
 baseline_vars
+
 #
 # check associations only -------------------------------------------------
 
@@ -720,7 +721,7 @@ fit_church_on_community_time_binary <-
     outcome = "community_time_binary",
     exposure = "religion_church_round",
     baseline_vars = base_var,
-    family = "binomial"
+    family = "poisson"
   )
 parameters::model_parameters(fit_church_on_community_time_binary, ci_method="wald")[2, ]
 here_save(fit_church_on_community_time_binary, "fit_church_on_community_time_binary")
@@ -732,12 +733,13 @@ fit_church_on_community_money_binary <-
     outcome = "community_money_binary",
     exposure = "religion_church_round",
     baseline_vars = base_var,
-    family = "binomial"
+    family = "poisson"
   )
 parameters::model_parameters(fit_church_on_community_money_binary, ci_method="wald")[2, ]
 
 margot::here_save(fit_church_on_community_money_binary, "fit_church_on_community_money_binary")
 
+exp(.16)
 
 fit_church_on_charity_donate<- margot::here_read('fit_church_on_charity_donate')
 fit_church_on_hours_charity<- margot::here_read('fit_church_on_hours_charity')
@@ -760,13 +762,51 @@ fit_church_on_community_money_binary<- margot::here_read('fit_church_on_communit
 # # b_church_on_charity_donate
 # here_save(b_church_on_hours_charity, "b_church_on_hours_charity")
 
+
+lm_coef_fit_church_on_community_time_binary_exp_false<- tbl_regression(fit_church_on_community_time_binary, exponentiate = FALSE)
+lm_coef_fit_church_on_community_time_binary_exp_true<- tbl_regression(fit_church_on_community_time_binary, exponentiate = TRUE)
+b_church_on_community_time_binary_exp_true <-inline_text(lm_coef_fit_church_on_community_time_binary_exp_true, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+here_save(b_church_on_community_time_binary_exp_true, "b_church_on_community_time_binary_exp_true")
+
+# 
+# b_church_on_community_time_binary_exp_false <-inline_text(lm_coef_fit_church_on_community_time_binary_exp_false, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# 
+# b_church_on_community_time_binary_exp_false 
+# # # #
+# 
+# here_save(b_church_on_community_time_binary_exp_false, "b_church_on_community_time_binary_exp_false")
+# b_church_on_community_time_binary_exp_false <- here_read("b_church_on_community_time_binary_exp_false")
+# 
+# 
+# lm_coef_fit_church_on_community_money_binary<- tbl_regression(fit_church_on_community_money_binary, exponentiate = FALSE)
+# 
+# b_church_on_community_money_binary_exp_false <-inline_text(lm_coef_fit_church_on_community_money_binary, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# 
+# b_church_on_community_money_binary_exp_false 
+# # # # #
+# 
+# here_save(b_church_on_community_time_binary_exp_false, "b_church_on_community_time_binary_exp_false")
+# b_church_on_community_time_binary_exp_false <- here_read("b_church_on_community_time_binary_exp_false")
+# 
+#here_save(b_church_on_community_money_binary_exp_false, "b_church_on_community_money_binary_exp_false")
+
+# lm_coef_fit_church_on_hours_charity <- tbl_regression(fit_church_on_hours_charity)
+# lm_coef_fit_church_on_hours_charity
+# b_church_on_hours_charity <-inline_text(lm_coef_fit_church_on_hours_charity, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# b_church_on_hours_charity
+# # b_church_on_charity_donate
+# here_save(b_church_on_hours_charity, "b_church_on_hours_charity")
+
+
+
+
 # tables ------------------------------------------------------------------
 library(gtsummary)
 
 # table baseline ----------------------------------------------------------
 # get names
 base_var
-
+dat_long$hour
 # prepare df
 selected_base_cols <-
   dt_18 |> select(all_of(base_var))
@@ -1618,7 +1658,7 @@ t2_hours_charity_z_gain <- lmtp_tmle(
   learners_outcome= sl_lib,
   parallel = n_cores
 )
-t2_hours_charity_z_gain
+
 here_save(t2_hours_charity_z_gain, "t2_hours_charity_z_gain")
 
 t2_hours_charity_z_zero <- lmtp_tmle(

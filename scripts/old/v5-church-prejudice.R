@@ -16,9 +16,9 @@ source("/Users/joseph/GIT/templates/functions/libs2.R")
 source("/Users/joseph/GIT/templates/functions/funs.R")
 
 # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-)
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
+# )
 
 # experimental functions (more functions)
 # source(
@@ -105,8 +105,9 @@ ids_2019 <- dat %>%
 ids_2018_2019 <- intersect(ids_2018, ids_2019)
 
 # Filter the dataset for these IDs for 2018, 2019, and 2020
-dat_long_use <- dat %>%
-  filter(id %in% ids_2018_2019 & wave %in% c(2018, 2019, 2020))
+use_id <- dat %>%
+  filter(id %in% ids_2018_2019 & wave %in% c(2018, 2019, 2020))%>%
+  pull(id)
 
 
 # filter the original dataset for these IDs three waves
