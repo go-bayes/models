@@ -811,7 +811,6 @@ library(gtsummary)
 # table baseline ----------------------------------------------------------
 # get names
 base_var
-dat_long$hour
 # prepare df
 selected_base_cols <-
   dt_18 |> select(all_of(base_var))
