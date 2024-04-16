@@ -3,7 +3,7 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
-listWrappers()
+
 push_mods <-  fs::path_expand(
   "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/church-prosocial-v7"
 )
@@ -12,6 +12,8 @@ library(margot)
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+listWrappers()
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 #source("/Users/joseph/GIT/templates/functions/funs.R")
@@ -54,10 +56,13 @@ push_mods
 
 
 # total nzavs participants
-n_total <- skimr::n_unique(dat$id)
+#n_total <- skimr::n_unique(dat$id)
 
 
-margot::here_save(n_total, "n_total")
+#margot::here_save(n_total, "n_total")
+
+n_total <- prettyNum(n_total,big.mark=",")
+n_total
 
 # set exposure here
 nzavs_exposure <- "religion_church_round"
@@ -686,7 +691,7 @@ naniar::vis_miss(dt_18_miss, warn_large_data = F)
 table((dt_18_miss$hours_religious_community))
 dev.off()
 
-summary(fit1 <- lm(charity_donate ~ religion_church_round, data = dt_18_miss))
+#summary(fit1 <- lm(charity_donate ~ religion_church_round, data = dt_18_miss))
 base_var
 
 # base_vars set above
@@ -957,35 +962,45 @@ table_outcomes <- here_read("table_outcomes")
 table_outcomes
 # histogram exposure ------------------------------------------------------
 
-dt_19 <- dat_long |> 
-  filter(wave == 2019)
+dt_19_name <- dat_long |> 
+  filter(wave == 2019) |> 
+  mutate(Monthly_Religious_Service = religion_church_round)
 
 library(ggplot2)
 library(dplyr)
 #
 # # generate bar plot
 graph_density_of_exposure_up <- margot::coloured_histogram_shift(
-  dt_19,
-  col_name = "religion_church_round",
+  dt_19_name,
+  col_name = "Monthly_Religious_Service",
   binwidth = .5, 
   range_highlight = c(0,3.9)
 )
-graph_density_of_exposure_up
+
 
 
 graph_density_of_exposure_down <- margot::coloured_histogram_shift(
   dt_19,
   shift = "down",
-  col_name = "religion_church_round",
+  col_name = "Monthly_Religious_Service",
   binwidth = .5, 
   range_highlight = c(1,8)
 )
-graph_density_of_exposure_up
-
 graph_density_of_exposure_down
+
+
+# patchwork
+graph_density_of_exposure_both <- graph_density_of_exposure_up / graph_density_of_exposure_down + plot_annotation(tag_levels = "A")
+graph_density_of_exposure_both
+
+here_save(graph_density_of_exposure_both, "graph_density_of_exposure_both")
 
 here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
 here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
+
+
+
+
 #
 # graph_density_of_exposure
 #
@@ -2873,7 +2888,7 @@ contrast_friends_money_null_zero <-
 output_tab_contrast_friends_money_null_zero <- margot_lmtp_evalue(
   contrast_friends_money_null_zero,
   scale = "RR",
-  new_name = "friends gives money"
+  new_name = "friends give money"
 )
 
 output_tab_contrast_friends_money
@@ -3153,7 +3168,7 @@ plot_group_tab_all_prosocial <- margot_plot(
   group_tab_all_prosocial,
   type = "RD",
   title = title,
-  subtitle = "Self-Reported Prosociality",
+  subtitle = NULL,#"Self-Reported Prosociality",
   estimate_scale = 1,
   base_size = 18,
   text_size = 4.5,
@@ -3187,7 +3202,7 @@ plot_group_tab_all_prosocial_null <- margot_plot(
   group_tab_all_prosocial_null,
   type = "RD",
   title = title_null,
-  subtitle = "Self-Reported Prosociality",
+  subtitle = NULL,#"Self-Reported Prosociality",
   estimate_scale = 1,
   base_size = 18,
   text_size = 4.5,
@@ -3219,7 +3234,7 @@ plot_group_tab_all_prosocial_null_zero <- margot_plot(
   group_tab_all_prosocial_null_zero,
   type = "RD",
   title = title_null_zero,
-  subtitle = "Self-Reported Prosociality",
+  subtitle = NULL,#"Self-Reported Prosociality",
   estimate_scale = 1,
   base_size = 18,
   text_size = 4.5,
@@ -3246,6 +3261,23 @@ ggsave(
   limitsize = FALSE,
   dpi = 300
 )
+
+
+
+# pathwork
+study_1 <- plot_group_tab_all_prosocial /
+plot_group_tab_all_prosocial_null/
+  plot_group_tab_all_prosocial_null_zero + 
+  plot_annotation(title = "Study 1: Self-Reported Prosociality", 
+                  theme = theme(plot.title = element_text(size = 24, face = "bold")))
+
+
+study_1
+
+# save plot
+here_save(study_1 , "study_1")
+
+#wrap_plots(plot_group_tab_all_prosocial, plot_group_tab_all_prosocial_null, plot_group_tab_all_prosocial_null_zero)
 
 # 
 # 
@@ -3465,7 +3497,7 @@ plot_group_tab_all_received_money <- margot_plot(
   legend_title_size = 10,
   x_offset = 0,
   x_lim_lo = 0,
-  x_lim_hi =  4
+  x_lim_hi =  2
 )
 
 plot_group_tab_all_received_money
