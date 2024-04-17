@@ -2512,34 +2512,34 @@ output_tab_contrast_charity_donate_z_null_zero
 # output_tab_contrast_volunteers_binary_null
 # support -----------------------------------------------------------------
 
-contrast_support_z <- 
-  lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_zero, type = "additive")
+# contrast_support_z <- 
+#   lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_zero, type = "additive")
 
-output_tab_contrast_support_z <- margot_lmtp_evalue(
-  contrast_support_z,
-  scale = "RD",
-  new_name = "social suport"
-)
+# output_tab_contrast_support_z <- margot_lmtp_evalue(
+#   contrast_support_z,
+#   scale = "RD",
+#   new_name = "social suport"
+# )
 
-contrast_support_z_null <-
-  lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_null, type = "additive")
+# contrast_support_z_null <-
+#   lmtp_contrast(t2_support_z_gain , ref =  t2_support_z_null, type = "additive")
 
-output_tab_contrast_support_z_null <- margot_lmtp_evalue(
-  contrast_support_z_null,
-  scale = "RD",
-  new_name = "social support"
-)
+# output_tab_contrast_support_z_null <- margot_lmtp_evalue(
+#   contrast_support_z_null,
+#   scale = "RD",
+#   new_name = "social support"
+# )
 
 
-# null zero
-contrast_support_z_null_zero <-
-  lmtp_contrast(t2_support_z_zero , ref =  t2_support_z_null, type = "additive")
+# # null zero
+# contrast_support_z_null_zero <-
+#   lmtp_contrast(t2_support_z_zero , ref =  t2_support_z_null, type = "additive")
 
-output_tab_contrast_support_z_null_zero <- margot_lmtp_evalue(
-  contrast_support_z_null_zero,
-  scale = "RD",
-  new_name = "social support"
-)
+# output_tab_contrast_support_z_null_zero <- margot_lmtp_evalue(
+#   contrast_support_z_null_zero,
+#   scale = "RD",
+#   new_name = "social support"
+# )
 # results belong ----------------------------------------------------------
 
 # # 
@@ -2712,14 +2712,14 @@ output_tab_contrast_friends_time <- margot_lmtp_evalue(
 )
 
 
-
+push_mods
 contrast_friends_time_null <-
   lmtp_contrast(t2_friends_time_binary_gain , ref =  t2_friends_time_binary_null, type = "rr")
 
 output_tab_contrast_friends_time_null <- margot_lmtp_evalue(
   contrast_friends_time_null,
   scale = "RR",
-  new_name = "friends gives time"
+  new_name = "friends give time"
 )
 
 
@@ -2730,7 +2730,7 @@ contrast_friends_time_null_zero <-
 output_tab_contrast_friends_time_null_zero <- margot_lmtp_evalue(
   contrast_friends_time_null_zero,
   scale = "RR",
-  new_name = "friends gives time"
+  new_name = "friends give time"
 )
 
 
@@ -2792,13 +2792,15 @@ output_tab_contrast_community_time_null_zero
 contrast_family_money <-
   lmtp_contrast(t2_family_money_binary_gain , ref =  t2_family_money_binary_zero, type = "rr")
 
+contrast_family_money
+
 output_tab_contrast_family_money <- margot_lmtp_evalue(
   contrast_family_money,
   scale = "RR",
   new_name = "family gives money"
 )
 
-
+output_tab_contrast_family_money
 
 contrast_family_money_null <-
   lmtp_contrast(t2_family_money_binary_gain , ref =  t2_family_money_binary_null, type = "rr")
@@ -2809,6 +2811,7 @@ output_tab_contrast_family_money_null <- margot_lmtp_evalue(
   new_name = "family gives money"
 )
 
+output_tab_contrast_family_money_null
 
 
 # output_tab_contrast_family_money
@@ -2823,6 +2826,8 @@ output_tab_contrast_family_money_null_zero <- margot_lmtp_evalue(
   scale = "RR",
   new_name = "family gives money"
 )
+
+output_tab_contrast_family_money_null_zero
 
 
 
@@ -2940,7 +2945,7 @@ library(tidyverse)
 
 tab_all_prosocial <- rbind( output_tab_contrast_charity_donate_z,
                             output_tab_contrast_hours_charity_z)
-
+tab_all_prosocial
 group_tab_all_prosocial <- group_tab(tab_all_prosocial, type = "RD")
 group_tab_all_prosocial
 
@@ -2949,7 +2954,8 @@ group_tab_all_prosocial
 tab_all_prosocial_null <- rbind( output_tab_contrast_charity_donate_z_null,
                                  output_tab_contrast_hours_charity_z_null)
 group_tab_all_prosocial_null <- group_tab(tab_all_prosocial_null, type = "RD")
-
+tab_all_prosocial_null
+group_tab_all_prosocial_null
 
 tab_all_prosocial_null_zero <- rbind( output_tab_contrast_charity_donate_z_null_zero,
                                       output_tab_contrast_hours_charity_z_null_zero)
@@ -2966,52 +2972,52 @@ here_save(group_tab_all_prosocial_null, "group_tab_all_prosocial_null")
 here_save(tab_all_prosocial_null_zero, "tab_all_prosocial_null_zero")
 here_save(group_tab_all_prosocial_null_zero, "group_tab_all_prosocial_null_zero")
 
-# # 
-# tab_all_prosocial_rr <- output_tab_contrast_volunteers_binary
-# group_tab_all_prosocial_rr <- group_tab(tab_all_prosocial_rr, type = "RR")
-# # 
-# here_save(tab_all_prosocial_rr, "tab_all_prosocial_rr")
-# here_save(group_tab_all_prosocial_rr, "group_tab_all_prosocial_rr")
-# group_tab_all_prosocial_rr
 
-# 
-# tab_all_perceived_support <- rbind(
-#   output_tab_contrast_neighbourhood_community_z,
-#   output_tab_contrast_belong_z, 
-#   output_tab_contrast_support_z
-# )
-# 
-# tab_all_perceived_support_null <- rbind(
-#   output_tab_contrast_neighbourhood_community_z_null,
-#   output_tab_contrast_belong_z_null, 
-#   output_tab_contrast_support_z_null
-# )
-# 
-# 
-# 
-# tab_all_perceived_support_null_zero <- rbind(
-#   output_tab_contrast_neighbourhood_community_z_null_zero,
-#   output_tab_contrast_belong_z_null_zero, 
-#   output_tab_contrast_support_z_null_zero
-# )
-# 
-# tab_all_perceived_support_null_zero
-# 
-# group_tab_all_perceived_support <- group_tab(tab_all_perceived_support, type = "RD")
-# group_tab_all_perceived_support_null <- group_tab(tab_all_perceived_support_null, type = "RD")
-# group_tab_all_perceived_support_null_zero <- group_tab(tab_all_perceived_support_null_zero, type = "RD")
-# 
-# 
-# 
-# 
-# here_save( tab_all_perceived_support, "tab_all_perceived_support")
-# here_save( group_tab_all_perceived_support, "group_tab_all_perceived_support")
-# here_save( tab_all_perceived_support_null, "tab_all_perceived_support_null")
-# here_save( group_tab_all_perceived_support_null, "group_tab_all_perceived_support_null")
-# 
-# here_save( tab_all_perceived_support_null_zero, "tab_all_perceived_support_null_zero")
-# here_save( group_tab_all_perceived_support_null_zero, "group_tab_all_perceived_support_null_zero")
-# 
+
+
+
+
+
+tab_received_time <- rbind(
+  output_tab_contrast_family_time,
+  output_tab_contrast_friends_time,
+  output_tab_contrast_community_time)
+
+
+tab_received_time_null <- rbind(
+  output_tab_contrast_family_time_null,
+  output_tab_contrast_friends_time_null, 
+  output_tab_contrast_community_time_null)
+
+
+tab_received_time_null_zero <- rbind(
+  output_tab_contrast_family_time_null_zero,
+  output_tab_contrast_friends_time_null_zero, 
+  output_tab_contrast_community_time_null_zero)
+
+group_tab_received_time<- group_tab(tab_received_time, type = "RR")
+group_tab_received_time_null<- group_tab(tab_received_time_null, type = "RR")
+group_tab_received_time_null_zero<- group_tab(tab_received_time_null_zero, type = "RR")
+
+tab_received_time
+group_tab_received_time
+group_tab_received_time
+tab_received_time_null
+group_tab_received_time_null
+
+tab_received_time_null_zero
+group_tab_received_time_null_zero
+
+
+
+here_save(tab_received_time, "tab_received_time")
+here_save(tab_received_time_null, "tab_received_time_null")
+here_save(tab_received_time_null_zero, "tab_received_time_null_zero")
+here_save(group_tab_received_time, "group_tab_received_time")
+here_save(group_tab_received_time_null, "group_tab_received_time_null")
+here_save(group_tab_received_time_null_zero, "group_tab_received_time_null_zero")
+
+
 
 
 tab_all_received_money <- rbind(
@@ -3047,37 +3053,6 @@ here_save(group_tab_all_received_money_null_zero, "group_tab_all_received_money_
 
 
 
-tab_contrast_received_time <- rbind(
-  output_tab_contrast_family_time,
-  output_tab_contrast_friends_time,
-  output_tab_contrast_community_time)
-
-
-tab_contrast_received_time_null <- rbind(
-  output_tab_contrast_family_time_null,
-  output_tab_contrast_friends_time_null, 
-  output_tab_contrast_community_time_null)
-
-
-tab_contrast_received_time_null_zero <- rbind(
-  output_tab_contrast_family_time_null_zero,
-  output_tab_contrast_friends_time_null_zero, 
-  output_tab_contrast_community_time_null_zero)
-
-group_tab_contrast_received_time<- group_tab(tab_contrast_received_time, type = "RR")
-group_tab_contrast_received_time_null<- group_tab(tab_contrast_received_time_null, type = "RR")
-group_tab_contrast_received_time_null_zero<- group_tab(tab_contrast_received_time_null_zero, type = "RR")
-
-
-here_save(tab_contrast_received_time, "tab_contrast_received_time")
-here_save(group_tab_contrast_received_time, "group_tab_contrast_received_time")
-here_save(tab_contrast_received_time_null, "tab_contrast_received_time_null")
-here_save(group_tab_contrast_received_time_null, "group_tab_contrast_received_time_null")
-here_save(tab_contrast_received_time_null_zero, "tab_contrast_received_time_null_zero")
-here_save(group_tab_contrast_received_time_null_zero, "group_tab_contrast_received_time_null_zero")
-
-
-
 # import to manuscript -------------------------------------------------------
 
 
@@ -3096,23 +3071,7 @@ group_tab_all_prosocial_null_zero<- here_read("group_tab_all_prosocial_null_zero
 group_tab_all_prosocial
 group_tab_all_prosocial_null
 group_tab_all_prosocial_null_zero
-# # 
-# tab_all_prosocial_rr <- here_read("tab_all_prosocial_rr")
-# group_tab_all_prosocial_rr <- here_read("group_tab_all_prosocial_rr")
-# 
-# tab_all_perceived_support <- here_read("tab_all_perceived_support")
-# tab_all_perceived_support_null <- here_read("tab_all_perceived_support_null")
-# tab_all_perceived_support_null_zero <- here_read("tab_all_perceived_support_null_zero")
-# tab_all_perceived_support
-# tab_all_perceived_support_null
-# tab_all_perceived_support_null_zero
-# 
-# group_tab_all_perceived_support <- here_read("group_tab_all_perceived_support")
-# group_tab_all_perceived_support_null <- here_read("group_tab_all_perceived_support_null")
-# group_tab_all_perceived_support_null_zero <- here_read("group_tab_all_perceived_support_null_zero")
-# group_tab_all_perceived_support
-# group_tab_all_perceived_support_null
-# group_tab_all_perceived_support_null_zero
+
 
 tab_all_received_money <- here_read( "tab_all_received_money")
 tab_all_received_money_null <- here_read( "tab_all_received_money_null")
@@ -3128,20 +3087,14 @@ group_tab_all_received_money
 group_tab_all_received_money_null
 group_tab_all_received_money_null_zero
 
-tab_contrast_received_time <- here_read( "tab_contrast_received_time")
-tab_contrast_received_time_null <- here_read( "tab_contrast_received_time_null")
-tab_contrast_received_time_null_zero <- here_read( "tab_contrast_received_time_null_zero")
-tab_contrast_received_time
-tab_contrast_received_time_null
-tab_contrast_received_time_null_zero
+tab_received_time <- here_read( "tab_received_time")
+tab_received_time_null <- here_read( "tab_received_time_null")
+tab_received_time_null_zero <- here_read( "tab_received_time_null_zero")
 
+group_tab_received_time <- here_read( "group_tab_received_time")
+group_tab_received_time_null <- here_read( "group_tab_received_time_null")
+group_tab_received_time_null_zero <- here_read( "group_tab_received_time_null_zero")
 
-group_tab_contrast_received_time <- here_read( "group_tab_contrast_received_time")
-group_tab_contrast_received_time_null <- here_read( "group_tab_contrast_received_time_null")
-group_tab_contrast_received_time_null_zero <- here_read( "group_tab_contrast_received_time_null_zero")
-group_tab_contrast_received_time
-group_tab_contrast_received_time_null
-group_tab_contrast_received_time_null_zero
 
 
 # graphs ------------------------------------------------------------------
@@ -3249,208 +3202,7 @@ ggsave(
   dpi = 300
 )
 
-# 
-# 
-# 
-# plot_group_tab_all_perceived_support <- margot_plot(
-#   group_tab_all_perceived_support,
-#   type = "RD",
-#   title = title,  
-#   subtitle = "Perceived Social Support",
-#   estimate_scale = 1,
-#   base_size = 18,
-#   text_size = 4.5,
-#   point_size = 3.5,
-#   title_size = 20,
-#   subtitle_size = 16,
-#   legend_text_size = 10,
-#   legend_title_size = 10,
-#   x_offset = -.5,
-#   x_lim_lo = -.5,
-#   x_lim_hi =  .5
-# )
-# plot_group_tab_all_perceived_support
-# 
-# ggsave(
-#   plot_group_tab_all_perceived_support,
-#   path = here::here(here::here(push_mods)),
-#   width = 16,
-#   height = 9,
-#   units = "in",
-#   filename = "plot_group_tab_all_perceived_support.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 300
-# )
-# 
-# 
-# # null
-# plot_group_tab_all_perceived_support_null <- margot_plot(
-#   group_tab_all_perceived_support_null,
-#   type = "RD",
-#   title = title_null,  
-#   subtitle = "Perceived Social Support",
-#   estimate_scale = 1,
-#   base_size = 18,
-#   text_size = 4.5,
-#   point_size = 3.5,
-#   title_size = 20,
-#   subtitle_size = 16,
-#   legend_text_size = 10,
-#   legend_title_size = 10,
-#   x_offset = -.5,
-#   x_lim_lo = -.5,
-#   x_lim_hi =  .5
-# )
-# plot_group_tab_all_perceived_support_null
-# ggsave(
-#   plot_group_tab_all_perceived_support_null,
-#   path = here::here(here::here(push_mods)),
-#   width = 16,
-#   height = 9,
-#   units = "in",
-#   filename = "plot_group_tab_all_perceived_support_null.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 300
-# )
-# 
-# 
-# # null zero
-# plot_group_tab_all_perceived_support_null_zero <- margot_plot(
-#   group_tab_all_perceived_support_null_zero,
-#   type = "RD",
-#   title = title_null_zero,  
-#   subtitle = "Perceived Social Support",
-#   estimate_scale = 1,
-#   base_size = 18,
-#   text_size = 4.5,
-#   point_size = 3.5,
-#   title_size = 20,
-#   subtitle_size = 16,
-#   legend_text_size = 10,
-#   legend_title_size = 10,
-#   x_offset = -.5,
-#   x_lim_lo = -.5,
-#   x_lim_hi =  .5
-# )
-# plot_group_tab_all_perceived_support_null_zero
-# ggsave(
-#   plot_group_tab_all_perceived_support_null_zero,
-#   path = here::here(here::here(push_mods)),
-#   width = 16,
-#   height = 9,
-#   units = "in",
-#   filename = "plot_group_tab_all_perceived_support_null_zero.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 300
-# )
-# 
-# 
-# 
-# plot_group_tab_all_received_time <- margot_plot(
-#   group_tab_contrast_received_time,
-#   type = "RR",
-#   title = title,
-#   subtitle = "Support Received From Others: Time",
-#   estimate_scale = 1,
-#   base_size = 18,
-#   text_size = 4.5,
-#   point_size = 3.5,
-#   title_size = 20,
-#   subtitle_size = 16,
-#   legend_text_size = 10,
-#   legend_title_size = 10,
-#   x_offset = 0,
-#   x_lim_lo = 0,
-#   x_lim_hi =  4
-# )
-# 
-# plot_group_tab_all_received_time
-# 
-# 
-# ggsave(
-#   plot_group_tab_all_received_time,
-#   path = here::here(here::here(push_mods)),
-#   width = 16,
-#   height = 9,
-#   units = "in",
-#   filename = "plot_group_tab_all_received_time.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 300
-# )
-# 
-# 
-# # null
-# plot_group_tab_all_received_time_null <- margot_plot(
-#   group_tab_contrast_received_time_null,
-#   type = "RR",
-#   title = title_null,
-#   subtitle = "Support Received From Others: Time",
-#   estimate_scale = 1,
-#   base_size = 18,
-#   text_size = 4.5,
-#   point_size = 3.5,
-#   title_size = 20,
-#   subtitle_size = 16,
-#   legend_text_size = 10,
-#   legend_title_size = 10,
-#   x_offset = 0,
-#   x_lim_lo = 0,
-#   x_lim_hi =  4
-# )
-# 
-# plot_group_tab_all_received_time_null
-# 
-# 
-# ggsave(
-#   plot_group_tab_all_received_time_null,
-#   path = here::here(here::here(push_mods)),
-#   width = 16,
-#   height = 9,
-#   units = "in",
-#   filename = "plot_group_tab_all_received_time_null.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 300
-# )
-# 
-# plot_group_tab_all_received_time_null_zero <- margot_plot(
-#   group_tab_contrast_received_time_null_zero,
-#   type = "RR",
-#   title = title_null_zero,
-#   subtitle = "Support Received From Others: Time",
-#   estimate_scale = 1,
-#   base_size = 18,
-#   text_size = 4.5,
-#   point_size = 3.5,
-#   title_size = 20,
-#   subtitle_size = 16,
-#   legend_text_size = 10,
-#   legend_title_size = 10,
-#   x_offset = 0,
-#   x_lim_lo = 0,
-#   x_lim_hi =  4
-# )
-# 
-# plot_group_tab_all_received_time_null_zero
-# 
-# 
-# ggsave(
-#   plot_group_tab_all_received_time_null_zero,
-#   path = here::here(here::here(push_mods)),
-#   width = 16,
-#   height = 9,
-#   units = "in",
-#   filename = "plot_group_tab_all_received_time_null_zero.png",
-#   device = 'png',
-#   limitsize = FALSE,
-#   dpi = 300
-# )
-# 
-# 
+
 
 plot_group_tab_all_received_money <- margot_plot(
   group_tab_all_received_money,
@@ -3569,4 +3321,5 @@ graph_density_of_exposure_down
 table_exposures <- here_read("table_exposures")
 table_baseline <- here_read("table_baseline")
 table_outcomes <- here_read("table_outcomes")
+
 

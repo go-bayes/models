@@ -3051,6 +3051,7 @@ group_tab_all_received_money_null <- group_tab(tab_all_received_money_null, type
 group_tab_all_received_money_null_zero <- group_tab(tab_all_received_money_null_zero, type = "RR")
 
 
+
 here_save(tab_all_received_money, "tab_all_received_money")
 here_save(group_tab_all_received_money, "group_tab_all_received_money")
 here_save(tab_all_received_money_null, "tab_all_received_money_null")
@@ -3089,8 +3090,9 @@ here_save(group_tab_contrast_received_time_null, "group_tab_contrast_received_ti
 here_save(tab_contrast_received_time_null_zero, "tab_contrast_received_time_null_zero")
 here_save(group_tab_contrast_received_time_null_zero, "group_tab_contrast_received_time_null_zero")
 
-
-
+group_tab_contrast_received_time
+group_tab_contrast_received_time_null
+group_tab_contrast_received_time_null_zero
 # import to manuscript -------------------------------------------------------
 
 
@@ -3168,18 +3170,19 @@ plot_group_tab_all_prosocial <- margot_plot(
   group_tab_all_prosocial,
   type = "RD",
   title = title,
-  subtitle = NULL,#"Self-Reported Prosociality",
-  estimate_scale = 1,
+  subtitle = NULL,
+  #"Self-Reported Prosociality",
+  estimate_scale = 3,
   base_size = 18,
   text_size = 4.5,
-  point_size = 3.5,
-  title_size = 20,
-  subtitle_size = 16,
+  point_size = 2.5,
+  title_size = 12,
+  subtitle_size = 14,
   legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -.5,
-  x_lim_lo = -.5,
-  x_lim_hi =  .5
+  x_offset = -.1,
+  x_lim_lo = -.3,
+  x_lim_hi =  .25
 )
 
 plot_group_tab_all_prosocial
@@ -3203,17 +3206,17 @@ plot_group_tab_all_prosocial_null <- margot_plot(
   type = "RD",
   title = title_null,
   subtitle = NULL,#"Self-Reported Prosociality",
-  estimate_scale = 1,
+  estimate_scale = 3,
   base_size = 18,
   text_size = 4.5,
-  point_size = 3.5,
-  title_size = 20,
-  subtitle_size = 16,
+  point_size = 2.5,
+  title_size = 12,
+  subtitle_size = 14,
   legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -.5,
-  x_lim_lo = -.5,
-  x_lim_hi =  .5
+  x_offset = -.1,
+  x_lim_lo = -.35,
+  x_lim_hi =  .25
 )
 
 plot_group_tab_all_prosocial_null
@@ -3235,17 +3238,17 @@ plot_group_tab_all_prosocial_null_zero <- margot_plot(
   type = "RD",
   title = title_null_zero,
   subtitle = NULL,#"Self-Reported Prosociality",
-  estimate_scale = 1,
+  estimate_scale = 3,
   base_size = 18,
   text_size = 4.5,
-  point_size = 3.5,
-  title_size = 20,
-  subtitle_size = 16,
+  point_size = 2.5,
+  title_size = 12,
+  subtitle_size = 14,
   legend_text_size = 10,
   legend_title_size = 10,
-  x_offset = -.5,
-  x_lim_lo = -.5,
-  x_lim_hi =  .5
+  x_offset = -.1,
+  x_lim_lo = -.35,
+  x_lim_hi =  .25
 )
 
 plot_group_tab_all_prosocial_null_zero
@@ -3269,7 +3272,7 @@ study_1 <- plot_group_tab_all_prosocial /
 plot_group_tab_all_prosocial_null/
   plot_group_tab_all_prosocial_null_zero + 
   plot_annotation(title = "Study 1: Self-Reported Prosociality", 
-                  theme = theme(plot.title = element_text(size = 24, face = "bold")))
+                  theme = theme(plot.title = element_text(size = 18, face = "bold")))
 
 
 study_1
