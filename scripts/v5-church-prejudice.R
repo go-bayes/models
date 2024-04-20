@@ -11,21 +11,33 @@
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
-
-# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-source("/Users/joseph/GIT/templates/functions/funs.R")
+# 
+# # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+# source("/Users/joseph/GIT/templates/functions/funs.R")
 
 # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
 # source(
 #   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
 # )
 
-# experimental functions (more functions)
-# source(
-#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-# )
 
 
+# male code is fixed
+table( dat$male )
+
+push_mods
+### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
+### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
+push_mods <-  fs::path_expand(
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/church-prej-v5"
+)
+
+library(margot)
+
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+source("/Users/joseph/GIT/templates/functions/libs2.R")
+
+listWrappers()
 ## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE.
 pull_path <-
   fs::path_expand(
@@ -35,23 +47,31 @@ pull_path <-
 
 # read data: note that you need use the arrow package in R
 
-dat <- qs::qread(pull_path)
+#dat <- arrow::read_parquet("/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data")
 
-
-
-# male code is fixed
-table( dat$male )
+dat <- qs::qread(here::here(pull_path))
 
 
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
-push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/church-prej-v5"
-)
+
+## note that this has the model results with all covariates (with convergence problems). so "v5" is **older**
+# push_mods <-  fs::path_expand(
+#   "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-coop-church-v5"
+# )
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
+
+# total nzavs participants
+n_total <- skimr::n_unique(dat$id)
+n_total
+push_mods
+margot::here_save(n_total, "n_total")
+
+n_total <- prettyNum(n_total,big.mark=",")
+n_total
 
 # set exposure here
 nzavs_exposure <- "religion_church_round"
@@ -64,71 +84,53 @@ progressr::handlers(global = TRUE)
 
 # set seed for reproducing results
 set.seed(0112358)
-
 library(future)
-library(ranger)
-library(biglasso)
-library(randomForest)
 plan(multisession)
 n_cores <- parallel::detectCores()
+
 listWrappers()
 
-
 # super learner libraries
-sl_lib <- c("SL.glmnet",
-            "SL.ranger", #
-            "SL.xgboost") #
+sl_lib <- c(  "SL.ranger", "SL.earth", "SL.polymars", "SL.xgboost")
+learners_outcome = c(  "SL.ranger", "SL.earth", "SL.polymars", "SL.xgboost")
+library(future)
+library(ranger)
+plan(multisession)
+n_cores = parallel::detectCores() -2 
 
 
-# large data
-#sl_lib_ranger <- c("SL.ranger") #
-
-# check
-push_mods
-
-# check colnames
-colnames(dat)
+name_exposure_raw <- "religion_church"
+# Obtain IDs for individuals who participated in 2018 and have no missing baseline exposure
 
 # Obtain IDs for individuals who participated in 2018 and have no missing baseline exposure
 ids_2018 <- dat %>%
-  filter(year_measured == 1, wave == 2018) %>%
-  filter(!is.na(religion_church)) %>%
+  dplyr::filter(year_measured == 1, wave == 2018) %>%
+  dplyr::filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
   pull(id)
 
 # Obtain IDs for individuals who participated in 2019
 ids_2019 <- dat %>%
-  filter(year_measured == 1, wave == 2019) %>%
-  filter(!is.na(religion_church)) %>%
+  dplyr::filter(year_measured == 1, wave == 2019) %>%
+  dplyr::filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
   pull(id)
 
 # Intersect IDs from 2018 and 2019 to ensure participation in both years
 ids_2018_2019 <- intersect(ids_2018, ids_2019)
 
-# Filter the dataset for these IDs for 2018, 2019, and 2020
-use_id <- dat %>%
-  filter(id %in% ids_2018_2019 & wave %in% c(2018, 2019, 2020))%>%
-  pull(id)
 
 
 # filter the original dataset for these IDs three waves
-dat_long_use <- as.data.frame(dat_long_use)
-dat_long_use <- haven::zap_formats(dat_long_use)
-dat_long_use <- haven::zap_label(dat_long_use)
-dat_long_use <- haven::zap_widths(dat_long_use)
-
-
+dat <- as.data.frame(dat)
+dat <- haven::zap_formats(dat)
+dat <- haven::zap_label(dat)
+dat <- haven::zap_widths(dat)
 str(dat)
+dat
 
-# Time 10 [2018/2019]	FamilyTime.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	FriendsTime.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	CommunityTime.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	FamilyMoney.T10	Please estimate how much help you have received from the following sources in the last week?
-# #   Time 10 [2018/2019]	FriendsMoney.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	CommunityMoney.T10	Please estimate how much help you have received from the following sources in the last week?
-dat_long <- dat_long_use |>
-  dplyr::filter(id %in% ids_2018 &
+dat_long <- dat |>
+  dplyr::filter(id %in% ids_2018_2019 &
                   wave %in% c(2018, 2019, 2020)) |>
-  arrange(id, wave) |>
+  arrange(id, wave)|>
   select(
     "id",
     "wave",
@@ -147,7 +149,7 @@ dat_long <- dat_long_use |>
     "employed",
     "sample_origin_names_combined",
     "education_level_coarsen",
-    "alert_level_combined_lead",
+   # "alert_level_combined_lead",
     # Are you currently employed? (this includes self-employment or casual work)
     # "gen_cohort",
     "household_inc",
@@ -165,7 +167,6 @@ dat_long <- dat_long_use |>
     #    "pol_wing",
     # Please rate how politically left-wing versus right-wing you see yourself as being.
     "sample_frame_opt_in",
-    "urban",
     # see NZAVS,
     "has_siblings",
     #Do you have siblings?
@@ -247,9 +248,7 @@ dat_long <- dat_long_use |>
     # "belong",
     "rural_gch_2018_l",
     # "hlth_disability",
-    # value label 0    No 1   Yes
-    "urban",
-    # see NZAVS,
+    # value label 0    No 1   Yes    # see NZAVS,
     #"children_num",
     # How many children have you given birth to, fathered, or adopted?
     #"hours_children",
@@ -331,11 +330,12 @@ dat_long <- dat_long_use |>
     #  "hlth_fatigue",
     #During the last 30 days, how often did.... you feel exhausted?
     # "rumination",
-    "kessler6_sum",
-    # "kessler_latent_depression",
-    # "kessler_latent_anxiety",
+   # "kessler6_sum",
+    "kessler_latent_depression",
+    "kessler_latent_anxiety",
     "hlth_fatigue",
     "hlth_sleep_hours",
+    "hlth_disability",
     #"support",
     #   "support_help",
     # 'There are people I can depend on to help me if I really need it.
@@ -354,8 +354,9 @@ dat_long <- dat_long_use |>
     #"friends_money",
     # "community_money",
     #"alert_level_combined_lead",
-    "alert_level_combined"
-  ) |>
+    "alert_level_combined",
+    "alert_level_combined_lead"
+  )|>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
 #  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
@@ -378,8 +379,6 @@ dat_long <- dat_long_use |>
     # )
   ) |>
   select(-year_measured) |>
-  mutate(# eth_cat = as.integer(eth_cat),
-    urban = as.numeric(urban)) |>
   ungroup() |>
   dplyr::mutate(
     #  friends_money = ifelse(friends_money < 0, 0, friends_money),
@@ -450,24 +449,21 @@ arrange(id, wave) |>
 #   religion_church_coarsen_n = as.numeric(religion_church_coarsen) - 1,
 #   religion_church_binary_n = as.numeric(religion_church_binary)
 # ) |>
-dplyr::mutate(# religion_church_binary = as.factor(religion_church_binary),
-  # eth_cat = as.integer(eth_cat),
-  urban = as.numeric(urban)) |>
-  mutate(
+dplyr::mutate(
     rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
     has_siblings = as.numeric(as.character(has_siblings)),
     parent = as.numeric(as.character(parent)),
     partner = as.numeric(as.character(partner)),
     born_nz = as.numeric(as.character(born_nz)),
     censored = as.numeric(as.character(censored)),
-    employed = as.numeric(as.character(employed))#,
-    #  hlth_disability = as.numeric(as.character(hlth_disability))
+    employed = as.numeric(as.character(employed)),
+    hlth_disability = as.numeric(as.character(hlth_disability))
   ) |>
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
 
-
+n_unique(dat_long$id)
 
 # baseline vars -----------------------------------------------------------
 # dat_long <- dat_long_full |>
@@ -482,7 +478,7 @@ dat_long_colnames <- colnames(dat_long)
 
 dat_long_colnames <- sort(dat_long_colnames)
 
-dat_long_colnames
+dat_long_colnames <- setdiff(dat_long_colnames, "alert_level_combined")
 
 # set baseline exposure and outcomes --------------------------------------
 
@@ -624,7 +620,6 @@ transition_table_binary_gain
 here_save(transition_table_binary_gain,
           "transition_table_binary_gain")
 
-(religion_church_round >= 4, 1, 0))
 
 
 
@@ -673,19 +668,18 @@ colnames(dat)
 dt_18 <- dat_long|>
   filter(wave == 2018) 
 
-
 naniar::vis_miss(dt_18, warn_large_data = F)
 
 
-fit_cross_sectional_maori <-
+fit_cross_sectional_warm_pacific <-
   regress_with_covariates(
     dt_18,
-    outcome = "warm_maori",
+    outcome = "warm_pacific",
     exposure = "religion_church_round",
     baseline_vars = base_var
   )
-summary(fit_cross_sectional_maori)
-parameters::model_parameters(fit_cross_sectional_maori)[2, ]
+summary(fit_cross_sectional_warm_pacific)
+parameters::model_parameters(fit_cross_sectional_warm_pacific)[2, ]
 
 fit_cross_sectional_muslims <-
   regress_with_covariates(
@@ -761,10 +755,10 @@ names_outcomes_final
 
 
 # histogram exposure ------------------------------------------------------
-
+table(is.na(dt_19$alert_level_combined))
 dt_19 <- dat_long |> 
   filter(wave == 2019)
-
+naniar::vis_miss(dt_19, warn_large_data = F)
 library(ggplot2)
 library(dplyr)
 #
@@ -801,7 +795,7 @@ here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
 #devtools::install_github("go-bayes/margot")
 str(dat_long)
 dat_long$sample_weights
-dat_long_df <- dat_long |> select(-alert_level_combined)
+dat_long_df <- dat_long # #select(-alert_level_combined)
 dat_long_df <- data.frame(dat_long)
 
 my_data_filtered <- as.data.frame(dat_long_df)
@@ -820,7 +814,6 @@ prep_coop_all <- margot::margot_wide_impute_baseline(
     outcome_vars = outcome_vars
   )
 
-prep_coop_all
 
 # save function -- will save to your "push_mod" directory
 margot::here_save(prep_coop_all, "prep_coop_all")
@@ -883,7 +876,7 @@ df_wide_censored <- prep_coop_all |>
   relocate("t0_censored", .before = starts_with("t1_"))  |>
   relocate("t1_censored", .before = starts_with("t2_"))
 
-# cehck
+# check
 naniar::vis_miss(df_wide_censored, warn_large_data = FALSE)
 
 table(df_wide_censored$t0_censored)
@@ -919,9 +912,9 @@ df_clean <- df_wide_censored %>%
         #  !t0_charity_donate & 
         !t0_rural_gch_2018_l & 
         ! t0_nzsei_13_l& 
-        !t0_alert_level_combined_lead  &
         !t0_sample_frame_opt_in & 
-        !t0_alert_level_combined_lead & 
+        !t0_alert_level_combined_lead  &
+        !t0_alert_level_combined_lead  & 
         !t0_sample_weights & 
         !t1_religion_church_round &
         !t1_censored,
@@ -937,10 +930,10 @@ df_clean <- df_wide_censored %>%
     t0_religion_church_round,
     t0_nzsei_13_l,
     t0_rural_gch_2018_l,
-    t0_alert_level_combined_lead,
     t0_sample_frame_opt_in,
-    t0_alert_level_combined_lead,
     t0_censored,
+    t0_alert_level_combined_lead ,
+    t0_alert_level_combined_lead ,
     t1_religion_church_round,    
     t1_censored,
     ends_with("_z")
@@ -996,7 +989,7 @@ table( df_clean$t0_alert_level_combined )
 A <- c("t1_religion_church_round")
 C <- c("t1_censored")
 
-#L <- list(c("L1"), c("L2"))
+#L <- list(c(NULL), c("t1_alert_level_combined"))
 #W <-  c(paste(names_base, collapse = ", "))
 names_base
 
@@ -1132,18 +1125,19 @@ A
 C
 L
 
-library("ranger")
+#library("ranger")
 
 
 # test data 
 df_clean_slice <- df_clean |>
-  slice_head(n = 500) |>
+  slice_head(n = 1000) |>
   as.data.frame()
 colnames(df_clean_slice)
 
 library(SuperLearner)
 library(xgboost)
 library(ranger)
+library(randomForest)
 # model charitable giving in population
 # measure time taken to run the model
 # 
@@ -1177,17 +1171,27 @@ select_and_rename_cols <- function(names_base, baseline_vars, outcome) {
 
 base_var
 
-names_base_t2_warm_asians_z<- margot::select_and_rename_cols(names_base = names_base,  
+names_base_t2_warm_pacific_z<- margot::select_and_rename_cols(names_base = names_base,  
                                                      baseline_vars = base_var, 
-                                                     outcome =  "t2_warm_asians_z")
+                                                     outcome =  "t2_warm_pacific_z")
 L
 
 A
+
+c("t0_warm_pacific_z", "t0_religion_church_round"),
 names_base_t2_warm_asians_z
-df_clean_slice$aler
-df_clean$t1_alert_level_combined_z
-t2_warm_asians_z_test_gain <- lmtp_tmle(
-  outcome = "t2_warm_asians_z",
+
+names_base_t2_warm_asians_z
+
+names_base <- setdiff(names_base, "urban")
+
+skimr::skim(df_clean)
+library(bartMachine)
+listWrappers()
+
+library(SuperLearner)
+t2_warm_pacific_z_test_gain <- lmtp_tmle(
+  outcome = "t2_warm_pacific_z",
   baseline = names_base,
   shift = gain_A,
   data = df_clean_slice,
@@ -1198,14 +1202,67 @@ t2_warm_asians_z_test_gain <- lmtp_tmle(
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
-  learners_trt = sl_lib,
-  # ranger much faster
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger"),
+  learners_outcome =  c("SL.ranger"),
+  parallel = n_cores
+)
+warnings()
+summary(lm(t2_warm_pacific_z ~ t1_religion_church_round + t0_religion_church_round + t0_warm_pacific_z, df_clean_slice))
+t2_warm_pacific_z_test_gain
+
+t2_warm_pacific_z_test_gain <- lmtp_tmle(
+  outcome = "t2_warm_pacific_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+  #time_vary = L,
+  cens = C,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
+  parallel = n_cores
+)
+t2_warm_pacific_z_test_gain
+
+
+t2_warm_pacific_z_test_gain <- lmtp_tmle(
+  outcome = "t2_warm_pacific_z",
+  baseline = names_base,
+  shift = gain_A,
+  data = df_clean_slice,
+  trt = A,
+  #time_vary = L,
+  cens = C,
+  mtp = TRUE,
+  folds = 5,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt = "SL.cforest",
+  learners_outcome = "SL.cforest",
   parallel = n_cores
 )
 
-t2_warm_asians_z_test_gain
+# obtions
+# sl_learner =  c( "SL.glmnet",  "SL.ranger","SL.xgboost", "SL.polymars", "SL.earth", "SL.bartMachine")
+# sl_outcome = c( "SL.glmnet",  "SL.ranger","SL.xgboost", "SL.polymars", "SL.earth")
 
+
+listWrappers()
+
+
+test <- df_clean_slice |> 
+  drop_na()
+nrow(test)
+test_model <- randomForest(t2_warm_pacific_z ~ t1_religion_church_round, test)
+test_model
+summary(test_model)
+
+
+listWrappers()
 
 t2_warm_asians_z_test_zero <- lmtp_tmle(
   outcome = "t2_warm_asians_z",
@@ -1216,17 +1273,15 @@ t2_warm_asians_z_test_zero <- lmtp_tmle(
   cens = C,
   mtp = TRUE,
   folds = 5,
-
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
-  learners_trt = sl_lib,
-  # ranger much faster
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 
 t2_warm_asians_z_test_zero
-zero_A
+
 
 
 t2_warm_asians_z_test_null <- lmtp_tmle(
@@ -1240,15 +1295,15 @@ t2_warm_asians_z_test_null <- lmtp_tmle(
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
-  learners_trt = sl_lib,
-  # ranger much faster
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 t2_warm_asians_z_test_null
 
 
-
+library(ranger)
+library(randomForest)
 ## MODELS
 
 # warm asians -------------------------------------------------------------
@@ -1263,14 +1318,13 @@ t2_warm_asians_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_asians_z_gain, "t2_warm_asians_z_gain")
@@ -1282,32 +1336,30 @@ t2_warm_asians_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_asians_z_zero, "t2_warm_asians_z_zero")
 
 t2_warm_asians_z_null <- lmtp_tmle(
   outcome = "t2_warm_asians_z",
-  baseline = names_base_t2_warm_asians_z,
+  baseline = names_base,
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_asians_z_null, "t2_warm_asians_z_null")
@@ -1325,18 +1377,17 @@ t2_warm_chinese_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_chinese_z_gain, "t2_warm_chinese_z_gain")
-
+t2_warm_chinese_z_gain
 # 
 t2_warm_chinese_z_zero <- lmtp_tmle(
   outcome = "t2_warm_chinese_z",
@@ -1344,14 +1395,13 @@ t2_warm_chinese_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_chinese_z_zero, "t2_warm_chinese_z_zero")
@@ -1364,14 +1414,13 @@ t2_warm_chinese_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_chinese_z_null, "t2_warm_chinese_z_null")
@@ -1390,14 +1439,13 @@ t2_warm_immigrants_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_immigrants_z_gain, "t2_warm_immigrants_z_gain")
@@ -1409,14 +1457,13 @@ t2_warm_immigrants_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_immigrants_z_zero, "t2_warm_immigrants_z_zero")
@@ -1429,14 +1476,13 @@ t2_warm_immigrants_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,  
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_immigrants_z_null, "t2_warm_immigrants_z_null")
@@ -1457,14 +1503,13 @@ t2_warm_indians_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_indians_z_gain, "t2_warm_indians_z_gain")
@@ -1476,14 +1521,13 @@ t2_warm_indians_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_indians_z_zero, "t2_warm_indians_z_zero")
@@ -1495,14 +1539,13 @@ t2_warm_indians_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_indians_z_null, "t2_warm_indians_z_null")
@@ -1521,13 +1564,12 @@ t2_warm_elderly_z_gain <- lmtp_tmle(
   data = df_clean,
   trt = A,
   cens = C,
-
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_elderly_z_gain, "t2_warm_elderly_z_gain")
@@ -1539,14 +1581,13 @@ t2_warm_elderly_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_elderly_z_zero, "t2_warm_elderly_z_zero")
@@ -1559,14 +1600,13 @@ t2_warm_elderly_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_elderly_z_null, "t2_warm_elderly_z_null")
@@ -1584,14 +1624,13 @@ t2_warm_maori_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_maori_z_gain, "t2_warm_maori_z_gain")
@@ -1603,14 +1642,13 @@ t2_warm_maori_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_maori_z_zero, "t2_warm_maori_z_zero")
@@ -1623,14 +1661,13 @@ t2_warm_maori_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_maori_z_null, "t2_warm_maori_z_null")
@@ -1648,14 +1685,13 @@ t2_warm_mental_illness_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_mental_illness_z_gain, "t2_warm_mental_illness_z_gain")
@@ -1667,14 +1703,13 @@ t2_warm_mental_illness_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_mental_illness_z_zero, "t2_warm_mental_illness_z_zero")
@@ -1687,14 +1722,13 @@ t2_warm_mental_illness_z_null<- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_mental_illness_z_null, "t2_warm_mental_illness_z_null")
@@ -1713,14 +1747,13 @@ t2_warm_muslims_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_muslims_z_gain, "t2_warm_muslims_z_gain")
@@ -1732,14 +1765,13 @@ t2_warm_muslims_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_muslims_z_zero, "t2_warm_muslims_z_zero")
@@ -1751,14 +1783,13 @@ t2_warm_muslims_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_muslims_z_null, "t2_warm_muslims_z_null")
@@ -1777,14 +1808,13 @@ t2_warm_nz_euro_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_nz_euro_z_gain, "t2_warm_nz_euro_z_gain")
@@ -1796,14 +1826,13 @@ t2_warm_nz_euro_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_nz_euro_z_zero, "t2_warm_nz_euro_z_zero")
@@ -1815,14 +1844,13 @@ t2_warm_nz_euro_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_nz_euro_z_null, "t2_warm_nz_euro_z_null")
@@ -1842,14 +1870,13 @@ t2_warm_overweight_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_overweight_z_gain, "t2_warm_overweight_z_gain")
@@ -1861,14 +1888,13 @@ t2_warm_overweight_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_overweight_z_zero, "t2_warm_overweight_z_zero")
@@ -1879,14 +1905,13 @@ t2_warm_overweight_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_overweight_z_null, "t2_warm_overweight_z_null")
@@ -1897,39 +1922,41 @@ here_save(t2_warm_overweight_z_null, "t2_warm_overweight_z_null")
 #                                                        baseline_vars = base_var, 
 #                                                        outcome =  "t2_warm_pacific_z")
 
+
+
 t2_warm_pacific_z_gain <- lmtp_tmle(
   outcome = "t2_warm_pacific_z",
-  baseline = names_base,
+  baseline = c("t0_warm_pacific_z", "t0_religion_church_round"),
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
-)         
+)       
+
+
 here_save(t2_warm_pacific_z_gain, "t2_warm_pacific_z_gain")
 
-# 
+
 t2_warm_pacific_z_zero <- lmtp_tmle(
   outcome = "t2_warm_pacific_z",
   baseline = names_base,
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_pacific_z_zero, "t2_warm_pacific_z_zero")
@@ -1940,14 +1967,13 @@ t2_warm_pacific_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_pacific_z_null, "t2_warm_pacific_z_null")
@@ -1958,9 +1984,9 @@ here_save(t2_warm_pacific_z_null, "t2_warm_pacific_z_null")
 
 
 # t2_warm_refugees_z -----------------------------------------------------------
-names_base_t2_warm_refugees_z <- select_and_rename_cols(names_base = names_base,  
-                                                        baseline_vars = base_var, 
-                                                        outcome =  "t2_warm_refugees_z")
+# names_base_t2_warm_refugees_z <- select_and_rename_cols(names_base = names_base,  
+#                                                         baseline_vars = base_var, 
+#                                                         outcome =  "t2_warm_refugees_z")
 
 
 t2_warm_refugees_z_gain <- lmtp_tmle(
@@ -1969,14 +1995,13 @@ t2_warm_refugees_z_gain <- lmtp_tmle(
   shift = gain_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_refugees_z_gain, "t2_warm_refugees_z_gain")
@@ -1988,14 +2013,13 @@ t2_warm_refugees_z_zero <- lmtp_tmle(
   shift = zero_A,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )
 here_save(t2_warm_refugees_z_zero, "t2_warm_refugees_z_zero")
@@ -2006,14 +2030,13 @@ t2_warm_refugees_z_null <- lmtp_tmle(
   shift = NULL,
   data = df_clean,
   trt = A,
-
   cens = C,
   mtp = TRUE,
   folds = 5,
   outcome_type = "continuous",
   weights = df_clean$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib,
+  learners_trt = c("SL.ranger", "SL.randomForest"),
+  learners_outcome =  c("SL.ranger"),
   parallel = n_cores
 )         
 here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
@@ -2031,14 +2054,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = gain_A,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )         
 # here_save(t2_perc_gend_discrim_z_gain, "t2_perc_gend_discrim_z_gain")
@@ -2050,14 +2072,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = zero_A,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )
 # here_save(t2_perc_gend_discrim_z_zero, "t2_perc_gend_discrim_z_zero")
@@ -2069,14 +2090,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = NULL,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )         
 # here_save(t2_perc_gend_discrim_z_null, "t2_perc_gend_discrim_z_null")
@@ -2093,14 +2113,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = gain_A,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )         
 # here_save(t2_perc_discrim_z_gain, "t2_perc_discrim_z_gain")
@@ -2112,14 +2131,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = zero_A,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )
 # here_save(t2_perc_discrim_z_zero, "t2_perc_discrim_z_zero")
@@ -2132,14 +2150,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = NULL,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )         
 # here_save(t2_perc_discrim_z_null, "t2_perc_discrim_z_null")
@@ -2158,14 +2175,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = gain_A,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )         
 # here_save(t2_perc_religious_discrim_z_gain, "t2_perc_religious_discrim_z_gain")
@@ -2178,14 +2194,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = zero_A,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )
 # here_save(t2_perc_religious_discrim_z_zero, "t2_perc_religious_discrim_z_zero")
@@ -2197,14 +2212,13 @@ here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 #   shift = NULL,
 #   data = df_clean,
 #   trt = A,
-# 
 #   cens = C,
 #   mtp = TRUE,
 #   folds = 5,
 #   outcome_type = "continuous",
 #   weights = df_clean$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib,
+#   learners_trt = c("SL.ranger", "SL.randomForest"),
+#   learners_outcome =  c("SL.ranger"),
 #   parallel = n_cores
 # )         
 # here_save(t2_perc_religious_discrim_z_null, "t2_perc_religious_discrim_z_null")
@@ -2232,15 +2246,15 @@ t2_warm_asians_z_null<- here_read("t2_warm_asians_z_null")
 contrast_t2_warm_asians_z <-
   lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_zero, type = "additive")
 
-tab_contrast_t2_warm_asians_z <- margot_tab_lmtp(
+library(margot)
+tab_contrast_t2_warm_asians_z <- margot::margot_lmtp_evalue(
   contrast_t2_warm_asians_z,
   scale = "RD",
   new_name = "relig service: warm asians"
 )
 
-output_tab_contrast_t2_warm_asians_z <- lmtp_evalue_tab(tab_contrast_t2_warm_asians_z,  delta = 1, sd = 1, scale = c("RD"))
 
-
+tab_contrast_t2_warm_asians_z
 
 contrast_t2_warm_asians_z_null <-
   lmtp_contrast(t2_warm_asians_z_gain, ref =  t2_warm_asians_z_null, type = "additive")
@@ -2573,6 +2587,9 @@ tab_contrast_t2_warm_pacific_z <- margot_tab_lmtp(
 output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
 # 
 # 
+
+t2_warm_pacific_z_gain
+t2_warm_pacific_z_null
 contrast_t2_warm_pacific_z_null <-
   lmtp_contrast(t2_warm_pacific_z_gain, ref =  t2_warm_pacific_z_null, type = "additive")
 
@@ -2583,7 +2600,7 @@ tab_contrast_t2_warm_pacific_z_null<- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_warm_pacific_z_null <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z_null,  delta = 1, sd = 1, scale = c("RD"))
-
+output_tab_contrast_t2_warm_pacific_z_null
 
 
 # refugees ----------------------------------------------------------------
@@ -2648,45 +2665,45 @@ tab_contrast_t2_perc_gend_discrim_z_null <- margot_tab_lmtp(
 )
 
 output_tab_contrast_t2_perc_gend_discrim_z_null <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z_null ,  delta = 1, sd = 1, scale = c("RD"))
-
-# perceive rel discrim ----------------------------------------------------
-t2_perc_religious_discrim_z_gain<- here_read("t2_perc_religious_discrim_z_gain")
-t2_perc_religious_discrim_z_zero<- here_read("t2_perc_religious_discrim_z_zero")
-t2_perc_religious_discrim_z_null<- here_read("t2_perc_religious_discrim_z_null")
-
-contrast_t2_perc_religious_discrim_z <-
-  lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_zero, type = "additive")
-
-tab_contrast_t2_perc_religious_discrim_z <- margot_tab_lmtp(
-  contrast_t2_perc_religious_discrim_z,
-  scale = "RD",
-  new_name = "relig service: perceive religious discrim"
-)
-
-output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
-output_tab_contrast_t2_perc_religious_discrim_z
-
-output_tab_contrast_t2_perc_religious_discrim_z
+# 
+# # perceive rel discrim ----------------------------------------------------
+# t2_perc_religious_discrim_z_gain<- here_read("t2_perc_religious_discrim_z_gain")
+# t2_perc_religious_discrim_z_zero<- here_read("t2_perc_religious_discrim_z_zero")
+# t2_perc_religious_discrim_z_null<- here_read("t2_perc_religious_discrim_z_null")
+# 
+# contrast_t2_perc_religious_discrim_z <-
+#   lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_zero, type = "additive")
+# 
+# tab_contrast_t2_perc_religious_discrim_z <- margot_tab_lmtp(
+#   contrast_t2_perc_religious_discrim_z,
+#   scale = "RD",
+#   new_name = "relig service: perceive religious discrim"
+# )
+# 
+# output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
+# output_tab_contrast_t2_perc_religious_discrim_z
+# 
+# output_tab_contrast_t2_perc_religious_discrim_z
+# # 
+# # 
+# contrast_t2_perc_religious_discrim_z_null <-
+#   lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_null, type = "additive")
 # 
 # 
-contrast_t2_perc_religious_discrim_z_null <-
-  lmtp_contrast(t2_perc_religious_discrim_z_gain, ref =  t2_perc_religious_discrim_z_null, type = "additive")
-
-
-tab_contrast_t2_perc_religious_discrim_z_null<- margot_tab_lmtp(
-  contrast_t2_perc_religious_discrim_z_null,
-  scale = "RD",
-  new_name = "relig service: perceive religious discrim"
-)
-
-output_tab_contrast_t2_perc_religious_discrim_z_null <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z_null,
-                                                                         delta = 1, sd = 1, scale = c("RD"))
-
-output_tab_contrast_t2_perc_religious_discrim_z_null
-
-push_mods
-# perceive ethnic discrim -------------------------------------------------
+# tab_contrast_t2_perc_religious_discrim_z_null<- margot_tab_lmtp(
+#   contrast_t2_perc_religious_discrim_z_null,
+#   scale = "RD",
+#   new_name = "relig service: perceive religious discrim"
+# )
 # 
+# output_tab_contrast_t2_perc_religious_discrim_z_null <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z_null,
+#                                                                          delta = 1, sd = 1, scale = c("RD"))
+# 
+# output_tab_contrast_t2_perc_religious_discrim_z_null
+# 
+# push_mods
+# # perceive ethnic discrim -------------------------------------------------
+# # 
 # t2_perc_discrim_z_gain<- here_read("t2_perc_discrim_z_gain")
 # t2_perc_discrim_z_zero<- here_read("t2_perc_discrim_z_zero")
 # t2_perc_discrim_z_null<- here_read("t2_perc_discrim_z_null")
@@ -2885,7 +2902,7 @@ ggsave(
   width = 16,
   height = 9,
   units = "in",
-  filename = "plot_group_tab_all_warm_null.png",
+  filename = "sl_lib_orig_plot_group_tab_all_warm_null.png",
   device = 'png',
   limitsize = FALSE,
   dpi = 300
