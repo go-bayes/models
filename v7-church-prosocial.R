@@ -1283,8 +1283,8 @@ names_outcomes <- here_read("names_outcomes")
 
 names_base
 df_clean$t0_sample_weights
-# check imbalance ---------------------------------------------------------
 
+# check imbalance ---------------------------------------------------------
 df_clean_no_na_treatment <- df_clean |> filter(!is.na(t1_religion_church_round))
 
 df_clean_no_na_treatment_base <- df_clean |> filter(!is.na(t0_religion_church_round)) 
