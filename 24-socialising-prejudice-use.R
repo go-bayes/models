@@ -7,21 +7,18 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
-#devtools::install_github("go-bayes/margot")
+devtools::install_github("go-bayes/margot")
 
-# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-#source("/Users/joseph/GIT/templates/functions/libs2.R")
-# 
-# # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-# source("/Users/joseph/GIT/templates/functions/funs.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-# source(
-#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-# )
 
-# test
-sl_lib
+# directory
+push_mods <-  fs::path_expand(
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/24-socialising-prejudice"
+)
+
+# check path:is this correct?  check so you know you are not overwriting other directors
+push_mods
+
 
 #devtools::install_github("go-bayes/margot")
 library(skimr)
@@ -33,18 +30,7 @@ library(cobalt)
 library(WeightIt)
 library(MatchThem)
 
-### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
-### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
-push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/church-prej-v5"
-)
 
-
-
-# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-#source("/Users/joseph/GIT/templates/functions/libs2.R")
-
-listWrappers()
 ## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE.
 pull_path <-
   fs::path_expand(
@@ -53,27 +39,12 @@ pull_path <-
   )
 
 # read data: note that you need use the arrow package in R
-
-#dat <- arrow::read_parquet("/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data")
-
 dat <- qs::qread(here::here(pull_path))
-
-
-### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
-### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
-
-## note that this has the model results with all covariates (with convergence problems). so "v5" is **older**
-# push_mods <-  fs::path_expand(
-#   "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-coop-church-v5"
-# )
-
-# check path:is this correct?  check so you know you are not overwriting other directors
-push_mods
-
 
 # total nzavs participants
 n_total <- skimr::n_unique(dat$id)
 n_total
+
 push_mods
 margot::here_save(n_total, "n_total")
 
@@ -163,7 +134,7 @@ dat_long <- dat |>
     "employed",
     "sample_origin_names_combined",
     "education_level_coarsen",
-   # "alert_level_combined_lead",
+    # "alert_level_combined_lead",
     # Are you currently employed? (this includes self-employment or casual work)
     # "gen_cohort",
     "household_inc",
@@ -251,7 +222,7 @@ dat_long <- dat |>
     # # I think that I am entitled to more respect than the average person is
     # "sdo",
     # "rwa",
-  #  "w_gend_age_ethnic",
+    #  "w_gend_age_ethnic",
     # perc_age_discrim,
     # "perc_gend_discrim",
     # "perc_religious_discrim",
@@ -344,7 +315,7 @@ dat_long <- dat |>
     #  "hlth_fatigue",
     #During the last 30 days, how often did.... you feel exhausted?
     # "rumination",
-   # "kessler6_sum",
+    # "kessler6_sum",
     "kessler_latent_depression",
     "kessler_latent_anxiety",
     "hlth_fatigue",
@@ -372,7 +343,7 @@ dat_long <- dat |>
     "alert_level_combined_lead"
   )|>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-#  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
+  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
     #initialize 'censored'
     censored = ifelse(lead(year_measured) == 1, 1, 0),
@@ -404,7 +375,7 @@ dat_long <- dat |>
     hours_exercise_log = log(hours_exercise + 1),
     hours_children_log = log(hours_children + 1),
     # total_siblings_log = log(total_siblings + 1),
-   # hours_community_log = log(hours_community + 1),
+    # hours_community_log = log(hours_community + 1),
     # hours_friends_log  = log(hours_friends + 1),
     # hours_family_log = log(hours_family + 1)#,
     #  children_num_log = log(children_num + 1)
@@ -416,11 +387,11 @@ dat_long <- dat |>
       household_inc,
       hours_exercise,
       hours_children)
- ) |>
-droplevels() |>
+  ) |>
+  droplevels() |>
   dplyr::rename(
-                sample_origin =  sample_origin_names_combined,
-                short_form_health = sfhealth) |>
+    sample_origin =  sample_origin_names_combined,
+    short_form_health = sfhealth) |>
   # dplyr::mutate(
   #   # make indicators binary
   #   family_time_binary = as.integer(ifelse(family_time > 0, 1, 0)),
@@ -464,15 +435,15 @@ arrange(id, wave) |>
 #   religion_church_binary_n = as.numeric(religion_church_binary)
 # ) |>
 dplyr::mutate(
-    rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
-    has_siblings = as.numeric(as.character(has_siblings)),
-    parent = as.numeric(as.character(parent)),
-    partner = as.numeric(as.character(partner)),
-    born_nz = as.numeric(as.character(born_nz)),
-    censored = as.numeric(as.character(censored)),
-    employed = as.numeric(as.character(employed)),
-    hlth_disability = as.numeric(as.character(hlth_disability))
-  ) |>
+  rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
+  has_siblings = as.numeric(as.character(has_siblings)),
+  parent = as.numeric(as.character(parent)),
+  partner = as.numeric(as.character(partner)),
+  born_nz = as.numeric(as.character(born_nz)),
+  censored = as.numeric(as.character(censored)),
+  employed = as.numeric(as.character(employed)),
+  hlth_disability = as.numeric(as.character(hlth_disability))
+) |>
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
@@ -849,11 +820,11 @@ dat_long_df <- data.frame(dat_long)
 colnames(dat_long_df)
 
 prep_coop_all <- margot::margot_wide_impute_baseline(
-    dat_long_df,
-    baseline_vars = baseline_vars,
-    exposure_var = exposure_var,
-    outcome_vars = outcome_vars
-  )
+  dat_long_df,
+  baseline_vars = baseline_vars,
+  exposure_var = exposure_var,
+  outcome_vars = outcome_vars
+)
 
 dt_18$alert_level_combined_lead
 
@@ -940,10 +911,10 @@ t0_na_condition <- rowSums(is.na(select(df_wide_censored, starts_with("t1_")))) 
 
 df_clean <- df_wide_censored %>%
   mutate(t0_censored = ifelse(t0_na_condition, 0, t0_censored)) %>%
- # mutate(t1_censored = ifelse(t1_na_condition, 0, t1_censored)) %>%
- # mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
- #        across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) %>%
- # mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .)))|>
+  # mutate(t1_censored = ifelse(t1_na_condition, 0, t1_censored)) %>%
+  # mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
+  #        across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) %>%
+  # mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .)))|>
   # select variables
   dplyr::mutate(
     across(
@@ -952,7 +923,7 @@ df_clean <- df_wide_censored %>%
         !t0_religion_church_round &
         # !t0_charity_donate & 
         !t0_rural_gch_2018_l & 
-    #    ! t0_nzsei_13_l& 
+        #    ! t0_nzsei_13_l& 
         !t0_sample_frame_opt_in & 
         !t0_alert_level_combined_lead  &
         !t0_alert_level_combined_lead  & 
@@ -969,7 +940,7 @@ df_clean <- df_wide_censored %>%
     where(is.factor),
     t0_sample_weights,
     t0_religion_church_round,
-  #  t0_nzsei_13_l,
+    #  t0_nzsei_13_l,
     t0_rural_gch_2018_l,
     t0_sample_frame_opt_in,
     t0_censored,
@@ -1356,8 +1327,8 @@ str(df_clean_t2)
 
 names_base <-
   df_clean_t2 |> select(starts_with("t0"),
-                     -t0_sample_weights, -t0_combo_weights,
-                     -t0_censored) |> colnames()
+                        -t0_sample_weights, -t0_combo_weights,
+                        -t0_censored) |> colnames()
 
 names_base
 
@@ -1421,11 +1392,11 @@ full_predictor_vars_final <- c(baseline_vars_set_final, new_encoded_colnames_fin
 
 
 df_clean_t2_hot_code$t0_
-  
+
 df_clean_t2_hot_code <-  df_clean_t2_hot_code |> 
-    relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
-    relocate("t0_censored", .before = starts_with("t1_"))  |>
-    relocate("t1_censored", .before = starts_with("t2_"))
+  relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
+  relocate("t0_censored", .before = starts_with("t1_"))  |>
+  relocate("t1_censored", .before = starts_with("t2_"))
 
 colnames(df_clean_t2_hot_code)
 #cv_control <- list(V = 10, stratifyCV = TRUE)  # 10-fold CV with stratification
@@ -1749,7 +1720,7 @@ t2_warm_asians_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_asians_z_null, "t2_warm_asians_z_null")
 
@@ -1773,7 +1744,7 @@ t2_warm_chinese_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_chinese_z_gain, "t2_warm_chinese_z_gain")
 t2_warm_chinese_z_gain
@@ -1791,7 +1762,7 @@ t2_warm_chinese_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_chinese_z_zero, "t2_warm_chinese_z_zero")
 
@@ -1810,7 +1781,7 @@ t2_warm_chinese_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_chinese_z_null, "t2_warm_chinese_z_null")
 
@@ -1835,7 +1806,7 @@ t2_warm_immigrants_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_immigrants_z_gain, "t2_warm_immigrants_z_gain")
 
@@ -1853,7 +1824,7 @@ t2_warm_immigrants_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_immigrants_z_zero, "t2_warm_immigrants_z_zero")
 # 
@@ -1872,7 +1843,7 @@ t2_warm_immigrants_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_immigrants_z_null, "t2_warm_immigrants_z_null")
 
@@ -1899,7 +1870,7 @@ t2_warm_indians_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_indians_z_gain, "t2_warm_indians_z_gain")
 # 
@@ -1917,7 +1888,7 @@ t2_warm_indians_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_indians_z_zero, "t2_warm_indians_z_zero")
 
@@ -1935,7 +1906,7 @@ t2_warm_indians_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_indians_z_null, "t2_warm_indians_z_null")
 
@@ -1959,7 +1930,7 @@ t2_warm_elderly_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_elderly_z_gain, "t2_warm_elderly_z_gain")
 # 
@@ -1977,7 +1948,7 @@ t2_warm_elderly_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_elderly_z_zero, "t2_warm_elderly_z_zero")
 
@@ -1996,7 +1967,7 @@ t2_warm_elderly_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_elderly_z_null, "t2_warm_elderly_z_null")
 
@@ -2020,7 +1991,7 @@ t2_warm_maori_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 
 
@@ -2041,7 +2012,7 @@ t2_warm_maori_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_maori_z_zero, "t2_warm_maori_z_zero")
 
@@ -2060,7 +2031,7 @@ t2_warm_maori_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_maori_z_null, "t2_warm_maori_z_null")
 
@@ -2084,7 +2055,7 @@ t2_warm_mental_illness_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_mental_illness_z_gain, "t2_warm_mental_illness_z_gain")
 # 
@@ -2102,7 +2073,7 @@ t2_warm_mental_illness_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_mental_illness_z_zero, "t2_warm_mental_illness_z_zero")
 
@@ -2121,7 +2092,7 @@ t2_warm_mental_illness_z_null<- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_mental_illness_z_null, "t2_warm_mental_illness_z_null")
 
@@ -2146,7 +2117,7 @@ t2_warm_muslims_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_muslims_z_gain, "t2_warm_muslims_z_gain")
 # 
@@ -2164,7 +2135,7 @@ t2_warm_muslims_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_muslims_z_zero, "t2_warm_muslims_z_zero")
 
@@ -2182,7 +2153,7 @@ t2_warm_muslims_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_muslims_z_null, "t2_warm_muslims_z_null")
 
@@ -2207,7 +2178,7 @@ t2_warm_nz_euro_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_nz_euro_z_gain, "t2_warm_nz_euro_z_gain")
 # 
@@ -2225,7 +2196,7 @@ t2_warm_nz_euro_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_nz_euro_z_zero, "t2_warm_nz_euro_z_zero")
 
@@ -2243,7 +2214,7 @@ t2_warm_nz_euro_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_nz_euro_z_null, "t2_warm_nz_euro_z_null")
 
@@ -2269,7 +2240,7 @@ t2_warm_overweight_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_overweight_z_gain, "t2_warm_overweight_z_gain")
 # 
@@ -2287,7 +2258,7 @@ t2_warm_overweight_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_overweight_z_zero, "t2_warm_overweight_z_zero")
 
@@ -2304,7 +2275,7 @@ t2_warm_overweight_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_overweight_z_null, "t2_warm_overweight_z_null")
 
@@ -2349,7 +2320,7 @@ t2_warm_pacific_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_pacific_z_zero, "t2_warm_pacific_z_zero")
 
@@ -2366,7 +2337,7 @@ t2_warm_pacific_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_pacific_z_null, "t2_warm_pacific_z_null")
 
@@ -2394,7 +2365,7 @@ t2_warm_refugees_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )         
 here_save(t2_warm_refugees_z_gain, "t2_warm_refugees_z_gain")
 
@@ -2412,7 +2383,7 @@ t2_warm_refugees_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
 )
 here_save(t2_warm_refugees_z_zero, "t2_warm_refugees_z_zero")
 
@@ -2429,7 +2400,7 @@ t2_warm_refugees_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
+  
   
 )         
 here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
@@ -3367,7 +3338,7 @@ df_clean_nona<- df_clean |> drop_na() |> droplevels()
 
 library(splines)
 test_pacific <- glm(t2_warm_pacific_z ~ t1_religion_church_round + (bs(t0_religion_church_round, k = 2) + bs(t0_warm_pacific_z, k = 1) + 
-                     (t0_alert_level_combined_lead)), family = gaussian,
+                                                                      (t0_alert_level_combined_lead)), family = gaussian,
                     df_clean_nona, weights = t0_sample_weights)
 
 test_pacific <- glm(t2_warm_pacific_z ~ t1_religion_church_round * ((t0_religion_church_round) + (t0_warm_pacific_z) + 
