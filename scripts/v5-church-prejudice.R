@@ -1162,7 +1162,7 @@ print(new_encoded_colnames)
 
 
 # Assuming you have a base list of predictors
-baseline_vars_set <- setdiff(names(df_clean_pre), c("t0_lost", "id", "t0_education_level_coarsen", "t0_eth_cat", "t0_religion_church_round", "t0_rural_gch_2018_l", "t0_sample_origin"))
+baseline_vars_set <- setdiff(names(df_clean_pre), c("t0_lost", "id", "t0_education_level_coarsen", "t0_eth_cat", "t0_rural_gch_2018_l", "t0_sample_origin"))
 
 # Add the new encoded column names
 full_predictor_vars <- c(baseline_vars_set, new_encoded_colnames)

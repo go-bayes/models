@@ -8,7 +8,7 @@
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
 devtools::install_github("go-bayes/margot")
-
+devtools::install_github("nt-williams/lmtp@devel")
 
 
 # directory
@@ -21,6 +21,8 @@ push_mods
 
 
 #devtools::install_github("go-bayes/margot")
+library(margot)
+library(ggplot2)
 library(skimr)
 library(tidyverse)
 library(margot)
@@ -29,7 +31,12 @@ library(lmtp)
 library(cobalt)
 library(WeightIt)
 library(MatchThem)
-
+library(future)
+library(ranger)
+library(xgboost)
+library(lmtp)
+library(rlang)
+library(doParallel)
 
 ## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE.
 pull_path <-
@@ -43,16 +50,15 @@ dat <- qs::qread(here::here(pull_path))
 
 # total nzavs participants
 n_total <- skimr::n_unique(dat$id)
-n_total
 
-push_mods
-margot::here_save(n_total, "n_total")
-
+# get comma in number
 n_total <- prettyNum(n_total,big.mark=",")
+
+# check
 n_total
 
-# set exposure here
-nzavs_exposure <- "religion_church_round"
+# save
+margot::here_save(n_total, "n_total")
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 10
@@ -66,20 +72,19 @@ library(future)
 library(SuperLearner)
 plan(multisession)
 
+#listWrappers()
+exposure_var_string <- "hours_community_round"
 
-listWrappers()
 
 # super learner libraries
+sl_lib <- c("SL.ranger", "SL.glmnet", "SL.xgboost")
 
-sl_lib <- c(   "SL.ranger", "SL.glmnet", "SL.xgboost", "SL.biglasso", "SL.polymars", "SL.earth")
 
-library(future)
-library(ranger)
 plan(multisession)
 n_cores = parallel::detectCores() -2 
 
-
-name_exposure_raw <- "religion_church"
+!!sym(exposure_var_string)
+name_exposure_raw <- "hours_community"
 # Obtain IDs for individuals who participated in 2018 and have no missing baseline exposure
 
 # Obtain IDs for individuals who participated in 2018 and have no missing baseline exposure
@@ -89,13 +94,13 @@ ids_2018 <- dat %>%
   pull(id)
 
 # Obtain IDs for individuals who participated in 2019/ NOT USED
-ids_2019 <- dat %>%
-  dplyr::filter(year_measured == 1, wave == 2019) %>%
-  dplyr::filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
-  pull(id)
-
-# Intersect IDs from 2018 and 2019 to ensure participation in both years
-ids_2018_2019 <- intersect(ids_2018, ids_2019) # not used 
+# ids_2019 <- dat %>%
+#   dplyr::filter(year_measured == 1, wave == 2019) %>%
+#   dplyr::filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
+#   pull(id)
+# 
+# # Intersect IDs from 2018 and 2019 to ensure participation in both years
+# ids_2018_2019 <- intersect(ids_2018, ids_2019) # not used 
 
 
 
@@ -105,9 +110,6 @@ dat <- haven::zap_formats(dat)
 dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
 str(dat)
-
-
-n_participants
 
 
 dat_long <- dat |>
@@ -173,7 +175,7 @@ dat_long <- dat |>
     #Hours - Working in paid employment
     "hours_housework",
     # Hours - Housework/cooking
-    # "hours_community",
+    "hours_community",
     # #Hours spent … socialising with friends
     # #Hours spent … socialising with community groups
     # #Hours spent … socialising with family
@@ -378,14 +380,16 @@ dat_long <- dat |>
     # hours_community_log = log(hours_community + 1),
     # hours_friends_log  = log(hours_friends + 1),
     # hours_family_log = log(hours_family + 1)#,
-    #  children_num_log = log(children_num + 1)
+    # children_num_log = log(children_num + 1)
   ) |>
   dplyr::select(
     -c(
+      religion_church,
       hours_work,
       hours_housework,
       household_inc,
       hours_exercise,
+      hours_community,
       hours_children)
   ) |>
   droplevels() |>
@@ -455,7 +459,6 @@ margot::here_save(n_participants, n_participants)
 n_participants
 
 
-
 # create sample weights for male female -----------------------------------
 
 # calculate gender weights assuming male is coded as 1 and female as 0
@@ -476,8 +479,6 @@ hist(dat_long$sample_weights)
 head(dat_long[, c("male", "sample_weights")])
 
 
-
-
 # baseline vars -----------------------------------------------------------
 # dat_long <- dat_long_full |>
 #   select(-alert_level_combined)
@@ -490,12 +491,12 @@ table(dat_long$alert_level_combined_lead)
 dat_long_colnames <- colnames(dat_long)
 
 dat_long_colnames <- sort(dat_long_colnames)
-
-dat_long_colnames <- setdiff(dat_long_colnames, "alert_level_combined", "alert_level_combined_lead")
+dat_long_colnames
+dat_long_colnames <- setdiff(dat_long_colnames, c("alert_level_combined", "alert_level_combined_lead"))
 
 # set baseline exposure and outcomes --------------------------------------
 
-exposure_var = c("religion_church_round",
+exposure_var = c("hours_community_round",
                  "censored"#,
                  # "hours_community_round"
 ) #
@@ -545,7 +546,6 @@ here_save(baseline_vars, "baseline_vars")
 
 push_mods
 
-
 # double check path
 push_mods
 
@@ -553,141 +553,61 @@ push_mods
 colnames(dat)
 
 # assess positivity
-dat_long$wave
-
 dt_positivity_full <- dat_long |>
   filter(wave == 2018 | wave == 2019) |>
-  select(wave, id, religion_church_round, sample_weights) |>
-  mutate(religion_church_shift_gain = ifelse(religion_church_round >= 4, 1, 0)) |> 
-  mutate(religion_church_shift_zero = ifelse(religion_church_round > 0, 1, 0))
+  select(wave, id, hours_community_round, sample_weights) |>
+  mutate(hours_community_shift_gain = ifelse(hours_community_round >= 2, 1, 0)) |> 
+  mutate(hours_community_shift_zero = ifelse(hours_community_round > 0, 1, 0))
 
 
 
 
 # create transition matrix
-out <-
-  msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
+# compute transitions
+out <-margot::create_transition_matrix(data = dt_positivity_full, state_var = "hours_community_round", id_var = "id")
 
+out_binary_gain <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "hours_community_shift_gain", id_var = "id")
 
-library(margot)
+out_binary_loss <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "hours_community_shift_zero", id_var = "id")
 
-
-
-out_church_2 <-
-  msm::statetable.msm(religion_church_shift_gain, id, data = dt_positivity_full)
-
-out <-margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_round", id_var = "id")
-
-out_church_2 <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_shift", id_var = "id")
-
-out_church_2
-
-# t_tab_2_labels <- c("< weekly", ">= weekly")
-# transition table
-
+# make table
 transition_table  <- margot::transition_table(out)
 transition_table
-# for import later
 margot::here_save(transition_table, "transition_table")
 
 
 
-out_church_zero <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_shift_zero", id_var = "id")
+gain_labs <- c("<2", ">=2")
+
+transition_table_gain  <- margot::transition_table(out_binary_gain, state_names = gain_labs)
+transition_table_gain
+margot::here_save(transition_table_gain, "transition_table_gain")
 
 
-t_tab_2_labels_zero <- c("0", "> 0")
-
-transition_table_binary_zero <-
-  margot::transition_table(out_church_zero,
-                           state_names = t_tab_2_labels_zero)
-
-transition_table_binary_zero
-
-# for import later
-here_save(transition_table_binary_zero,
-          "transition_table_binary_zero")
+loss_labs <- c("0", ">0")
+transition_table_loss  <- margot::transition_table(out_binary_loss, state_names = loss_labs)
+transition_table_loss
+margot::here_save(transition_table_loss, "transition_table_loss")
 
 
-
-# transition table
-out_church_gain <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_shift_gain", id_var = "id")
-
-
-t_tab_2_labels_gain <- c(">=4", "< 4")
-
-transition_table_binary_gain <-
-  margot::transition_table(out_church_gain,
-                           state_names = t_tab_2_labels_gain)
-
-transition_table_binary_gain
-
-# for import later
-here_save(transition_table_binary_gain,
-          "transition_table_binary_gain")
-
-
-
-
-# create transition matrix
-out <-
-  msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
-
-out
-out_binary
-
-t_tab_binary_labels <- c("< weekly", ">= weekly")
-# transition table
-
-transition_table  <- margot::transition_table(out)
-transition_table
-# for import later
-here_save(transition_table, "transition_table")
-
-dt_positivity_full$religion_church_shift_zero
-
-create_transition_matrix()
-out_loss <-
-  margot::create_transition_matrix(state_var = "religion_church_shift_zero",  id= "id", data = dt_positivity_full)
-
-
-transition_table_binary <-
-  margot::transition_table(out_loss,
-                           state_names = t_tab_binary_labels)
-
-transition_table_binary
-
-# for import later
-here_save(transition_table_binary,
-          "transition_table_binary")
-transition_table_binary <-
-  here_read("transition_table_binary")
-
-
-# double check path
-push_mods
-
-# check col names
-colnames(dat)
-
-
-# sd values ---------------------------------------------------------------
+# view
+transition_table_gain
+transition_table_loss
 
 
 # check associations only -------------------------------------------------
-
-
-
 dt_18 <- dat_long|>
   filter(wave == 2018) 
 
-naniar::vis_miss(dt_18, warn_large_data = F)
+exposure = colnames(dt_18[[exposure_var_string]])
 
+naniar::vis_miss(dt_18, warn_large_data = F)
 
 fit_cross_sectional_warm_pacific <-
   regress_with_covariates(
     dt_18,
     outcome = "warm_pacific",
-    exposure = "religion_church_round",
+    exposure = exposure_var_string,
     baseline_vars = base_var
   )
 summary(fit_cross_sectional_warm_pacific, ci_method="wald")
@@ -697,7 +617,7 @@ fit_cross_sectional_muslims <-
   regress_with_covariates(
     dt_18,
     outcome = "warm_muslims",
-    exposure = "religion_church_round",
+    exposure = exposure_var_string,
     baseline_vars = base_var
   )
 parameters::model_parameters(fit_cross_sectional_muslims, ci_method="wald")[2, ]
@@ -705,25 +625,12 @@ parameters::model_parameters(fit_cross_sectional_muslims, ci_method="wald")[2, ]
 
 
 here_save(fit_cross_sectional_muslims, "fit_cross_sectional_muslims")
-fit_cross_sectional_muslims <-
-  here_read("fit_cross_sectional_muslims")
 
 here_save(fit_cross_sectional_maori, "fit_cross_sectional_maori")
-fit_cross_sectional_maori <-
-  here_read("fit_cross_sectional_maori")
 
 
 # tables ------------------------------------------------------------------
 library(gtsummary)
-
-
-# REAL tables -----------------------
-
-
-# get names
-
-
-##
 
 
 library(gtsummary)
@@ -770,6 +677,9 @@ names_outcomes_final
 table(is.na(dt_19$alert_level_combined))
 dt_19 <- dat_long |> 
   filter(wave == 2019)
+
+mean(dt_19$hours_community_round, na.rm = TRUE)
+median(dt_19$hours_community_round, na.rm = TRUE)
 naniar::vis_miss(dt_19, warn_large_data = F)
 library(ggplot2)
 library(dplyr)
@@ -777,9 +687,9 @@ library(dplyr)
 # # generate bar plot
 graph_density_of_exposure_up <- margot::coloured_histogram_shift(
   dt_19,
-  col_name = "religion_church_round",
-  binwidth = .5, 
-  range_highlight = c(0,3.9)
+  col_name = exposure_var_string,
+  binwidth = 1, 
+  range_highlight = c(0,.99)
 )
 graph_density_of_exposure_up
 
@@ -787,9 +697,9 @@ graph_density_of_exposure_up
 graph_density_of_exposure_down <- margot::coloured_histogram_shift(
   dt_19,
   shift = "down",
-  col_name = "religion_church_round",
-  binwidth = .5, 
-  range_highlight = c(1,8)
+  col_name = exposure_var_string,
+  binwidth = 1, 
+  range_highlight = c(.01,24)
 )
 graph_density_of_exposure_up
 
@@ -819,6 +729,11 @@ dat_long_df <- data.frame(dat_long)
 
 colnames(dat_long_df)
 
+# check baseline vars
+baseline_vars
+
+
+# impute
 prep_coop_all <- margot::margot_wide_impute_baseline(
   dat_long_df,
   baseline_vars = baseline_vars,
@@ -826,11 +741,8 @@ prep_coop_all <- margot::margot_wide_impute_baseline(
   outcome_vars = outcome_vars
 )
 
-dt_18$alert_level_combined_lead
 
-
-# save function -- will save to your "push_mod" directory
-
+# return variables to the imputed data frame
 # sample weights
 prep_coop_all$t0_sample_weights <- dt_18$sample_weights
 
@@ -840,34 +752,13 @@ prep_coop_all$t0_alert_level_combined_lead <- dt_18$alert_level_combined_lead
 margot::here_save(prep_coop_all, "prep_coop_all")
 
 
-# check mi model
-# outlist <-
-#   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
-# .length(outlist)
-# 
-# # checks. We do not impute with weights: area of current research
-# head(prep_coop_all$loggedEvents, 10)
-
-# 
-# Warning messages:
-#   1: Number of logged events: 190 
-# 2: Using an external vector in selections was deprecated in tidyselect 1.1.0.
-# ℹ Please use `all_of()` or `any_of()` instead.
-# # Was:
-# data %>% select(t0_column_order)
-# 
-# # Now:
-# data %>% select(all_of(t0_column_order))
-# 
-# See <https://tidyselect.r-lib.org/reference/faq-external-vector.html>.
-
-
-
 # read function
 prep_coop_all <-
   margot::here_read("prep_coop_all")
 
 head(prep_coop_all)
+
+#check data
 naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
 
 table(prep_coop_all$t0_censored)
@@ -876,8 +767,6 @@ head(prep_coop_all$t0_sam)
 #check must be a dataframe
 str(prep_coop_all)
 nrow(prep_coop_all)
-
-prep_coop_all$t0_alert_level_combined_lead
 
 
 
@@ -920,7 +809,8 @@ df_clean <- df_wide_censored %>%
     across(
       .cols = where(is.numeric) &
         !t0_censored &
-        !t0_religion_church_round &
+     #   !t0_religion_church_round &
+     #   !t0_hours_community_round &
         # !t0_charity_donate & 
         !t0_rural_gch_2018_l & 
         #    ! t0_nzsei_13_l& 
@@ -928,7 +818,7 @@ df_clean <- df_wide_censored %>%
         !t0_alert_level_combined_lead  &
         !t0_alert_level_combined_lead  & 
         !t0_sample_weights & 
-        !t1_religion_church_round &
+        !t1_hours_community_round &
         !t1_censored,
       .fns = ~ scale(.),
       .names = "{.col}_z"
@@ -939,14 +829,15 @@ df_clean <- df_wide_censored %>%
   select(
     where(is.factor),
     t0_sample_weights,
-    t0_religion_church_round,
+    #t0_religion_church_round,
+    #t0_hours_community_round,
     #  t0_nzsei_13_l,
     t0_rural_gch_2018_l,
     t0_sample_frame_opt_in,
     t0_censored,
     t0_alert_level_combined_lead ,
     t0_alert_level_combined_lead ,
-    t1_religion_church_round,    
+    t1_hours_community_round,    
     t1_censored,
     ends_with("_z")
   ) |>
@@ -957,8 +848,6 @@ df_clean <- df_wide_censored %>%
   relocate("t1_censored", .before = starts_with("t2_"))
 
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
-
-here_save(df_clean, "df_clean")
 
 
 # checks
@@ -996,121 +885,26 @@ baseline_vars_models
 
 
 
-# fit proponsity score model 
-
-library(MatchIt)
-library(WeightIt)
-library(cobalt)
-
-
-#test
-match_mi_general_dev <- function(data,
-                                 X,
-                                 baseline_vars,
-                                 estimand,
-                                 method,
-                                 focal = NULL,
-                                 sample_weights = NULL,
-                                 stabilize = FALSE,
-                                 include.obj = FALSE,
-                                 keep.mparts = TRUE,
-                                 ...) {
-  
-  # Check input data type
-  data_class <- class(data)
-  if (!data_class %in% c("mids", "data.frame")) {
-    stop("Input data must be either 'mids' or 'data.frame' object")
-  }
-  
-  # Construct the formula
-  formula_str <- as.formula(paste(X, "~", paste(baseline_vars, collapse = "+")))
-  
-  # Choose appropriate function based on data type
-  weight_function <- if (data_class == "mids") MatchThem::weightthem else WeightIt::weightit
-  
-  # Function to perform matching
-  perform_matching <- function(data) {
-    if (is.null(sample_weights)) {
-      weight_function(
-        formula = formula_str,
-        data = data,
-        estimand = estimand,
-        stabilize = stabilize,
-        method = method,
-        focal = focal,
-        include.obj = include.obj,
-        keep.mparts = keep.mparts,
-        ...
-      )
-    } else {
-      weight_function(
-        formula = formula_str,
-        data = data,
-        estimand = estimand,
-        stabilize = stabilize,
-        method = method,
-        sample_weights = sample_weights,
-        focal = focal,
-        include.obj = include.obj,
-        keep.mparts = keep.mparts,
-        ...
-      )
-    }
-  }
-  
-  # Perform matching on the entire dataset
-  dt_match <- perform_matching(data)
-  
-  return(dt_match)
-}
-
-
-
-
-# match_censoring <- match_mi_general_dev(data = df_clean, 
-#                                         X = "t0_lost", 
-#                                         baseline_vars = baseline_vars_models, 
-#                                         estimand = "ATE", 
-#                                         stabalize = FALSE,
-#                                         superlearner = TRUE,
-#                                         method = "gbm"
-#                                         # focal = "< >", for ATT
-#                                        #SL.library = c("SL.glmnet","SL.xgboost","SL.polymars")
-#                                        )
-
-
-
-# Assuming 'df_clean' has categorical and ordinal variables
-# Load necessary libraries
-library(dplyr)
-
-# Assuming df_clean is your original dataframe
-# One-hot encoding using model.matrix
-# Assuming df_clean is your dataframe and baseline_vars_models is your vector of model variables
+# fit propensity score model 
 
 # use same libraries
 sl_lib
 
-sl_lib
-
-sl_lib
 listWrappers()
 
-# ranger doesn't work here
-# SL.nnet
 
-str(df_clean_pre$t0_rural_gch_2018_l)
-
+# clean vars
 df_clean_pre <- df_clean[baseline_vars_models]
 
 df_clean_pre$t0_rural_gch_2018_l <- as.factor(df_clean_pre$t0_rural_gch_2018_l)
 levels(df_clean_pre$t0_sample_origin)
-# Perform one-hot encoding using model.matrix
+
+str(df_clean_pre)
+
+# perform one-hot encoding using model.matrix
 encoded_vars <- model.matrix(~ t0_education_level_coarsen + t0_eth_cat + t0_sample_origin + t0_rural_gch_2018_l  - 1, data = df_clean_pre)
 
-
-
-# Convert matrix to data frame
+# convert matrix to data frame
 encoded_df <- as.data.frame(encoded_vars)
 
 
@@ -1118,13 +912,13 @@ encoded_df <- as.data.frame(encoded_vars)
 encoded_df <- encoded_df %>% 
   janitor::clean_names()
 
-# View the first few rows to confirm structure
+# view the first few rows to confirm structure
 head(encoded_df)
 
 # bind the new one-hot encoded variables back to the original dataframe
 # ensure to remove original categorical variables to avoid duplication
 df_clean_hot_code <- df_clean %>%
-  select(-c(t0_education_level_coarsen, t0_eth_cat, t0_sample_origin, t0_rural_gch_2018_l, t0_rural_gch_2018_l)) %>%
+  select(-c(id, t0_education_level_coarsen, t0_eth_cat, t0_sample_origin, t0_rural_gch_2018_l, t0_rural_gch_2018_l, t0_alert_level_combined_lead)) %>%
   bind_cols(encoded_df)
 
 # extract and print the new column names for encoded variables
@@ -1132,8 +926,8 @@ new_encoded_colnames <- colnames(encoded_df)
 print(new_encoded_colnames)
 
 
-# Assuming you have a base list of predictors
-baseline_vars_set <- setdiff(names(df_clean_pre), c("t0_lost", "id", "t0_education_level_coarsen", "t0_eth_cat", "t0_religion_church_round", "t0_rural_gch_2018_l", "t0_sample_origin"))
+# combine with base list of predictors
+baseline_vars_set <- setdiff(names(df_clean_pre), c("t0_lost", "id", "t0_education_level_coarsen", "t0_eth_cat", "t0_rural_gch_2018_l", "t0_sample_origin"))
 
 # Add the new encoded column names
 full_predictor_vars <- c(baseline_vars_set, new_encoded_colnames)
@@ -1141,42 +935,26 @@ full_predictor_vars <- c(baseline_vars_set, new_encoded_colnames)
 
 full_predictor_vars
 
-
+# no factors
 str(df_clean_hot_code)
 
 
 cv_control <- list(V = 10, stratifyCV = TRUE)  # 10-fold CV with stratification
 
-library(SuperLearner)
-
-#match_lib = c("SL.glmnet", "SL.xgboost", "SL.biglasso", "SL.polymars", "SL.earth")
-
-#
-# Install the packages if they are not already installed
-if (!requireNamespace("doParallel", quietly = TRUE)) {
-  install.packages("doParallel")
-}
-if (!requireNamespace("foreach", quietly = TRUE)) {
-  install.packages("foreach")
-}
-
-
 
 library(doParallel)
 library(SuperLearner)
-listWrappers()
-# Set up parallel backend
+
+
+# parallel backend
 no_cores <- detectCores()
 cl <- makeCluster(no_cores - 1)
 registerDoParallel(cl)
 
 
-library(dplyr)
-
 str(df_clean_hot_code[full_predictor_vars])
-sl_lib
 
-match_lib = c("SL.glmnet", "SL.xgboost", "SL.ranger", "SL.biglasso")
+match_lib = c("SL.glmnet", "SL.xgboost", "SL.ranger")
 
 
 
@@ -1188,7 +966,7 @@ sl <- SuperLearner(
   method = "method.NNloglik", 
   cvControl = list(V = 10)
 )
-
+push_mods
 here_save(sl, "sl")
 
 # stop the cluster
@@ -1215,12 +993,14 @@ df_clean_hot_code$pscore <- predictions$pred[, 1]
 str(predictions)
 
 
+# IPCW
 df_clean_hot_code$weights <- ifelse(df_clean_hot_code$t0_lost == 1, 1 / df_clean_hot_code$pscore, 1 / (1 - df_clean_hot_code$pscore))
 
 
 # check 
 hist(df_clean_hot_code$weights)
-
+min(df_clean_hot_code$weights)
+max(df_clean_hot_code$weights)
 # obtain stabalizing var (no need)
 #df_clean_hot_code <- mean(df_clean_hot_code$t0_lost)
 
@@ -1235,8 +1015,6 @@ hist(df_clean_hot_code$weights)
 
 # save output
 here_save( df_clean_hot_code, "df_clean_hot_code") 
-
-
 
 #
 head(df_clean_hot_code)
@@ -1262,15 +1040,21 @@ min(df_clean_t1$t0_combo_weights)
 #
 nrow(df_clean_t1)
 
-table(is.na(df_clean_t1$t1_religion_church_round)) # 33198
+table(is.na(df_clean_t1$t1_hours_community_round)) # 33198
 
 # gets us the correct df for weights
-
 naniar::vis_miss(df_clean_t1, warn_large_data = FALSE)
 
+
+# nrow full
+nrow(test)
+
+# correct
 nrow(df_clean_t1)
+
 # next get data for t1
 hist(df_clean_t1$t0_combo_weights)
+
 # get correct censoring 
 
 # redundant but OK
@@ -1308,15 +1092,10 @@ hist(df_clean_t2$t0_combo_weights)
 # outcomes
 naniar::vis_miss(df_clean_t2, warn_large_data = F)
 
+#
 here_save(df_clean_t2, "df_clean_t2")
 
-
-
 # START HERE --------------------------------------------------------------
-
-
-
-
 # read data --  start here if previous work already done
 df_clean_t2 <- here_read("df_clean_t2")
 
@@ -1324,16 +1103,12 @@ colnames(df_clean_t2)
 str(df_clean_t2)
 # names of vars for modelling
 
-
 names_base <-
   df_clean_t2 |> select(starts_with("t0"),
                         -t0_sample_weights, -t0_combo_weights,
                         -t0_censored) |> colnames()
 
 names_base
-
-here_save(names_base, "names_base")
-names_base <- here_read("names_base")
 
 
 names_outcomes <-
@@ -1346,8 +1121,6 @@ table( is.na( df_clean_t2$t0_alert_level_combined ))
 names(df_clean_t2)
 # explan names
 
-
-
 names_base
 
 df_final_base  <- df_clean_t2[names_base]
@@ -1355,12 +1128,10 @@ df_final_base  <- df_clean_t2[names_base]
 
 df_final_base$t0_rural_gch_2018_l <- as.factor(df_final_base$t0_rural_gch_2018_l)
 
-# Perform one-hot encoding using model.matrix
+# perform one-hot encoding using model.matrix
 encoded_vars_final <- model.matrix(~ t0_education_level_coarsen + t0_eth_cat + t0_sample_origin + t0_rural_gch_2018_l  +  t0_alert_level_combined_lead - 1, data = df_final_base)
 
-
-
-# Convert matrix to data frame
+# convert matrix to data frame
 encoded_vars_final <- as.data.frame(encoded_vars_final)
 
 encoded_vars_final
@@ -1383,15 +1154,12 @@ new_encoded_colnames_final <- colnames(encoded_vars_final)
 print(new_encoded_colnames_final)
 
 
-# Assuming you have a base list of predictors
+#  base list of predictors
 baseline_vars_set_final <- setdiff(names(df_final_base), c("t0_lost", "id", "t0_education_level_coarsen", "t0_eth_cat", "t0_religion_church_round", "t0_rural_gch_2018_l", "t0_sample_origin", "t0_alert_level_combined_lead"))
 
 # Add the new encoded column names
 full_predictor_vars_final <- c(baseline_vars_set_final, new_encoded_colnames_final)
 
-
-
-df_clean_t2_hot_code$t0_
 
 df_clean_t2_hot_code <-  df_clean_t2_hot_code |> 
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
@@ -1430,7 +1198,7 @@ plan(multisession)
 
 #### SET VARIABLE NAMES
 #  model
-A <- c("t1_religion_church_round")
+A <- "t1_hours_community_round"
 C <- c("t1_censored")
 
 #L <- list(c(NULL), c("t1_alert_level_combined"))
@@ -1521,7 +1289,7 @@ names_base
 
 
 gain_A <- function(data, trt){
-  ifelse( data[[trt]] < 4, 4,  data[[trt]] )
+  ifelse( data[[trt]] < 1, 1,  data[[trt]] )
 }
 
 # 
@@ -1559,8 +1327,6 @@ progressr::handlers(global = TRUE)
 
 library(future)
 plan(multisession)
-n_cores <-
-  parallel::detectCores()-2
 
 n_cores
 # church: charity models ----------------------------------------------------------
@@ -1581,15 +1347,14 @@ df_clean_t2_hot <- df_clean_t2_hot_code
 
 # test data 
 df_clean_slice <- df_clean_t2_hot_code |>
-  slice_head(n = 2000) |>
+  slice_head(n = 1000) |>
   as.data.frame()
 colnames(df_clean_slice)
 
 library(SuperLearner)
 library(xgboost)
 library(ranger)
-library(randomForest)
-# model charitable giving in population
+
 # measure time taken to run the model
 # 
 # names_base_t2_hours_charity_z <-
@@ -1603,22 +1368,12 @@ library(randomForest)
 # sl_lib <- c("SL.glmnet",
 #             "SL.ranger", #
 #             "SL.xgboost") #
-library(ranger)
-
-baseline_vars
 
 
-# 
-# names_base_t2_warm_pacific_z<- margot::select_and_rename_cols(names_base = names_base,  
-#                                                      baseline_vars = base_var, 
-#                                                      outcome =  "t2_warm_pacific_z")
+
 L
 
 A
-
-
-
-
 listWrappers()
 
 
@@ -1636,13 +1391,17 @@ t2_warm_pacific_z_test_null <- lmtp_tmle(
   learners_trt = sl_lib,
   learners_outcome = sl_lib
 )
-t2_warm_pacific_z_test_null$fits_r
 
-summary(lm(t2_warm_pacific_z ~ t1_religion_church_round + t0_religion_church_round + t0_warm_pacific_z, df_clean_slice))
+
+summary(lm(t2_warm_pacific_z ~ t1_hours_community_round + t0_religion_church_round + t0_warm_pacific_z, df_clean_slice))
 t2_warm_pacific_z_test_gain
 
-t2_warm_pacific_z_test_gain$fits_m
+t2_warm_pacific_z_test_null
+t2_warm_pacific_z_test_null$fits_m
+t2_warm_pacific_z_test_null$fits_r
 
+# checks
+gain_A
 
 library(lmtp)
 t2_warm_pacific_z_test_gain <- lmtp_tmle(
@@ -1662,7 +1421,7 @@ t2_warm_pacific_z_test_gain <- lmtp_tmle(
 
 
 t2_warm_pacific_z_test_gain$fits_m
-
+t2_warm_pacific_z_test_gain$fits_r
 
 
 # warm asians -------------------------------------------------------------
@@ -1670,10 +1429,6 @@ t2_warm_pacific_z_test_gain$fits_m
 # names_base_t2_warm_asians_z<- select_and_rename_cols(names_base = names_base,  
 #                                                      baseline_vars = base_var, 
 #                                                      outcome =  "t2_warm_asians_z")
-
-
-# simplify 
-sl_lib <- c(   "SL.ranger", "SL.glmnet", "SL.xgboost", "SL.biglasso" )
 
 
 t2_warm_asians_z_gain <- lmtp_tmle(
