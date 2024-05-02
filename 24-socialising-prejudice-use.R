@@ -2042,9 +2042,21 @@ here_save(t2_warm_overweight_z_null, "t2_warm_overweight_z_null")
 
 
 
+
+tab_contrast_t2_warm_asians_z
+tab_contrast_t2_warm_chinese_z
+tab_contrast_t2_warm_immigrants_z
+tab_contrast_t2_warm_indians_z
+tab_contrast_t2_warm_elderly_z
+tab_contrast_t2_warm_maori_z
+tab_contrast_t2_warm_mental_illness_z
+tab_contrast_t2_warm_muslims_z
+tab_contrast_t2_warm_nz_euro_z
+tab_contrast_t2_warm_overweight_z
+
 t2_warm_pacific_z_gain <- lmtp_tmle(
   outcome = "t2_warm_pacific_z",
-  baseline = c("t0_warm_pacific_z", "t0_religion_church_round"),
+  baseline = names_base_hot,
   shift = gain_A,
   data = df_clean_t2_hot,
   trt = A,
@@ -2075,7 +2087,6 @@ t2_warm_pacific_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-  
 )
 here_save(t2_warm_pacific_z_zero, "t2_warm_pacific_z_zero")
 
@@ -2092,7 +2103,6 @@ t2_warm_pacific_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-  
 )         
 here_save(t2_warm_pacific_z_null, "t2_warm_pacific_z_null")
 
@@ -2120,7 +2130,6 @@ t2_warm_refugees_z_gain <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-  
 )         
 here_save(t2_warm_refugees_z_gain, "t2_warm_refugees_z_gain")
 
@@ -2138,7 +2147,6 @@ t2_warm_refugees_z_zero <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-  
 )
 here_save(t2_warm_refugees_z_zero, "t2_warm_refugees_z_zero")
 
@@ -2155,8 +2163,6 @@ t2_warm_refugees_z_null <- lmtp_tmle(
   weights = df_clean_t2_hot$t0_combo_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-  
-  
 )         
 here_save(t2_warm_refugees_z_null, "t2_warm_refugees_z_null")
 
@@ -2369,7 +2375,7 @@ library(margot)
 tab_contrast_t2_warm_asians_z <- margot::margot_lmtp_evalue(
   contrast_t2_warm_asians_z,
   scale = "RD",
-  new_name = "relig service: warm asians"
+  new_name = "community socialising: warm asians"
 )
 
 
@@ -2381,7 +2387,7 @@ contrast_t2_warm_asians_z_null <-
 tab_contrast_t2_warm_asians_z_null <- margot_lmtp_evalue(
   contrast_t2_warm_asians_z_null,
   scale = "RD",
-  new_name = "relig service: warm asians"
+  new_name = "community socialising: warm asians"
 )
 
 
@@ -2398,7 +2404,7 @@ contrast_t2_warm_chinese_z <-
 tab_contrast_t2_warm_chinese_z <- margot_lmtp_evalue(
   contrast_t2_warm_chinese_z,
   scale = "RD",
-  new_name = "relig service: warm chinese"
+  new_name = "community socialising: warm chinese"
 )
 
 
@@ -2409,7 +2415,7 @@ contrast_t2_warm_chinese_z_null <-
 tab_contrast_t2_warm_chinese_z_null <- margot_lmtp_evalue(
   contrast_t2_warm_chinese_z_null,
   scale = "RD",
-  new_name = "relig service: warm chinese"
+  new_name = "community socialising: warm chinese"
 )
 
 
@@ -2427,7 +2433,7 @@ contrast_t2_warm_immigrants_z <-
 tab_contrast_t2_warm_immigrants_z <- margot_lmtp_evalue(
   contrast_t2_warm_immigrants_z,
   scale = "RD",
-  new_name = "relig service: warm immigrants"
+  new_name = "community socialising: warm immigrants"
 )
 
 contrast_t2_warm_immigrants_z_null <-
@@ -2436,7 +2442,7 @@ contrast_t2_warm_immigrants_z_null <-
 tab_contrast_t2_warm_immigrants_z_null <- margot_lmtp_evalue(
   contrast_t2_warm_immigrants_z_null,
   scale = "RD",
-  new_name = "relig service: warm immigrants"
+  new_name = "community socialising: warm immigrants"
 )
 tab_contrast_t2_warm_immigrants_z_null
 
@@ -2457,7 +2463,7 @@ contrast_t2_warm_indians_z <-
 tab_contrast_t2_warm_indians_z<- margot_lmtp_evalue(
   contrast_t2_warm_indians_z,
   scale = "RD",
-  new_name = "relig service: warm indians"
+  new_name = "community socialising: warm indians"
 )
 
 
@@ -2467,7 +2473,7 @@ contrast_t2_warm_indians_z_null <-
 tab_contrast_t2_warm_indians_z_null<- margot_lmtp_evalue(
   contrast_t2_warm_indians_z_null,
   scale = "RD",
-  new_name = "relig service: warm indians"
+  new_name = "community socialising: warm indians"
 )
 
 
@@ -2485,7 +2491,7 @@ contrast_t2_warm_elderly_z <-
 tab_contrast_t2_warm_elderly_z <- margot_lmtp_evalue(
   contrast_t2_warm_elderly_z,
   scale = "RD",
-  new_name = "relig service: warm elderly"
+  new_name = "community socialising: warm elderly"
 )
 
 
@@ -2498,7 +2504,7 @@ contrast_t2_warm_elderly_z_null <-
 tab_contrast_t2_warm_elderly_z_null <- margot_lmtp_evalue(
   contrast_t2_warm_elderly_z_null,
   scale = "RD",
-  new_name = "relig service: warm elderly"
+  new_name = "community socialising: warm elderly"
 )
 
 
@@ -2518,7 +2524,7 @@ contrast_t2_warm_maori_z <-
 tab_contrast_t2_warm_maori_z <- margot_lmtp_evalue(
   contrast_t2_warm_maori_z,
   scale = "RD",
-  new_name = "relig service: warm maori"
+  new_name = "community socialising: warm maori"
 )
 
 # 
@@ -2528,7 +2534,7 @@ contrast_t2_warm_maori_z_null <-
 tab_contrast_t2_warm_maori_z_null <- margot_lmtp_evalue(
   contrast_t2_warm_maori_z_null,
   scale = "RD",
-  new_name = "relig service: warm maori"
+  new_name = "community socialising: warm maori"
 )
 
 
@@ -2550,7 +2556,7 @@ contrast_t2_warm_mental_illness_z <-
 tab_contrast_t2_warm_mental_illness_z <- margot_lmtp_evalue(
   contrast_t2_warm_mental_illness_z,
   scale = "RD",
-  new_name = "relig service: warm mental illness"
+  new_name = "community socialising: warm mental illness"
 )
 
 
@@ -2562,7 +2568,7 @@ contrast_t2_warm_mental_illness_z_null <-
 tab_contrast_t2_warm_mental_illness_z_null <- margot::margot_lmtp_evalue(
   contrast_t2_warm_mental_illness_z_null,
   scale = "RD",
-  new_name = "relig service: warm mental illness"
+  new_name = "community socialising: warm mental illness"
 )
 
 # muslims -----------------------------------------------------------------
@@ -2577,7 +2583,7 @@ contrast_t2_warm_muslims_z <-
 tab_contrast_t2_warm_muslims_z <- margot::margot_lmtp_evalue(
   contrast_t2_warm_muslims_z,
   scale = "RD",
-  new_name = "relig service: warm muslims"
+  new_name = "community socialising: warm muslims"
 )
 
 
@@ -2588,7 +2594,7 @@ contrast_t2_warm_muslims_z_null <-
 tab_contrast_t2_warm_muslims_z_null <- margot::margot_lmtp_evalue(
   contrast_t2_warm_muslims_z_null,
   scale = "RD",
-  new_name = "relig service: warm muslims"
+  new_name = "community socialising: warm muslims"
 )
 
 
@@ -2606,7 +2612,7 @@ contrast_t2_warm_nz_euro_z <-
 tab_contrast_t2_warm_nz_euro_z <- margot::margot_lmtp_evalue(
   contrast_t2_warm_nz_euro_z,
   scale = "RD",
-  new_name = "relig service: warm nz euro"
+  new_name = "community socialising: warm nz euro"
 )
 
 
@@ -2618,7 +2624,7 @@ contrast_t2_warm_nz_euro_z_null<-
 tab_contrast_t2_warm_nz_euro_z_null <- margot::margot_lmtp_evalue(
   contrast_t2_warm_nz_euro_z_null,
   scale = "RD",
-  new_name = "relig service: warm nz euro"
+  new_name = "community socialising: warm nz euro"
 )
 
 
@@ -2636,7 +2642,7 @@ contrast_t2_warm_overweight_z <-
 tab_contrast_t2_warm_overweight_z <- margot::margot_lmtp_evalue(
   contrast_t2_warm_overweight_z,
   scale = "RD",
-  new_name = "relig service: warm overweight"
+  new_name = "community socialising: warm overweight"
 )
 
 
@@ -2648,7 +2654,7 @@ contrast_t2_warm_overweight_z_null <-
 tab_contrast_t2_warm_overweight_z_null <- margot::margot_lmtp_evalue(
   contrast_t2_warm_overweight_z_null,
   scale = "RD",
-  new_name = "relig service: warm overweight"
+  new_name = "community socialising: warm overweight"
 )
 
 
@@ -2668,7 +2674,7 @@ contrast_t2_warm_pacific_z <-
 tab_contrast_t2_warm_pacific_z <- margot::margot_lmtp_evalue(
   contrast_t2_warm_pacific_z,
   scale = "RD",
-  new_name = "relig service: warm pacific"
+  new_name = "community socialising: warm pacific"
 )
 tab_contrast_t2_warm_pacific_z
 #output_tab_contrast_t2_warm_pacific_z <- lmtp_evalue_tab(tab_contrast_t2_warm_pacific_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2683,7 +2689,7 @@ contrast_t2_warm_pacific_z_null <-
 tab_contrast_t2_warm_pacific_z_null<- margot::margot_lmtp_evalue(
   contrast_t2_warm_pacific_z_null,
   scale = "RD",
-  new_name = "relig service: warm pacific"
+  new_name = "community socialising: warm pacific"
 )
 
 tab_contrast_t2_warm_pacific_z_null
@@ -2702,7 +2708,7 @@ contrast_t2_warm_refugees_z <-
 tab_contrast_t2_warm_refugees_z <-  margot::margot_lmtp_evalue(
   contrast_t2_warm_refugees_z,
   scale = "RD",
-  new_name = "relig service: warm refugees"
+  new_name = "community socialising: warm refugees"
 )
 
 
@@ -2714,7 +2720,7 @@ contrast_t2_warm_refugees_z_null <-
 tab_contrast_t2_warm_refugees_z_null <-  margot::margot_lmtp_evalue(
   contrast_t2_warm_refugees_z_null,
   scale = "RD",
-  new_name = "relig service: warm refugees"
+  new_name = "community socialising: warm refugees"
 )
 
 
@@ -2732,7 +2738,7 @@ tab_contrast_t2_warm_refugees_z_null <-  margot::margot_lmtp_evalue(
 # tab_contrast_t2_perc_gend_discrim_z <- margot_tab_lmtp(
 #   contrast_t2_perc_gend_discrim_z,
 #   scale = "RD",
-#   new_name = "relig service: perceive gender discrim"
+#   new_name = "community socialising: perceive gender discrim"
 # )
 # 
 # output_tab_contrast_t2_perc_gend_discrim_z <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z ,  delta = 1, sd = 1, scale = c("RD"))
@@ -2744,7 +2750,7 @@ tab_contrast_t2_warm_refugees_z_null <-  margot::margot_lmtp_evalue(
 # tab_contrast_t2_perc_gend_discrim_z_null <- margot_tab_lmtp(
 #   contrast_t2_perc_gend_discrim_z_null,
 #   scale = "RD",
-#   new_name = "relig service: perceive gender discrim"
+#   new_name = "community socialising: perceive gender discrim"
 # )
 # 
 # output_tab_contrast_t2_perc_gend_discrim_z_null <- lmtp_evalue_tab(tab_contrast_t2_perc_gend_discrim_z_null ,  delta = 1, sd = 1, scale = c("RD"))
@@ -2760,7 +2766,7 @@ tab_contrast_t2_warm_refugees_z_null <-  margot::margot_lmtp_evalue(
 # tab_contrast_t2_perc_religious_discrim_z <- margot_tab_lmtp(
 #   contrast_t2_perc_religious_discrim_z,
 #   scale = "RD",
-#   new_name = "relig service: perceive religious discrim"
+#   new_name = "community socialising: perceive religious discrim"
 # )
 # 
 # output_tab_contrast_t2_perc_religious_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2776,7 +2782,7 @@ tab_contrast_t2_warm_refugees_z_null <-  margot::margot_lmtp_evalue(
 # tab_contrast_t2_perc_religious_discrim_z_null<- margot_tab_lmtp(
 #   contrast_t2_perc_religious_discrim_z_null,
 #   scale = "RD",
-#   new_name = "relig service: perceive religious discrim"
+#   new_name = "community socialising: perceive religious discrim"
 # )
 # 
 # output_tab_contrast_t2_perc_religious_discrim_z_null <- lmtp_evalue_tab( tab_contrast_t2_perc_religious_discrim_z_null,
@@ -2799,7 +2805,7 @@ tab_contrast_t2_warm_refugees_z_null <-  margot::margot_lmtp_evalue(
 # tab_contrast_t2_perc_discrim_z <- margot_tab_lmtp(
 #   contrast_t2_perc_discrim_z,
 #   scale = "RD",
-#   new_name = "relig service: perceive ethnic discrim"
+#   new_name = "community socialising: perceive ethnic discrim"
 # )
 # 
 # output_tab_contrast_t2_perc_discrim_z <- lmtp_evalue_tab( tab_contrast_t2_perc_discrim_z,  delta = 1, sd = 1, scale = c("RD"))
@@ -2812,7 +2818,7 @@ tab_contrast_t2_warm_refugees_z_null <-  margot::margot_lmtp_evalue(
 # tab_contrast_t2_perc_discrim_z_null <- margot_tab_lmtp(
 #   contrast_t2_perc_discrim_z_null,
 #   scale = "RD",
-#   new_name = "relig service: perceive ethnic discrim"
+#   new_name = "community socialising: perceive ethnic discrim"
 # )
 # 
 # output_tab_contrast_t2_perc_discrim_z_null <- lmtp_evalue_tab( tab_contrast_t2_perc_discrim_z_null,  delta = 1, sd = 1, scale = c("RD"))
