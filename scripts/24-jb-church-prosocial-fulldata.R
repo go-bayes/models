@@ -18,7 +18,7 @@ if (!require(devtools, quietly = TRUE)) {
 }
 
 # get 'margot' from my github (make sure to update)
-devtools::install_github("go-bayes/margot")
+# devtools::install_github("go-bayes/margot")
 
 
 
@@ -1833,7 +1833,7 @@ sl_lib
 
 # t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
 #   outcome = "t2_charity_donate_z",
-#   baseline = names_base,
+#   baseline = names_base_final,
 #   shift = gain_A,
 #   data = df_clean_slice,
 #   trt = A,
@@ -1843,15 +1843,15 @@ sl_lib
 #   outcome_type = "continuous",
 #   weights = df_clean_slice$t0_sample_weights,
 #   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
+#   learners_outcome= sl_lib
+# 
 # )
 # t2_charity_donate_z_test_gain_orig
 # 
 # 
 # t2_charity_donate_z_test_gain_five <- lmtp_tmle(
 #   outcome = "t2_charity_donate_z",
-#   baseline = names_base,
+#   baseline = names_base_final,
 #   shift = gain_A,
 #   data = df_clean_slice,
 #   trt = A,
@@ -1861,8 +1861,8 @@ sl_lib
 #   outcome_type = "continuous",
 #   weights = df_clean_slice$t0_sample_weights,
 #   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
+#   learners_outcome= sl_lib
+# 
 # )
 # t2_charity_donate_z_test_gain_five
 
@@ -1881,15 +1881,15 @@ sl_lib
 #   weights = df_clean_slice$t0_sample_weights,
 #   learners_trt= sl_lib,
 # 
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
+#   learners_outcome= sl_lib
+# 
 # )
 # t2_charity_donate_z_test_gain_time_vary
 
 
 t2_charity_donate_z_test_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base_base,
+  baseline = names_base_final,
   shift = gain_A,
   data = df_clean_slice,
   trt = A,
@@ -1899,15 +1899,14 @@ t2_charity_donate_z_test_gain <- lmtp_tmle(
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
 )
 t2_charity_donate_z_test_gain
 
 
 t2_charity_donate_z_test_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base_base,
+  baseline = names_base_final,
   shift = zero_A,
   data = df_clean_slice,
   trt = A,
@@ -1917,8 +1916,8 @@ t2_charity_donate_z_test_zero <- lmtp_tmle(
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 lmtp_contrast(t2_charity_donate_z_test_gain, ref = t2_charity_donate_z_test_zero, type = "additive")
@@ -1930,6 +1929,7 @@ lmtp_contrast(t2_charity_donate_z_test_gain, ref = t2_charity_donate_z_test_zero
 library(SuperLearner)
 library(xgboost)
 library(ranger)
+library(margot)
 
 #
 gain_A <- function(data, trt) {
@@ -1956,14 +1956,15 @@ sl_lib <- c("SL.glmnet",
             "SL.xgboost")
 
 
+
 names_base_final<- here_read("names_base_final")
 df_final<- here_read("df_final")
 
-
+push_mods
 
 t2_hours_charity_z_gain <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data = df_final,
   trt = A,
@@ -1971,17 +1972,17 @@ t2_hours_charity_z_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "continuous",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_hours_charity_z_gain, "t2_hours_charity_z_gain")
 
 t2_hours_charity_z_zero <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -1989,10 +1990,10 @@ t2_hours_charity_z_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "continuous",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_hours_charity_z_zero, "t2_hours_charity_z_zero")
@@ -2000,7 +2001,7 @@ here_save(t2_hours_charity_z_zero, "t2_hours_charity_z_zero")
 
 t2_hours_charity_z_null <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2008,10 +2009,10 @@ t2_hours_charity_z_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "continuous",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores 
+  learners_outcome= sl_lib
+ 
 )
 t2_hours_charity_z_null
 here_save(t2_hours_charity_z_null, "t2_hours_charity_z_null")
@@ -2030,7 +2031,7 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_zero, type = "ad
 
 t2_charity_donate_z_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data =  df_final,
   trt = A,
@@ -2038,17 +2039,17 @@ t2_charity_donate_z_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "continuous",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 here_save(t2_charity_donate_z_gain, "t2_charity_donate_z_gain")
 t2_charity_donate_z_gain
 
 t2_charity_donate_z_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -2056,10 +2057,10 @@ t2_charity_donate_z_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "continuous",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_charity_donate_z_zero, "t2_charity_donate_z_zero")
@@ -2067,7 +2068,7 @@ here_save(t2_charity_donate_z_zero, "t2_charity_donate_z_zero")
 
 t2_charity_donate_z_null <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2075,10 +2076,10 @@ t2_charity_donate_z_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "continuous",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_charity_donate_z_null, "t2_charity_donate_z_null")
@@ -2105,7 +2106,7 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "ad
 # 
 # t2_support_z_gain <- lmtp_tmle(
 #   outcome = "t2_support_z",
-#   baseline = names_base,
+#   baseline = names_base_final,
 #   shift = gain_A,
 #   data =  df_final,
 #   trt = A,
@@ -2113,16 +2114,16 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "ad
 #   mtp = TRUE,
 #   folds = 10,
 #   outcome_type = "continuous",
-#   data =  df_final$t0_combo_weights, 
+#   weights =  df_final$t0_combo_weights, 
 #   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
+#   learners_outcome= sl_lib
+# 
 # )
 # here_save(t2_support_z_gain, "t2_support_z_gain")
 # 
 # t2_support_z_zero <- lmtp_tmle(
 #   outcome = "t2_support_z",
-#   baseline = names_base,
+#   baseline = names_base_final,
 #   shift = zero_A,
 #   data =  df_final,
 #   trt = A,
@@ -2130,10 +2131,10 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "ad
 #   mtp = TRUE,
 #   folds = 10,
 #   outcome_type = "continuous",
-#   data =  df_final$t0_combo_weights, 
+#   weights =  df_final$t0_combo_weights, 
 #   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
+#   learners_outcome= sl_lib
+# 
 # )
 # 
 # here_save(t2_support_z_zero, "t2_support_z_zero")
@@ -2142,7 +2143,7 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "ad
 # #
 # t2_support_z_null <- lmtp_tmle(
 #   outcome = "t2_support_z",
-#   baseline = names_base,
+#   baseline = names_base_final,
 #   shift = NULL,
 #   data =  df_final,
 #   trt = A,
@@ -2150,10 +2151,10 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "ad
 #   mtp = TRUE,
 #   folds = 10,
 #   outcome_type = "continuous",
-#   data =  df_final$t0_combo_weights, 
+#   weights =  df_final$t0_combo_weights, 
 #   learners_trt= sl_lib,
-#   learners_outcome= sl_lib,
-#   parallel = n_cores
+#   learners_outcome= sl_lib
+# 
 # )
 # 
 # here_save(t2_support_z_null, "t2_support_z_null")
@@ -2167,7 +2168,7 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "ad
 
 t2_family_time_binary_gain <- lmtp_tmle(
   outcome = "t2_family_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data =  df_final,
   trt = A,
@@ -2175,17 +2176,17 @@ t2_family_time_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_family_time_binary_gain, "t2_family_time_binary_gain")
 
 t2_family_time_binary_zero <- lmtp_tmle(
   outcome = "t2_family_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -2193,10 +2194,10 @@ t2_family_time_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_family_time_binary_zero, "t2_family_time_binary_zero")
@@ -2204,7 +2205,7 @@ here_save(t2_family_time_binary_zero, "t2_family_time_binary_zero")
 # 
 t2_family_time_binary_null <- lmtp_tmle(
   outcome = "t2_family_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2212,10 +2213,10 @@ t2_family_time_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_family_time_binary_null, "t2_family_time_binary_null")
@@ -2234,7 +2235,7 @@ here_save(t2_family_time_binary_null, "t2_family_time_binary_null")
 
 t2_friends_time_binary_gain <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data =  df_final,
   trt = A,
@@ -2242,10 +2243,10 @@ t2_friends_time_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_friends_time_binary_gain, "t2_friends_time_binary_gain")
@@ -2253,7 +2254,7 @@ here_save(t2_friends_time_binary_gain, "t2_friends_time_binary_gain")
 
 t2_friends_time_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -2261,10 +2262,10 @@ t2_friends_time_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_friends_time_binary_zero, "t2_friends_time_binary_zero")
@@ -2273,7 +2274,7 @@ here_save(t2_friends_time_binary_zero, "t2_friends_time_binary_zero")
 # 
 t2_friends_time_binary_null <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2281,10 +2282,10 @@ t2_friends_time_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_friends_time_binary_null, "t2_friends_time_binary_null")
@@ -2300,7 +2301,7 @@ here_save(t2_friends_time_binary_null, "t2_friends_time_binary_null")
 
 t2_community_time_binary_gain <- lmtp_tmle(
   outcome = "t2_community_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data =  df_final,
   trt = A,
@@ -2308,10 +2309,10 @@ t2_community_time_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_community_time_binary_gain,
@@ -2321,7 +2322,7 @@ here_save(t2_community_time_binary_gain,
 # 
 t2_community_time_binary_zero <- lmtp_tmle(
   outcome = "t2_community_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -2329,10 +2330,10 @@ t2_community_time_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_community_time_binary_zero,
@@ -2341,7 +2342,7 @@ here_save(t2_community_time_binary_zero,
 # 
 t2_community_time_binary_null<- lmtp_tmle(
   outcome = "t2_community_time_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2349,10 +2350,10 @@ t2_community_time_binary_null<- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_community_time_binary_null,
@@ -2372,7 +2373,7 @@ here_save(t2_community_time_binary_null,
 
 t2_family_money_binary_gain <- lmtp_tmle(
   outcome = "t2_family_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data =  df_final,
   trt = A,
@@ -2380,10 +2381,10 @@ t2_family_money_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_family_money_binary_gain, "t2_family_money_binary_gain")
@@ -2393,7 +2394,7 @@ here_save(t2_family_money_binary_gain, "t2_family_money_binary_gain")
 # 
 t2_family_money_binary_zero <- lmtp_tmle(
   outcome = "t2_family_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -2401,10 +2402,10 @@ t2_family_money_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_family_money_binary_zero, "t2_family_money_binary_zero")
@@ -2413,7 +2414,7 @@ here_save(t2_family_money_binary_zero, "t2_family_money_binary_zero")
 # 
 t2_family_money_binary_null <- lmtp_tmle(
   outcome = "t2_family_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2421,10 +2422,10 @@ t2_family_money_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_family_money_binary_null, "t2_family_money_binary_null")
@@ -2441,7 +2442,7 @@ t2_family_money_binary_null
 
 t2_friends_money_binary_gain <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data =  df_final,
   trt = A,
@@ -2449,10 +2450,10 @@ t2_friends_money_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_friends_money_binary_gain,
@@ -2461,7 +2462,7 @@ here_save(t2_friends_money_binary_gain,
 
 t2_friends_money_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -2469,10 +2470,10 @@ t2_friends_money_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_friends_money_binary_zero,
@@ -2482,7 +2483,7 @@ here_save(t2_friends_money_binary_zero,
 # 
 t2_friends_money_binary_null<- lmtp_tmle(
   outcome = "t2_friends_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2490,10 +2491,10 @@ t2_friends_money_binary_null<- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_friends_money_binary_null,
@@ -2509,7 +2510,7 @@ here_save(t2_friends_money_binary_null,
 
 t2_community_money_binary_gain <- lmtp_tmle(
   outcome = "t2_community_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = gain_A,
   data =  df_final,
   trt = A,
@@ -2517,10 +2518,10 @@ t2_community_money_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_community_money_binary_gain,
@@ -2528,7 +2529,7 @@ here_save(t2_community_money_binary_gain,
 
 t2_community_money_binary_zero <- lmtp_tmle(
   outcome = "t2_community_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = zero_A,
   data =  df_final,
   trt = A,
@@ -2536,10 +2537,10 @@ t2_community_money_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_community_money_binary_zero,
@@ -2548,7 +2549,7 @@ here_save(t2_community_money_binary_zero,
 # 
 t2_community_money_binary_null <- lmtp_tmle(
   outcome = "t2_community_money_binary",
-  baseline = names_base,
+  baseline = names_base_final,
   shift = NULL,
   data =  df_final,
   trt = A,
@@ -2556,10 +2557,10 @@ t2_community_money_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-  data =  df_final$t0_combo_weights, 
+  weights =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
+  learners_outcome= sl_lib
+
 )
 
 here_save(t2_community_money_binary_null,
