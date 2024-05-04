@@ -5,9 +5,11 @@
 ### ALWAYS RESTART R IN A FRESH SESSION ####
 listWrappers()
 push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/church-prosocial-v7"
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/24-church-prejudice"
 )
 
+#devtools::install_github("go-bayes/margot")
+#devtools::install_github("nt-williams/lmtp@devel")
 
 # get devtools
 if (!require(devtools, quietly = TRUE)) {
@@ -17,7 +19,7 @@ if (!require(devtools, quietly = TRUE)) {
 
 # get 'margot' from my github (make sure to update)
 devtools::install_github("go-bayes/margot")
-}
+
 
 
 # Check if pacman is installed; if not, install it
@@ -70,15 +72,6 @@ pull_path <-
 
 dat <- qs::qread(here::here(pull_path))
 
-
-### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
-### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
-
-## note that this has the model results with all covariates (with convergence problems). so "v5" is **older**
-# push_mods <-  fs::path_expand(
-#   "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/24/ow-coop-church-v5"
-# )
-
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 
@@ -86,11 +79,21 @@ push_mods
 # total nzavs participants
 n_total <- skimr::n_unique(dat$id)
 
+# get comma in number
+n_total <- prettyNum(n_total, big.mark = ",")
 
+# check n total
+n_total
+
+# save n for manuscript
 margot::here_save(n_total, "n_total")
 
 # set exposure here
 nzavs_exposure <- "religion_church_round"
+
+
+!!sym(exposure_var_string)
+name_exposure_raw <- "religion_church"
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 10
@@ -102,20 +105,14 @@ progressr::handlers(global = TRUE)
 set.seed(0112358)
 library(future)
 plan(multisession)
-n_cores <- parallel::detectCores()
+n_cores <- parallel::detectCores()-1
 
 listWrappers()
 
 # super learner libraries
 sl_lib <- c("SL.glmnet",
             "SL.ranger",
-            # "SL.biglasso", no gain? 
             "SL.xgboost")
-
-library(future)
-library(ranger)
-plan(multisession)
-n_cores = 10 #<- parallel::detectCores()
 
 
 # check
@@ -131,13 +128,13 @@ ids_2018 <- dat %>%
   pull(id)
 
 # Obtain IDs for individuals who participated in 2019
-ids_2019 <- dat %>%
-  filter(year_measured == 1, wave == 2019) %>%
-  filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
-  pull(id)
-
-# Intersect IDs from 2018 and 2019 to ensure participation in both years
-ids_2018_2019 <- intersect(ids_2018, ids_2019)
+# ids_2019 <- dat %>%
+#   filter(year_measured == 1, wave == 2019) %>%
+#   filter(!is.na(!!sym(name_exposure_raw))) |> # criteria, no missing
+#   pull(id)
+# 
+# # Intersect IDs from 2018 and 2019 to ensure participation in both years
+# ids_2018_2019 <- intersect(ids_2018, ids_2019)
 
 
 
@@ -147,15 +144,10 @@ dat <- haven::zap_formats(dat)
 dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
 str(dat)
-# Time 10 [2018/2019]	FamilyTime.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	FriendsTime.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	CommunityTime.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	FamilyMoney.T10	Please estimate how much help you have received from the following sources in the last week?
-# #   Time 10 [2018/2019]	FriendsMoney.T10	Please estimate how much help you have received from the following sources in the last week?
-#   Time 10 [2018/2019]	CommunityMoney.T10	Please estimate how much help you have received from the following sources in the last week?
 
-dat_long_full <- dat |>
-  dplyr::filter(id %in% ids_2018_2019 &
+
+dat_long <- dat |>
+  dplyr::filter(id %in% ids_2018 &
                   wave %in% c(2018, 2019, 2020)) |>
   arrange(id, wave) |>
   select(
@@ -261,7 +253,7 @@ dat_long_full <- dat |>
     # # I think that I am entitled to more respect than the average person is
     # "sdo",
     # "rwa",
-    "w_gend_age_ethnic",
+   # "w_gend_age_ethnic",
     # perc_age_discrim,
     # "perc_gend_discrim",
     # "perc_religious_discrim",
@@ -322,6 +314,7 @@ dat_long_full <- dat |>
     "family_money",
     "friends_money",
     "community_money",
+    "hours_community",
     #Please estimate how much help you have received from the following sources in the last week?
     # Received help and support - hours
     # family
@@ -383,7 +376,7 @@ dat_long_full <- dat |>
     "alert_level_combined"
   ) |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-  #  mutate(hours_community_round = round(ifelse(hours_community >= 10, 10, hours_community), 0)) |>
+  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
     #initialize 'censored'
     censored = ifelse(lead(year_measured) == 1, 1, 0),
@@ -428,12 +421,13 @@ dat_long_full <- dat |>
       hours_exercise,
       hours_children,
       has_siblings,
+      hours_community
       #    children_num,
       #    total_siblings
     )
   ) |>
   droplevels() |>
-  dplyr::rename(sample_weights = w_gend_age_ethnic,
+  dplyr::rename(#sample_weights = w_gend_age_ethnic,
                 sample_origin =  sample_origin_names_combined) |>
   dplyr::mutate(
     # make indicators binary
@@ -494,8 +488,37 @@ dat_long_full <- dat |>
 
 
 
+n_participants <- n_unique(dat_long$id)
+n_participants <- prettyNum(n_participants,big.mark=",")
+
+margot::here_save(n_participants, n_participants)
+n_participants
+
+
+
+# create sample weights for male female -----------------------------------
+
+# calculate gender weights assuming male is coded as 1 and female as 0
+prop_male_population <- 0.5  # target proportion of males in the population
+prop_female_population <- 0.5  # target proportion of females in the population
+
+prop_male_sample <- mean(dat_long$male)
+prop_female_sample <- 1 - prop_male_sample
+
+gender_weight_male <- prop_male_population / prop_male_sample
+gender_weight_female <- prop_female_population / prop_female_sample
+
+dat_long$sample_weights <- ifelse(dat_long$male == 1, gender_weight_male, gender_weight_female)
+
+hist(dat_long$sample_weights)
+
+# check male are upweighted
+head(dat_long[, c("male", "sample_weights")])
+
+
+
+
 # baseline vars -----------------------------------------------------------
-dat_long <- dat_long_full
 str(dat_long)
 # check
 table(dat_long$censored)
@@ -507,12 +530,20 @@ dat_long_colnames <- sort(dat_long_colnames)
 
 dat_long_colnames
 
+# select vars for baseline
+dat_long_colnames <- colnames(dat_long)
+
+dat_long_colnames <- sort(dat_long_colnames)
+dat_long_colnames
+dat_long_colnames <- setdiff(dat_long_colnames, c("alert_level_combined", "alert_level_combined_lead", "sample_weights"))
+
+dat_long_colnames
+
 
 # set baseline exposure and outcomes --------------------------------------
 
 exposure_var = c("religion_church_round",
                  "censored"#,
-                 # "hours_community_round"
 ) #
 
 
@@ -521,18 +552,6 @@ exposure_var = c("religion_church_round",
 outcome_vars = c(
   "hours_charity",
   "charity_donate",
-  # "warm_asians",
-  # "warm_chinese",
-  # "warm_immigrants",
-  # "warm_indians",
-  # "warm_elderly",
-  # "warm_maori",
-  # "warm_mental_illness",
-  # "warm_muslims",
-  # "warm_nz_euro",
-  # "warm_overweight",
-  # "warm_pacific",
-  # "warm_refugees",
   "family_time_binary",
   "friends_time_binary",
   "community_time_binary",
@@ -542,16 +561,13 @@ outcome_vars = c(
   "friends_money_binary",
   "support",
   "belong"
-  # "perc_gend_discrim",
-  # "perc_religious_discrim",
-  # "perc_discrim"
 )
 
 dat_long_colnames <- colnames(dat_long)
 #
 baseline_vars <-
   setdiff(dat_long_colnames,
-          c("id","wave", "alert_level_combined"))
+          c("id","wave", "alert_level_combined", "alert_level_combined_lead", "sample_weights"))
 
 # c(outcome_vars, 'id', 'wave'))
 baseline_vars
@@ -570,7 +586,7 @@ n_participants <-
   n_unique(dat_long$id) #47202 # reports hours with
 
 # check
-n_participants #33198
+n_participants #46377
 
 margot::here_save(n_participants, "n_participants")
 
@@ -716,9 +732,6 @@ naniar::vis_miss(dt_18_miss, warn_large_data = F)
 table((dt_18_miss$hours_religious_community))
 dev.off()
 
-summary(fit1 <- lm(charity_donate ~ religion_church_round, data = dt_18_miss))
-base_var
-
 # base_vars set above
 fit_church_on_charity_donate <-
   margot::regress_with_covariates(
@@ -769,8 +782,6 @@ parameters::model_parameters(fit_church_on_community_money_binary, ci_method="wa
 
 margot::here_save(fit_church_on_community_money_binary, "fit_church_on_community_money_binary")
 
-exp(.16)
-
 fit_church_on_charity_donate<- margot::here_read('fit_church_on_charity_donate')
 fit_church_on_hours_charity<- margot::here_read('fit_church_on_hours_charity')
 fit_church_on_community_time_binary<- margot::here_read('fit_church_on_community_time_binary')
@@ -782,7 +793,7 @@ fit_church_on_community_money_binary<- margot::here_read('fit_church_on_communit
 # lm_coef_fit_church_on_charity_donate <- tbl_regression(fit_church_on_charity_donate)
 # b_church_on_charity_donate <-inline_text(lm_coef_fit_church_on_charity_donate, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
 # # # #
-#  b_church_on_charity_donate
+# b_church_on_charity_donate
 # here_save(b_church_on_charity_donate, "b_church_on_charity_donate")
 # 
 # lm_coef_fit_church_on_hours_charity <- tbl_regression(fit_church_on_hours_charity)
@@ -792,58 +803,12 @@ fit_church_on_community_money_binary<- margot::here_read('fit_church_on_communit
 # # b_church_on_charity_donate
 # here_save(b_church_on_hours_charity, "b_church_on_hours_charity")
 
-#b_church_on_community_money_binary_exp_true
-# lm_coef_fit_church_on_community_time_binary_exp_false<- tbl_regression(fit_church_on_community_time_binary, exponentiate = FALSE)
-# lm_coef_fit_church_on_community_time_binary_exp_true<- tbl_regression(fit_church_on_community_time_binary, exponentiate = TRUE)
-# b_church_on_community_time_binary_exp_true <-inline_text(lm_coef_fit_church_on_community_time_binary_exp_true, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
-# here_save(b_church_on_community_time_binary_exp_true, "b_church_on_community_time_binary_exp_true")
-# b_church_on_community_time_binary_exp_true
-# 
-lm_coef_fit_church_on_community_money_binary_exp_true<- tbl_regression(fit_church_on_community_money_binary, exponentiate = TRUE)
-b_church_on_community_money_binary_exp_true <-inline_text(lm_coef_fit_church_on_community_money_binary_exp_true, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
-here_save(b_church_on_community_money_binary_exp_true, "b_church_on_community_money_binary_exp_true")
-b_church_on_community_money_binary_exp_true <- here_read("b_church_on_community_money_binary_exp_true")
-b_church_on_community_money_binary_exp_true
-# 
-# b_church_on_community_time_binary_exp_false <-inline_text(lm_coef_fit_church_on_community_time_binary_exp_false, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
-# 
-# b_church_on_community_time_binary_exp_false 
-# # # #
-# 
-# here_save(b_church_on_community_time_binary_exp_false, "b_church_on_community_time_binary_exp_false")
-# b_church_on_community_time_binary_exp_false <- here_read("b_church_on_community_time_binary_exp_false")
-# 
-# 
-# lm_coef_fit_church_on_community_money_binary<- tbl_regression(fit_church_on_community_money_binary, exponentiate = FALSE)
-# 
-# b_church_on_community_money_binary_exp_false <-inline_text(lm_coef_fit_church_on_community_money_binary, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
-# 
-# b_church_on_community_money_binary_exp_false 
-# # # # #
-# 
-# here_save(b_church_on_community_time_binary_exp_false, "b_church_on_community_time_binary_exp_false")
-# b_church_on_community_time_binary_exp_false <- here_read("b_church_on_community_time_binary_exp_false")
-# 
-#here_save(b_church_on_community_money_binary_exp_false, "b_church_on_community_money_binary_exp_false")
-
-# lm_coef_fit_church_on_hours_charity <- tbl_regression(fit_church_on_hours_charity)
-# lm_coef_fit_church_on_hours_charity
-# b_church_on_hours_charity <-inline_text(lm_coef_fit_church_on_hours_charity, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
-# b_church_on_hours_charity
-# # b_church_on_charity_donate
-# here_save(b_church_on_hours_charity, "b_church_on_hours_charity")
-
-
-
-
 # tables ------------------------------------------------------------------
 library(gtsummary)
 
 # table baseline ----------------------------------------------------------
 # get names
-base_var
-dat_long$hour
-# prepare df
+
 selected_base_cols <-
   dt_18 |> select(all_of(base_var))
 
@@ -983,7 +948,6 @@ table_outcomes <- selected_outcome_cols %>%
 
 table_outcomes
 
-
 here_save(table_outcomes, "table_outcomes")
 table_outcomes <- here_read("table_outcomes")
 table_outcomes
@@ -1050,73 +1014,13 @@ here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
 
 
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-source("/Users/joseph/GIT/templates/functions/funs.R")
+# source("/Users/joseph/GIT/templates/functions/funs.R")
 
-# ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-source(
-  "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-)
-# devtools::install_github("go-bayes/margot")
-
-dt_19 <- dat_long |>
-  filter(wave == 2019) |>
-  select(c(religion_church_round, hours_community_round))
-
-library(margot)
-
-# 
-# graph_density_of_exposure_up <-
-#   coloured_histogram_shift_range(
-#     dt_19,
-#     col_name = "religion_church_round",
-#     binwidth = 1,
-#     range_highlight = c(0, 3.9),
-#     shift = "up"
-#   )
-# 
-# graph_density_of_exposure_up
-# here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
-# 
-# graph_density_of_exposure_down <-
-#   coloured_histogram_shift_range(
-#     dt_19,
-#     col_name = "religion_church_round",
-#     binwidth = 1,
-#     range_highlight = c(1, 8),
-#     shift = "down"
-#   )
-# 
-# graph_density_of_exposure_down
-# here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
-
-# 
-# table(dt_18$censored)
-# graph_density_of_exposure_socialising <-
-#   coloured_histogram_shift_range(
-#     dt_19,
-#     col_name = "hours_community_round",
-#     binwidth = .25,
-#     range_highlight = c(0, 1),
-#     shift = "up"
-#   )
-# 
-# graph_density_of_exposure_socialising
-# 
-# here_save(graph_density_of_exposure_socialising,
-#           "graph_density_of_exposure_socialising")
-# 
-# 
-# ggsave(
-#   graph_density_of_exposure_socialising,
-#   path = here::here(here::here(push_mods, "figs")),
-#   width = 12,
-#   height = 8,
-#   units = "in",
-#   filename = "graph_density_of_exposure_socialising.jpg",
-#   device = 'jpeg',
-#   limitsize = FALSE,
-#   dpi = 600
+# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
+# source(
+#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
 # )
+# # devtools::install_github("go-bayes/margot")
 
 
 # impute baseline ---------------------------------------------------------
@@ -1125,7 +1029,7 @@ library(margot)
 # function imputes only baseline not outcome
 #
 #devtools::install_github("go-bayes/margot")
-str(dat_long)
+
 dat_long$sample_weights
 dat_long_df <- data.frame(dat_long)
 
@@ -1139,7 +1043,7 @@ dat_long_df <- data.frame(dat_long)
 
 # check before committing
 colnames(dat_long_df)
-
+baseline_vars
 prep_coop_all <-
   margot_wide_impute_baseline(
     dat_long_df,
@@ -1148,23 +1052,24 @@ prep_coop_all <-
     outcome_vars = outcome_vars
   )
 
+
+
+# return variables to the imputed data frame
+# sample weights
+prep_coop_all$t0_sample_weights <- dt_18$sample_weights
+
+# alert_level
+prep_coop_all$t0_alert_level_combined_lead <- dt_18$alert_level_combined_lead
+
 prep_coop_all$t0_sample_weights
 prep_coop_all$t0_alert_level_combined
 prep_coop_all$t1_alert_level_combined
 
+margot::here_save(prep_coop_all, "prep_coop_all")
 
 # save function -- will save to your "push_mod" directory
 margot::here_save(prep_coop_all, "prep_coop_all")
 
-# check mi model
-outlist <-
-  row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
-.length(outlist)
-
-# checks. We do not impute with weights: area of current research
-head(prep_coop_all$loggedEvents, 10)
-
-# 
 # Warning messages:
 #   1: Number of logged events: 190 
 # 2: Using an external vector in selections was deprecated in tidyselect 1.1.0.
@@ -1179,19 +1084,6 @@ head(prep_coop_all$loggedEvents, 10)
 
 
 
-# read function
-prep_coop_all <-margot::here_read( "prep_coop_all")
-
-head(prep_coop_all)
-naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
-dev.off()
-
-table(prep_coop_all$t0_censored)
-head(prep_coop_all$t0_sam)
-colnames(prep_coop_all)
-#check must be a dataframe
-str(prep_coop_all)
-nrow(prep_coop_all)
 
 
 
@@ -1199,12 +1091,11 @@ nrow(prep_coop_all)
 
 # spit shine --------------------------------------------------------------
 
+
 df_wide_censored <- prep_coop_all |>
   mutate(
     t0_eth_cat = as.factor(t0_eth_cat),
-    t0_education_level_coarsen = as.factor(t0_education_level_coarsen),
-    t0_volunteers_binary = ifelse(t0_hours_charity > 0, 1, 0),
-    t2_volunteers_binary = ifelse(t0_hours_charity > 0, 1, 0),
+    t0_education_level_coarsen = as.factor(t0_education_level_coarsen)
   ) |>
   relocate("t0_censored", .before = starts_with("t1_")) |>
   relocate("t1_censored", .before = starts_with("t2_")) |>
@@ -1215,30 +1106,32 @@ df_wide_censored <- prep_coop_all |>
 # check
 naniar::vis_miss(df_wide_censored, warn_large_data = FALSE)
 
-table(df_wide_censored$t0_censored)
-outcome_vars
-
-outcome_vars
-str(df_wide_censored)
-
-library(dplyr)
 
 
-library(dplyr)
+
+# Assuming df_wide_censored is your dataframe
+
+# Calculate the conditions before the mutate steps
+t0_na_condition <- rowSums(is.na(select(df_wide_censored, starts_with("t1_")))) > 0
+#t1_na_condition <- rowSums(is.na(select(df_wide_censored, starts_with("t2_")))) > 0
+
+# check
+naniar::vis_miss(df_wide_censored, warn_large_data = FALSE)
+
 
 # Assuming df_wide_censored is your dataframe
 
 # Calculate the conditions before the mutate steps
 t0_na_condition <-
   rowSums(is.na(select(df_wide_censored, starts_with("t1_")))) > 0
-t1_na_condition <-
-  rowSums(is.na(select(df_wide_censored, starts_with("t2_")))) > 0
+# t1_na_condition <-
+#   rowSums(is.na(select(df_wide_censored, starts_with("t2_")))) > 0
 df_clean <- df_wide_censored %>%
   mutate(t0_censored = ifelse(t0_na_condition, 0, t0_censored)) %>%
-  mutate(t1_censored = ifelse(t1_na_condition, 0, t1_censored)) %>%
-  mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
-         across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) %>%
-  mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .))) |>
+  # mutate(t1_censored = ifelse(t1_na_condition, 0, t1_censored)) %>%
+  # mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
+  #        across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) %>%
+  # mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .))) |>
   select(-c(ends_with("_volunteers_binary"))) |> 
   # select variables
   dplyr::mutate(
@@ -1248,7 +1141,7 @@ df_clean <- df_wide_censored %>%
         # !t0_nzsei_13_l & 
         !t0_sample_weights & 
         !t0_rural_gch_2018_l & 
-        !t0_nzsei_13_l& 
+       # !t0_nzsei_13_l& 
         !t0_sample_frame_opt_in & 
         # !t0_total_siblings & 
         # !t0_volunteers_binary &
@@ -1282,7 +1175,7 @@ df_clean <- df_wide_censored %>%
     where(is.factor),
     t0_sample_weights,
     t0_rural_gch_2018_l,
-    t0_nzsei_13_l,
+  #  t0_nzsei_13_l,
     t0_sample_frame_opt_in,
     t0_alert_level_combined_lead,
     #  t0_volunteers_binary,
@@ -1311,12 +1204,40 @@ df_clean <- df_wide_censored %>%
     t2_community_money_binary,
     ends_with("_z")
   ) |>
+  mutate(t0_lost = 1 - t0_censored) |> 
+  mutate(t1_lost = 1 - t1_censored) |> 
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
   relocate("t0_censored", .before = starts_with("t1_"))  |>
   relocate("t1_censored", .before = starts_with("t2_"))
 
 
+#check
+naniar::vis_miss(df_clean, warn_large_data = FALSE)
 
+
+# checks
+table(df_clean$t1_lost)
+table(df_clean$t0_lost)
+
+test <- df_wide_censored |> filter(t0_censored == 1)
+nrow(test)
+
+table(df_clean$t0_censored)
+
+test <- df_wide_censored |> filter(t0_censored == 1)
+nrow(test)
+
+# 
+# df_impute_base$t1_perfectionism_z = scale(df_impute_base$t1_perfectionism)
+
+# get rid of attributes
+df_clean <- margot::remove_numeric_attributes(df_clean)
+str( df_clean )
+
+nrow(df_clean)
+
+# checks
+naniar::vis_miss(df_clean, warn_large_data = FALSE)
 
 
 here_save(df_clean, "df_clean")
@@ -1352,15 +1273,325 @@ names_outcomes <- here_read("names_outcomes")
 
 names_base
 df_clean$t0_sample_weights
+
+
+
+# weights for treament ----------------------------------------------------
+df_clean <- here_read("df_clean")
+
+
+baseline_vars_models = df_clean |>  # post process of impute and combine
+  dplyr::select(starts_with("t0"),-t0_censored, -t0_lost, -t0_sample_weights, -t0_alert_level_combined_lead, - t0_sample_weights)|> colnames() # note, we ear
+
+# check
+baseline_vars_models
+
+
+# clean vars
+df_clean_pre <- df_clean[baseline_vars_models]
+
+df_clean_pre$t0_rural_gch_2018_l <- as.factor(df_clean_pre$t0_rural_gch_2018_l)
+levels(df_clean_pre$t0_sample_origin)
+
+str(df_clean_pre)
+
+# perform one-hot encoding using model.matrix
+encoded_vars <- model.matrix(~ t0_education_level_coarsen + t0_eth_cat + t0_sample_origin + t0_rural_gch_2018_l  - 1, data = df_clean_pre)
+
+# convert matrix to data frame
+encoded_df <- as.data.frame(encoded_vars)
+
+
+# make better names
+encoded_df <- encoded_df %>% 
+  janitor::clean_names()
+
+# view the first few rows to confirm structure
+head(encoded_df)
+
+# bind the new one-hot encoded variables back to the original dataframe
+# ensure to remove original categorical variables to avoid duplication
+df_clean_hot_code <- df_clean %>%
+  select(-c(id, t0_education_level_coarsen, t0_eth_cat, t0_sample_origin, t0_rural_gch_2018_l, t0_rural_gch_2018_l, t0_alert_level_combined_lead)) %>%
+  bind_cols(encoded_df)
+
+# extract and print the new column names for encoded variables
+new_encoded_colnames <- colnames(encoded_df)
+print(new_encoded_colnames)
+
+
+# combine with base list of predictors
+baseline_vars_set <- setdiff(names(df_clean_pre), c("t0_lost", "id", "t0_education_level_coarsen", "t0_eth_cat", "t0_rural_gch_2018_l", "t0_sample_origin"))
+
+# Add the new encoded column names
+full_predictor_vars <- c(baseline_vars_set, new_encoded_colnames)
+
+
+full_predictor_vars
+
+# no factors
+str(df_clean_hot_code)
+
+
+cv_control <- list(V = 10, stratifyCV = TRUE)  # 10-fold CV with stratification
+
+
+library(doParallel)
+library(SuperLearner)
+
+
+# parallel backend
+no_cores <- detectCores()
+cl <- makeCluster(no_cores - 1)
+registerDoParallel(cl)
+
+
+str(df_clean_hot_code[full_predictor_vars])
+
+match_lib = c("SL.glmnet", "SL.xgboost", "SL.ranger")
+
+
+sl <- SuperLearner(
+  Y = df_clean_hot_code$t0_lost, 
+  X = df_clean_hot_code[full_predictor_vars],  # Use all specified predictors
+  SL.library = match_lib,
+  family = binomial(), 
+  method = "method.NNloglik", 
+  cvControl = list(V = 10)
+)
+here_save(sl, "sl")
+
+# stop the cluster
+stopCluster(cl)
+
+
+# CHECKS 
+print(sl)                  # Prints the summary of the SuperLearner output
+summary(sl)                # Provides a detailed summary, including cross-validated risks
+
+# For detailed examination of cross-validated performance
+sl$cvRisk                  # Cross-validated risks for each learner
+sl$coef                    # Weights assigned to each learner in the final ensemble
+
+
+
+# Generate predictions
+predictions <- predict(sl, newdata = df_clean_hot_code[full_predictor_vars], type = "response")
+
+# Extract predictions from the 'pred' component and ensure it's a vector
+df_clean_hot_code$pscore <- predictions$pred[, 1]
+
+# Check the structure of the predictions
+str(predictions)
+
+
+# IPCW
+df_clean_hot_code$weights <- ifelse(df_clean_hot_code$t0_lost == 1, 1 / df_clean_hot_code$pscore, 1 / (1 - df_clean_hot_code$pscore))
+
+
+# check 
+hist(df_clean_hot_code$weights)
+min(df_clean_hot_code$weights)
+max(df_clean_hot_code$weights)
+# obtain stabalizing var (no need)
+#df_clean_hot_code <- mean(df_clean_hot_code$t0_lost)
+
+# stabalized weights
+# #df_clean_hot_code$weights_stabilized <- ifelse(df_clean_hot_code$t0_lost == 1, 
+#                                   marginal_censored / df_clean_hot_code$pscore, 
+#                                   (1 - marginal_censored) / (1 - df_clean_hot_code$pscore))
+
+
+
+
+
+
+#
+head(df_clean_hot_code)
+
+df_clean
+
+# new weights
+df_clean$t0_combo_weights = df_clean_hot_code$weights * df_clean$t0_sample_weights
+df_clean$t0_alert_level_combined_lead <- df_clean$t0_alert_level_combined_lead
+
+min( df_clean$t0_combo_weights)
+max( df_clean$t0_combo_weights)
+
+hist( df_clean$t0_combo_weights)
+
+df_clean_t1 <- df_clean |> filter(t0_lost == 0)
+
+
+hist( df_clean_t1$t0_combo_weights )
+
+max(( df_clean_t1$t0_combo_weights ))
+min(df_clean_t1$t0_combo_weights)
+
+#
+nrow(df_clean_t1)
+
+table(is.na(df_clean_t1$t1_religion_church_round)) # 33198
+
+# gets us the correct df for weights
+naniar::vis_miss(df_clean_t1, warn_large_data = FALSE)
+
+# nrow full
+nrow(test)
+
+# correct
+nrow(df_clean_t1)
+
+# next get data for t1
+hist(df_clean_t1$t0_combo_weights)
+
+# get correct censoring 
+
+# redundant but OK
+t0_na_condition <-
+  rowSums(is.na(select(df_clean_t1, starts_with("t1_")))) > 0
+
+# use
+t1_na_condition <-
+  rowSums(is.na(select(df_clean_t1, starts_with("t2_")))) > 0
+# baseline_vars
+# df_impute_base$t0_sample_weights
+
+
+df_clean_t2 <- df_clean_t1 %>%
+  # select(-t0_alert_level_combined_lead) |> 
+  mutate(t0_censored = ifelse(t0_na_condition, 0, t0_censored)) %>%
+  mutate(t1_censored = ifelse(t1_na_condition, 0, t1_censored)) %>%
+  mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
+         across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) %>%
+  mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .))) |>
+  # mutate(t0_lost = 1 - t0_censored) |> 
+  mutate(t1_lost = 1 - t1_censored) |> 
+  relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
+  relocate("t0_censored", .before = starts_with("t1_"))  |>
+  relocate("t1_censored", .before = starts_with("t2_")) |> 
+  select(-t1_lost, -t0_lost)
+
+
+# test 
+nrow(df_clean_t2)
+
+# checks 
+hist(df_clean_t2$t0_combo_weights)
+
+# outcomes
+naniar::vis_miss(df_clean_t2, warn_large_data = F)
+
+#
+here_save(df_clean_t2, "df_clean_t2")
+
+# START HERE --------------------------------------------------------------
+# read data --  start here if previous work already done
+df_clean_t2 <- here_read("df_clean_t2")
+
+colnames(df_clean_t2)
+str(df_clean_t2)
+# names of vars for modelling
+
+names_base <-
+  df_clean_t2 |> select(starts_with("t0"),
+                        -t0_sample_weights, -t0_combo_weights,
+                        -t0_censored) |> colnames()
+
+names_base
+
+
+names_outcomes <-
+  df_clean_t2 |> select(starts_with("t2")) |> colnames()
+
+names_outcomes
+
+table( is.na( df_clean_t2$t0_alert_level_combined ))
+
+names(df_clean_t2)
+# explan names
+
+names_base
+
+df_final_base  <- df_clean_t2[names_base]
+
+
+df_final_base$t0_rural_gch_2018_l <- as.factor(df_final_base$t0_rural_gch_2018_l)
+
+# perform one-hot encoding using model.matrix
+encoded_vars_final <- model.matrix(~ t0_education_level_coarsen + t0_eth_cat + t0_sample_origin + t0_rural_gch_2018_l  +  t0_alert_level_combined_lead - 1, data = df_final_base)
+
+# convert matrix to data frame
+encoded_vars_final <- as.data.frame(encoded_vars_final)
+
+encoded_vars_final
+
+# make better names
+encoded_vars_final <- encoded_vars_final %>% 
+  janitor::clean_names()
+
+# View the first few rows to confirm structure
+head(encoded_vars_final)
+
+# bind the new one-hot encoded variables back to the original dataframe
+# ensure to remove original categorical variables to avoid duplication
+df_clean_t2_hot_code <- df_clean_t2 %>%
+  select(-c(t0_education_level_coarsen, t0_eth_cat, t0_sample_origin, t0_rural_gch_2018_l, t0_alert_level_combined_lead)) %>%
+  bind_cols(encoded_vars_final)
+
+# extract and print the new column names for encoded variables
+new_encoded_colnames_final <- colnames(encoded_vars_final)
+print(new_encoded_colnames_final)
+
+
+#  base list of predictors
+baseline_vars_set_final <- setdiff(names(df_final_base), c("t0_lost", "id", "t0_education_level_coarsen", "t0_eth_cat", "t0_religion_church_round", "t0_rural_gch_2018_l", "t0_sample_origin", "t0_alert_level_combined_lead"))
+
+# Add the new encoded column names
+full_predictor_vars_final <- c(baseline_vars_set_final, new_encoded_colnames_final)
+
+
+df_clean_t2_hot_code <-  df_clean_t2_hot_code |> 
+  relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
+  relocate("t0_censored", .before = starts_with("t1_"))  |>
+  relocate("t1_censored", .before = starts_with("t2_"))
+
+colnames(df_clean_t2_hot_code)
+#cv_control <- list(V = 10, stratifyCV = TRUE)  # 10-fold CV with stratification
+
+
+library(SuperLearner)
+
+
+
+#this will allow you to track progress
+progressr::handlers(global = TRUE)
+
+# set seed for reproducing results
+set.seed(0112358)
+library(future)
+library(SuperLearner)
+plan(multisession)
+
+
+
+
+
+# matching ----------------------------------------------------------------
+
+
 # check imbalance ---------------------------------------------------------
 
-df_clean_no_na_treatment_one <- df_clean |> filter(!is.na(t1_religion_church_round))
+df_clean_no_na_treatment_one <- df_clean_t2_hot_code |> filter(!is.na(t1_religion_church_round))
 
 # df_clean_no_na_treatment_base <- df_clean |> filter(!is.na(t0_religion_church_round)) 
 # 
 # 
 # 
-# names_base_base <- setdiff(names_base, "t0_religion_church_round")
+df_clean_t2_hot_code
+names_base_base <-df_clean_t2_hot_code |> select(starts_with("t0_"), -t0_sample_weights, -t0_censored, -starts_with("t0_alert_level_combined")) |> colnames()
+
+names_base_base
 # names_base_base
 # 
 # 
@@ -1384,9 +1615,9 @@ df_clean_no_na_treatment_one <- df_clean |> filter(!is.na(t1_religion_church_rou
 # here_save(summary_match_ebal, "summary_match_ebal")
 
 
-match_ebal_one<- match_mi_general(data = df_clean_no_na_treatment,
+match_ebal_one<- match_mi_general(data = df_clean_t2_hot_code,
                                   X = "t1_religion_church_round",
-                                  baseline_vars = names_base,
+                                  baseline_vars = names_base_base,
                                   estimand = "ATE",
                                   #  focal = 0, #for ATT
                                   method = "ebal",
@@ -1414,12 +1645,12 @@ plot(summary_match_ebal)
 
 
 # For trimmed weights e.g.
-#trim if needed (weights > 10 might be a problem)
-match_ebal_trim <- WeightIt::trim(match_ebal_one, at = .99)
-#bal.tab(match_ebal_trim_health)
-summary_match_ebal_trim<- summary(match_ebal_trim)
-plot(summary_match_ebal_trim)
-
+# #trim if needed (weights > 10 might be a problem)
+# match_ebal_trim <- WeightIt::trim(match_ebal_one, at = .99)
+# #bal.tab(match_ebal_trim_health)
+# summary_match_ebal_trim<- summary(match_ebal_trim)
+# plot(summary_match_ebal_trim)
+# 
 
 
 # set variable names ------------------------------------------------------
@@ -1550,12 +1781,30 @@ n_cores
 
 library("ranger")
 
+#library("ranger")
+full_predictor_vars_final
+df_clean_t2_hot_code
 
-# test data
-df_clean_slice <- df_clean |>
-  slice_head(n = 500) |>
+names_base_hot <- full_predictor_vars_final
+
+names_base_final <- names_base_hot
+here_save(names_base_final, "names_base_final")
+
+#better name
+df_final <- df_clean_t2_hot_code
+here_save(df_final, "df_final")
+
+# test data 
+df_clean_slice <- df_final |>
+  slice_head(n = 1000) |>
   as.data.frame()
 colnames(df_clean_slice)
+
+library(SuperLearner)
+library(xgboost)
+library(ranger)
+
+
 
 library(SuperLearner)
 library(xgboost)
@@ -1582,42 +1831,40 @@ sl_lib
 
 # redundant
 
-t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
-  outcome = "t2_charity_donate_z",
-  baseline = names_base,
-  shift = gain_A,
-  data = df_clean_slice,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean_slice$t0_sample_weights,
-  learners_trt= sl_lib,
-  # ranger much faster
-  learners_outcome= sl_lib,
-  parallel = n_cores
-)
-t2_charity_donate_z_test_gain_orig
-
-
-t2_charity_donate_z_test_gain_five <- lmtp_tmle(
-  outcome = "t2_charity_donate_z",
-  baseline = names_base,
-  shift = gain_A,
-  data = df_clean_slice,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 5,
-  outcome_type = "continuous",
-  weights = df_clean_slice$t0_sample_weights,
-  learners_trt= sl_lib,
-  # ranger much faster
-  learners_outcome= sl_lib,
-  parallel = n_cores
-)
-t2_charity_donate_z_test_gain_five
+# t2_charity_donate_z_test_gain_orig <- lmtp_tmle(
+#   outcome = "t2_charity_donate_z",
+#   baseline = names_base,
+#   shift = gain_A,
+#   data = df_clean_slice,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean_slice$t0_sample_weights,
+#   learners_trt= sl_lib,
+#   learners_outcome= sl_lib,
+#   parallel = n_cores
+# )
+# t2_charity_donate_z_test_gain_orig
+# 
+# 
+# t2_charity_donate_z_test_gain_five <- lmtp_tmle(
+#   outcome = "t2_charity_donate_z",
+#   baseline = names_base,
+#   shift = gain_A,
+#   data = df_clean_slice,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_clean_slice$t0_sample_weights,
+#   learners_trt= sl_lib,
+#   learners_outcome= sl_lib,
+#   parallel = n_cores
+# )
+# t2_charity_donate_z_test_gain_five
 
 #  As can be verified here: 
 # t2_charity_donate_z_test_gain_time_vary <- lmtp_tmle(
@@ -1629,11 +1876,11 @@ t2_charity_donate_z_test_gain_five
 #   trt = A,
 #   cens = C,
 #   mtp = TRUE,
-#   folds = 5,
+#   folds = 10,
 #   outcome_type = "continuous",
 #   weights = df_clean_slice$t0_sample_weights,
 #   learners_trt= sl_lib,
-#   # ranger much faster
+# 
 #   learners_outcome= sl_lib,
 #   parallel = n_cores
 # )
@@ -1648,48 +1895,82 @@ t2_charity_donate_z_test_gain <- lmtp_tmle(
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
   weights = df_clean_slice$t0_sample_weights,
   learners_trt= sl_lib,
-  # ranger much faster
   learners_outcome= sl_lib,
   parallel = n_cores
 )
 t2_charity_donate_z_test_gain
 
 
+t2_charity_donate_z_test_zero <- lmtp_tmle(
+  outcome = "t2_charity_donate_z",
+  baseline = names_base_base,
+  shift = zero_A,
+  data = df_clean_slice,
+  trt = A,
+  cens = C,
+  mtp = TRUE,
+  folds = 10,
+  outcome_type = "continuous",
+  weights = df_clean_slice$t0_sample_weights,
+  learners_trt= sl_lib,
+  learners_outcome= sl_lib,
+  parallel = n_cores
+)
+
 lmtp_contrast(t2_charity_donate_z_test_gain, ref = t2_charity_donate_z_test_zero, type = "additive")
 
 
 
-t2_charity_donate_z_test_gain
-
 # models ------------------------------------------------------------------
 
 library(SuperLearner)
-# do for all
-# names_base_t2_hours_charity_z<- select_and_rename_cols(names_base = names_base,  
-#                                                      baseline_vars = base_var, 
-#                                                      outcome =  "t2_hours_charity_z")
+library(xgboost)
+library(ranger)
+
+#
+gain_A <- function(data, trt) {
+  ifelse(data[[trt]] < 4, 4,  data[[trt]])
+}
 # 
-# # redundant
-# names_base_t2_hours_charity_z<- setdiff(names_base_t2_hours_charity_z, "t0_volunteers_binary")
-# # remove duplicate measure
-# names_base_t2_hours_charity_z<- setdiff(names_base, "t0_volunteers_binary")
+zero_A <- function(data, trt){
+  ifelse( data[[trt]] > 0, 0,  data[[trt]] )
+}
+
+
+# set seed for reproducing results
+set.seed(0112358)
+library(future)
+plan(multisession)
+n_cores <- parallel::detectCores()-1
+
+listWrappers()
+
+# super learner libraries
+sl_lib <- c("SL.glmnet",
+            "SL.ranger",
+            "SL.xgboost")
+
+
+names_base_final<- here_read("names_base_final")
+df_final<- here_read("df_final")
+
 
 
 t2_hours_charity_z_gain <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data = df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1701,13 +1982,13 @@ t2_hours_charity_z_zero <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1720,13 +2001,13 @@ t2_hours_charity_z_null <- lmtp_tmle(
   outcome = "t2_hours_charity_z",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores 
@@ -1750,13 +2031,13 @@ t2_charity_donate_z_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1768,13 +2049,13 @@ t2_charity_donate_z_zero <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1787,13 +2068,13 @@ t2_charity_donate_z_null <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1825,13 +2106,13 @@ t2_support_z_gain <- lmtp_tmle(
   outcome = "t2_support_z",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1842,13 +2123,13 @@ t2_support_z_zero <- lmtp_tmle(
   outcome = "t2_support_z",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1862,13 +2143,13 @@ t2_support_z_null <- lmtp_tmle(
   outcome = "t2_support_z",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "continuous",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1887,13 +2168,13 @@ t2_family_time_binary_gain <- lmtp_tmle(
   outcome = "t2_family_time_binary",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1905,13 +2186,13 @@ t2_family_time_binary_zero <- lmtp_tmle(
   outcome = "t2_family_time_binary",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1924,13 +2205,13 @@ t2_family_time_binary_null <- lmtp_tmle(
   outcome = "t2_family_time_binary",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1954,13 +2235,13 @@ t2_friends_time_binary_gain <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1973,13 +2254,13 @@ t2_friends_time_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -1993,13 +2274,13 @@ t2_friends_time_binary_null <- lmtp_tmle(
   outcome = "t2_friends_time_binary",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2020,13 +2301,13 @@ t2_community_time_binary_gain <- lmtp_tmle(
   outcome = "t2_community_time_binary",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2041,13 +2322,13 @@ t2_community_time_binary_zero <- lmtp_tmle(
   outcome = "t2_community_time_binary",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2061,13 +2342,13 @@ t2_community_time_binary_null<- lmtp_tmle(
   outcome = "t2_community_time_binary",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2092,13 +2373,13 @@ t2_family_money_binary_gain <- lmtp_tmle(
   outcome = "t2_family_money_binary",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2113,13 +2394,13 @@ t2_family_money_binary_zero <- lmtp_tmle(
   outcome = "t2_family_money_binary",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2133,13 +2414,13 @@ t2_family_money_binary_null <- lmtp_tmle(
   outcome = "t2_family_money_binary",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2161,13 +2442,13 @@ t2_friends_money_binary_gain <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2181,13 +2462,13 @@ t2_friends_money_binary_zero <- lmtp_tmle(
   outcome = "t2_friends_money_binary",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2202,13 +2483,13 @@ t2_friends_money_binary_null<- lmtp_tmle(
   outcome = "t2_friends_money_binary",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2229,13 +2510,13 @@ t2_community_money_binary_gain <- lmtp_tmle(
   outcome = "t2_community_money_binary",
   baseline = names_base,
   shift = gain_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2248,13 +2529,13 @@ t2_community_money_binary_zero <- lmtp_tmle(
   outcome = "t2_community_money_binary",
   baseline = names_base,
   shift = zero_A,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2268,13 +2549,13 @@ t2_community_money_binary_null <- lmtp_tmle(
   outcome = "t2_community_money_binary",
   baseline = names_base,
   shift = NULL,
-  data = df_clean,
+  data =  df_final,
   trt = A,
   cens = C,
   mtp = TRUE,
-  folds = 5,
+  folds = 10,
   outcome_type = "binomial",
-  weights = df_clean$t0_sample_weights,
+data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores

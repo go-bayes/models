@@ -111,6 +111,7 @@ dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
 str(dat)
 
+df
 
 dat_long <- dat |>
   # dplyr::filter(id %in% ids_2018_2019 &
