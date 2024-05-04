@@ -1945,9 +1945,10 @@ zero_A <- function(data, trt){
 set.seed(0112358)
 library(future)
 plan(multisession)
+plan(multisession)
 n_cores <- parallel::detectCores()-1
 
-listWrappers()
+
 
 # super learner libraries
 sl_lib <- c("SL.glmnet",
@@ -2074,7 +2075,7 @@ t2_charity_donate_z_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "continuous",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2102,60 +2103,60 @@ lmtp_contrast(t2_hours_charity_z_gain, ref = t2_hours_charity_z_null, type = "ad
 # names_base_t2_support_z<- setdiff(names_base_t2_support_z, "t0_volunteers_binary")
 # 
 # 
-t2_support_z_gain <- lmtp_tmle(
-  outcome = "t2_support_z",
-  baseline = names_base,
-  shift = gain_A,
-  data =  df_final,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "continuous",
-data =  df_final$t0_combo_weights, 
-  learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
-)
-here_save(t2_support_z_gain, "t2_support_z_gain")
-
-t2_support_z_zero <- lmtp_tmle(
-  outcome = "t2_support_z",
-  baseline = names_base,
-  shift = zero_A,
-  data =  df_final,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "continuous",
-data =  df_final$t0_combo_weights, 
-  learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
-)
-
-here_save(t2_support_z_zero, "t2_support_z_zero")
-
-#
-#
-t2_support_z_null <- lmtp_tmle(
-  outcome = "t2_support_z",
-  baseline = names_base,
-  shift = NULL,
-  data =  df_final,
-  trt = A,
-  cens = C,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "continuous",
-data =  df_final$t0_combo_weights, 
-  learners_trt= sl_lib,
-  learners_outcome= sl_lib,
-  parallel = n_cores
-)
-
-here_save(t2_support_z_null, "t2_support_z_null")
+# t2_support_z_gain <- lmtp_tmle(
+#   outcome = "t2_support_z",
+#   baseline = names_base,
+#   shift = gain_A,
+#   data =  df_final,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   data =  df_final$t0_combo_weights, 
+#   learners_trt= sl_lib,
+#   learners_outcome= sl_lib,
+#   parallel = n_cores
+# )
+# here_save(t2_support_z_gain, "t2_support_z_gain")
+# 
+# t2_support_z_zero <- lmtp_tmle(
+#   outcome = "t2_support_z",
+#   baseline = names_base,
+#   shift = zero_A,
+#   data =  df_final,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   data =  df_final$t0_combo_weights, 
+#   learners_trt= sl_lib,
+#   learners_outcome= sl_lib,
+#   parallel = n_cores
+# )
+# 
+# here_save(t2_support_z_zero, "t2_support_z_zero")
+# 
+# #
+# #
+# t2_support_z_null <- lmtp_tmle(
+#   outcome = "t2_support_z",
+#   baseline = names_base,
+#   shift = NULL,
+#   data =  df_final,
+#   trt = A,
+#   cens = C,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   data =  df_final$t0_combo_weights, 
+#   learners_trt= sl_lib,
+#   learners_outcome= sl_lib,
+#   parallel = n_cores
+# )
+# 
+# here_save(t2_support_z_null, "t2_support_z_null")
 # 
 # # church soc belong -------------------------------------------------------
 # names_base_t2_belong_z<- select_and_rename_cols(names_base = names_base,  
@@ -2174,7 +2175,7 @@ t2_family_time_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2192,7 +2193,7 @@ t2_family_time_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2211,7 +2212,7 @@ t2_family_time_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2241,7 +2242,7 @@ t2_friends_time_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2260,7 +2261,7 @@ t2_friends_time_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2280,7 +2281,7 @@ t2_friends_time_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2307,7 +2308,7 @@ t2_community_time_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2328,7 +2329,7 @@ t2_community_time_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2348,7 +2349,7 @@ t2_community_time_binary_null<- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2379,7 +2380,7 @@ t2_family_money_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2400,7 +2401,7 @@ t2_family_money_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2420,7 +2421,7 @@ t2_family_money_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2448,7 +2449,7 @@ t2_friends_money_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2468,7 +2469,7 @@ t2_friends_money_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2489,7 +2490,7 @@ t2_friends_money_binary_null<- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2516,7 +2517,7 @@ t2_community_money_binary_gain <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2535,7 +2536,7 @@ t2_community_money_binary_zero <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
@@ -2555,7 +2556,7 @@ t2_community_money_binary_null <- lmtp_tmle(
   mtp = TRUE,
   folds = 10,
   outcome_type = "binomial",
-data =  df_final$t0_combo_weights, 
+  data =  df_final$t0_combo_weights, 
   learners_trt= sl_lib,
   learners_outcome= sl_lib,
   parallel = n_cores
