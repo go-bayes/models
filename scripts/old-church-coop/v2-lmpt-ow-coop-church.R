@@ -3,8 +3,14 @@
 # this script brings the analysis for this study to the 'models" workflow
 
 ### ALWAYS RESTART R IN A FRESH SESSION ####
-
-
+library(margot)
+session_info <- sessionInfo()
+loaded_packages <- session_info$loadedOnly
+loaded_packages
+sess_info <- sessionInfo()
+loaded_packages <- sess_info$loadedOnly
+names(loaded_packages)
+library(gtable)
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 source("/Users/joseph/GIT/templates/functions/libs2.R")
 
