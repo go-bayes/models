@@ -2921,14 +2921,14 @@ here_save(group_tab_all_perceive_null, "group_tab_all_perceive_null")
 # graphs ------------------------------------------------------------------
 
 
-title = "Religious Service At Least Once Per Week vs None"
-title_null = "Religious Service At Least Once Per Week vs No Intervention"
+title = "Hours with Community: One vs None"
+title_null = "Hours with Community One Per Week vs No Intervention"
 
 conflicted::conflicts_prefer(ggplot2::margin())
 plot_group_tab_all_warm <- margot_plot(
   group_tab_all_warm,
   type = "RD",
-  title =  "Religious Service At Least Once Per Week vs None",
+  title =  "Hours with Community:  vs None",
   subtitle = "Out-Group Warmth",
   estimate_scale = 1,
   base_size = 18,
@@ -2962,7 +2962,7 @@ ggsave(
 plot_group_tab_all_warm_null <- margot_plot(
   group_tab_all_warm_null,
   type = "RD",
-  title = "Religious Service At Least Once Per Week vs No Intervention",
+  title = "Hours with Community: vs No Intervention",
   subtitle = "Out-Group Warmth",
   estimate_scale = 1,
   base_size = 18,
@@ -2999,7 +2999,7 @@ ggsave(
 plot_group_tab_all_perceive <- margot_plot(
   group_tab_all_perceive,
   type = "RD",
-  title =  "Religious Service At Least Once Per Week vs None",
+  title =  "Hours with Community: At Least Once Per Week vs None",
   subtitle = "Perceived Discrimination",
   xlab = "",
   ylab = "",
