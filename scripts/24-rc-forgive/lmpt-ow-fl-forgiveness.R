@@ -3,52 +3,90 @@
 # outcome-wide-analysis-template
 
 # Forgiveness
-
-
-# preliminaries -----------------------------------------------------------
-
-
-# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-source("/Users/joseph/GIT/templates/functions/libs2.R")
-
-# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
-source("/Users/joseph/GIT/templates/functions/funs.R")
-
-# experimental functions
-source(
-  "/Users/joseph/GIT/templates/functions/experimental_funs.R"
-)
-
-# 
-# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE LIBRARIES FROM JB's GITHUB
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/libs2.R")
-# 
-# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-# source("https://raw.githubusercontent.com/go-bayes/templates/main/functions/funs.R")
-# 
-# 
-# # ALERT: UNCOMMENT THIS AND DOWNLOAD THE FUNCTIONS FROM JB's GITHUB
-# source(
-#   "https://raw.githubusercontent.com/go-bayes/templates/main/functions/experimental_funs.R"
-# )
-
-
-
-## WARNING SET THIS PATH TO YOUR DATA ON YOUR SECURE MACHINE. DO NOT USE THIS PATH
-pull_path <-
-  fs::path_expand(
-    "/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
-  )
-
-# read data: note that you need use the arrow package in R
-dat <- arrow::read_parquet(pull_path)
-
-### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
-### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
   fs::path_expand(
     "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-forgiveness"
   )
+
+
+library(margot)
+library(tidyverse)
+
+# use p_load to load / install the packages
+pacman::p_load(
+  skimr,
+  naniar,
+  WeightIt,
+  clarify,
+  MatchThem,
+  cobalt,
+  MatchIt,
+  kableExtra,
+  janitor,
+  lmtp,
+  SuperLearner,
+  ranger,
+  xgboost,
+  glmnet,
+  doParallel,
+  ggplot2,
+  here,
+  naniar,
+  gtsummary,
+  grf,
+  progressr,
+  tidyverse,
+  ggplot2,
+  parameters,
+  kableExtra
+)
+
+# WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
+# source("/Users/joseph/GIT/templates/functions/libs2")
+
+pull_path <-
+  fs::path_expand(
+    #"/Users/joseph/v-project\ Dropbox/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs_refactor/nzavs_data_23"
+    "/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data_qs"
+  )
+
+# read data: note that you need use the arrow package in R
+
+#dat <- arrow::read_parquet("/Users/joseph/Library/CloudStorage/Dropbox-v-project/Joseph\ Bulbulia/00Bulbulia\ Pubs/DATA/nzavs-current/r-data/nzavs_data")
+
+dat <- qs::qread(here::here(pull_path))
+
+
+# zap haven labels
+dat <- as.data.frame(dat)
+dat <- haven::zap_formats(dat)
+dat <- haven::zap_label(dat)
+dat <- haven::zap_widths(dat)
+
+
+
+
+# check path:is this correct?  check so you know you are not overwriting other directors
+push_mods
+
+
+# total nzavs participants
+n_total <- skimr::n_unique(dat$id)
+
+# get comma in number
+n_total <- prettyNum(n_total, big.mark = ",")
+
+# check n total
+n_total
+
+# save n for manuscript
+margot::here_save(n_total, "n_total")
+
+# read data: note that you need use the arrow package in R
+# dat <- arrow::read_parquet(pull_path)
+
+### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
+### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
@@ -135,7 +173,7 @@ library(xgboost)
 library(glmnet)
 
 # boost speed
-SL.xgboost = list(tree_method = 'gpu_hist')
+#SL.xgboost = list(tree_method = 'gpu_hist')
 
 
 # check options
@@ -143,82 +181,8 @@ listWrappers()
 
 
 # kessler 6 ---------------------------------------------------------------
-# uncomment to get analysis
-#
-#
-#
-# dt_only_k6 <- dt_19 |> select(kessler_depressed, kessler_effort,kessler_hopeless,
-#                                  kessler_worthless, kessler_nervous,
-#                                  kessler_restless)
-#
-#
-# # check factor structure
-# performance::check_factorstructure(dt_only_k6)
-#
-# # explore a factor structure made of 3 latent variables
-# efa <- psych::fa(dt_only_k6, nfactors = 2) %>%
-#   model_parameters(sort = TRUE, threshold = "max")
-#
-# efa
-#
-#
-# n <- n_factors(dt_only_k6)
-#
-# # plot
-# plot(n) + theme_classic()
-#
-# # CFA
-# part_data <- datawizard::data_partition(dt_only_k6, traing_proportion = .7, seed = seed)
-#
-#
-# # set up training data
-# training <- part_data$p_0.7
-# test <- part_data$test
-#
-#
-# # one factor model
-# structure_k6_one <- psych::fa(training, nfactors = 1) |>
-#   efa_to_cfa()
-#
-# # two factor model model
-# structure_k6_two <- psych::fa(training, nfactors = 2) |>
-#   efa_to_cfa()
-#
-# # three factor model
-# structure_k6_three <- psych::fa(training, nfactors = 3) %>%
-#   efa_to_cfa()
-#
-# # inspect models
-# structure_k6_one
-# structure_k6_two
-# structure_k6_three
-#
-#
-# # Next we perform the confirmatory factor analysis.
-#
-#
-# one_latent <-
-#   suppressWarnings(lavaan::cfa(structure_k6_one, data = test))
-#
-# # two latents model
-# two_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_two, data = test))
-#
-# # three latents model
-# three_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
-#
-#
-# # compare models
-# compare <-
-#   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
-#
-# # view as html table
-# as.data.frame(compare) |>
-#   kbl(format = "markdown")
-#
 
-# import data and wrangle-------------------------------------------------
+
 dat_long  <- dat |>
   arrange(id, wave) |>
   mutate(forgiveness = 8 - vengeful_rumin) |> # reverse score veng rumination 
@@ -530,7 +494,7 @@ dat_long  <- dat |>
     # 'There are people I can depend on to help me if I really need it.
     "support_turnto",
     # There is no one I can turn to for guidance in times of stress.
-    "support_noguidance_reverseed",
+    "support_noguidance_reversed",
     #There is no one I can turn to for guidance in times of stress.
     "belong",
     "belong_accept",
@@ -555,7 +519,8 @@ dat_long  <- dat |>
     "hours_community",
     "hours_friends",
     "hours_family",
-    "alert_level_combined_lead"
+    "alert_level_combined_lead",
+    "alert_level_combined",
     # Hours spent … socialising with family
     # Hours spent … socialising with friends
     # Hours spent … socialising with community groups
@@ -648,449 +613,37 @@ dat_long  <- dat |>
 #   religion_church_binary_n = as.numeric(religion_church_binary)
 # ) |>
 mutate(
-  # eth_cat = as.integer(eth_cat),
+  born_nz = as.numeric(born_nz), 
+  hlth_disability = as.numeric(hlth_disability), 
+  partner = as.numeric(partner),
   urban = as.numeric(urban),
-  education_level_coarsen = as.integer(education_level_coarsen)
+  education_level_coarsen = as.integer(education_level_coarsen), 
+  alcohol_frequency = as.numeric(alcohol_frequency),
+  smoker = as.numeric(smoker)
 ) |>
   droplevels() |>
   arrange(id, wave) |>
   data.frame()
 
+# total nzavs participants
+n_participants <- skimr::n_unique(dat_long$id)
 
+n_participants <- prettyNum(n_participants, big.mark = ",")
 
+n_participants
+# save n for manuscript
+margot::here_save(n_participants, "n_participants")
 
 
 
-# factors 
-#
-# dt_only_k6 <- dt_19 |> select(kessler_depressed, kessler_effort,kessler_hopeless,
-#                                  kessler_worthless, kessler_nervous,
-#                                  kessler_restless)
-#
-#
-# # check factor structure
-# performance::check_factorstructure(dt_only_k6)
-#
-# # explore a factor structure made of 3 latent variables
-# efa <- psych::fa(dt_only_k6, nfactors = 2) %>%
-#   model_parameters(sort = TRUE, threshold = "max")
-#
-# efa
-#
-#
-# n <- n_factors(dt_only_k6)
-#
-# # plot
-# plot(n) + theme_classic()
-#
-# # CFA
-# part_data <- datawizard::data_partition(dt_only_k6, traing_proportion = .7, seed = seed)
-#
-#
-# # set up training data
-# training <- part_data$p_0.7
-# test <- part_data$test
-#
-#
-# # one factor model
-# structure_k6_one <- psych::fa(training, nfactors = 1) |>
-#   efa_to_cfa()
-#
-# # two factor model model
-# structure_k6_two <- psych::fa(training, nfactors = 2) |>
-#   efa_to_cfa()
-#
-# # three factor model
-# structure_k6_three <- psych::fa(training, nfactors = 3) %>%
-#   efa_to_cfa()
-#
-# # inspect models
-# structure_k6_one
-# structure_k6_two
-# structure_k6_three
-#
-#
-# # Next we perform the confirmatory factor analysis.
-#
-#
-# one_latent <-
-#   suppressWarnings(lavaan::cfa(structure_k6_one, data = test))
-#
-# # two latents model
-# two_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_two, data = test))
-#
-# # three latents model
-# three_latents <-
-#   suppressWarnings(lavaan::cfa(structure_k6_three, data = test))
-#
-#
-# # compare models
-# compare <-
-#   performance::compare_performance(one_latent, two_latents, three_latents, verbose = FALSE)
-#
-# # view as html table
-# as.data.frame(compare) |>
-#   kbl(format = "markdown")
-#
+# #zap haven labels
+dat_long <- as.data.frame(dat_long)
+dat_long <- haven::zap_formats(dat_long)
+dat_long <- haven::zap_label(dat_long)
+dat_long <- haven::zap_widths(dat_long)
 
-table(dat_long$wave)
 
-# eyeball distribution
-# table(dat_long$wave)
-
-dt_19 <- dat_long |>
-  filter(year_measured ==1 & wave == 2019) |> 
-  mutate(forgiveness_z = scale(forgiveness))
-
-nrow(dt_19)
-
-here_save_arrow(dt_19, "dt_19")
-
-
-library(ggplot2)
-library(dplyr)
-# 
-# coloured_histogram <- function(df, col_name, scale_min, scale_max) {
-#   
-#   epsilon <- 0.01  # small value to adjust range
-#   
-#   # title and subtitle
-#   dynamic_title <- paste("Density of responses for", col_name)
-#   fixed_sub_title <- "Lowest compressed shift shaded blue; highest compressed-shift shaded gold."
-#   
-#   # create a copy of the data to avoid modifying the original data
-#   df_copy <- df %>% 
-#     mutate(fill_category = case_when(
-#       between(!!sym(col_name), scale_min, scale_min + 1 - epsilon) ~ "Lowest",
-#       between(!!sym(col_name), scale_max - 1 + epsilon, scale_max) ~ "Highest",
-#       TRUE ~ "Middle"
-#     ))
-#   
-#   # create bar plot
-#   p <- ggplot(df_copy, aes(x = !!sym(col_name))) +
-#     geom_bar(aes(y = ..count.., fill = fill_category), alpha = 1) +
-#     scale_fill_manual(
-#       values = c("Lowest" = "dodgerblue", "Highest" = "gold2", "Middle" = "grey60")
-#     ) +
-#     labs(title = dynamic_title, subtitle = fixed_sub_title) +
-#     scale_x_continuous(breaks = seq(floor(min(df_copy[[col_name]])), ceiling(max(df_copy[[col_name]])), by = 1)) +
-#     theme_minimal()
-#   
-#   return(p)
-# }
-
-
-source("/Users/joseph/GIT/templates/functions/funs.R")
-
-# generate bar plot
-graph_density_of_exposure <- coloured_histogram(dt_19, col_name = "forgiveness", scale_min = 0, scale_max = 7)
-
-graph_density_of_exposure
-
-
-ggsave(
-  graph_density_of_exposure,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "graph_density_of_exposure.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-# test 
-dt_19 |> 
-  select(forgiveness) |> 
-  filter(forgiveness < 2) |> 
-  count(n = n())
-dt_19 |> 
-  select(forgiveness) |> 
-  filter(forgiveness > 6) |> 
-  count(n = n())
-
-dt_19 |> 
-  select(forgiveness) |> 
-  filter(forgiveness >=2  &  forgiveness <=6) |> 
-  count(n = n())
-
-
-hist(dt_19$forgiveness_z)
-table(dt_19$forgiveness_z)
-dev.off()
-
-mean_exposure <- mean(dt_19$forgiveness,
-                      na.rm = TRUE)
-
-# just to view, do not use in function
-mean_exposure
-
-# make sure to use the sd
-min_score <- min(dt_19$forgiveness_z, na.rm = TRUE)
-
-max_score <- max(dt_19$forgiveness_z, na.rm = TRUE)
-max_score
-
-sd_exposure <- sd(dt_19$forgiveness,
-                  na.rm = TRUE)
-sd_exposure
-
-one_point_in_sd_units <- 1/sd_exposure
-one_point_in_sd_units
-
-# half_sd <- sd_exposure / 2
-# half_sd
-
-
-
-#  increase everyone by one point, contrasted with what they would be anyway.
-# only use this function for raw scores
-f_1
-f
-
-#check missing
-#naniar::vis_miss(dat_long, warn_large_data = FALSE)
-dev.off()
-
-# check
-hist(dat_long$forgiveness)
-table(floor(dat_long$kessler_latent_depression))
-
-
-table(scale(dat_long$kessler_latent_anxiety))
-
-
-# check sample 
-N_participants <-n_unique(dat_long$id) #34749 
-N_participants
-
-
-# save for paper
-here_save(N_participants, "N_participants")
-
-# for later use
-N <- N_participants
-
-# double check path
-push_mods
-
-# check col names
-colnames(dat)
-
-dev.off()
-# check
-dt_check_exposure <- dat_long |> filter(wave == 2018| wave == 2019)
-
-# makes sure all is false
-table (is.na(dt_check_exposure$forgiveness))
-
-# makes sure all is false
-table ((dt_check_exposure$forgiveness))
-# make
-dt_18 <- dat_long |>
-  filter(wave == 1 )
-
-
-
-dt_positivity_full <- dt_check_exposure |>
-  filter(wave == 2018| wave == 2019) |>
-  select(wave, id, forgiveness, sample_weights) |> 
-  mutate(foregivness_round = round(forgiveness, 0))
-
-dt_positivity_full
-
-# check sample weights NA - will return to this after impute
-table (is.na(dt_positivity_full$sample_weights)) # 
-
-# test positivity
-out <-
-  msm::statetable.msm(foregivness_round, id, data = dt_positivity_full)
-
-# transition table
-t_tab <- transition_table(out, state_names = NULL)
-t_tab
-
-here_save(t_tab, "t_tab")
-
-
-# save transition
-here_save(t_tab, "t_tab")
-
-out <-
-  msm::statetable.msm(forgiveness, id, data = dt_positivity_full)
-
-# transition table
-t_tab <- transition_table(out, state_names = NULL)
-t_tab
-
-
-# graph of sd -------------------------------------------------------------
-
-coloured_histogram_sd <- function(df, col_name, binwidth = 30) {
-  # Compute statistics
-  avg_val <- mean(df[[col_name]], na.rm = TRUE)
-  std_val <- sd(df[[col_name]], na.rm = TRUE)
-  
-  # Create data frame for v-lines and their descriptions
-  line_data <- data.frame(
-    value = c(avg_val, avg_val - std_val, avg_val + std_val),
-    description = c("Mean", "Mean - 1 SD", "Mean + 1 SD"),
-    color = c("black", "dodgerblue", "gold2")
-  )
-  
-  # Create the plot
-  p <- ggplot(df, aes(x = !!sym(col_name))) +
-    geom_histogram(aes(y = ..count..),
-                   binwidth = binwidth,
-                   fill = "grey60") +
-    geom_vline(data = line_data,
-               aes(xintercept = value, color = description),
-               size = 1.5) +
-    geom_segment(
-      data = line_data,
-      aes(
-        x = avg_val,
-        y = 0,
-        xend = value,
-        yend = 0,
-        color = description
-      ),
-      arrow = arrow(
-        type = "closed",
-        ends = "last",
-        length = unit(0.2, "inches")
-      ),
-      size = 1.5
-    ) +
-    scale_color_manual(values = c(
-      "Mean - 1 SD" = "dodgerblue",
-      "Mean + 1 SD" = "gold2"
-    )) +
-    labs(title = "Histogram with Mean and Standard Deviation Intervals",
-         subtitle = "Arrows indicate one standard deviation from the mean.",
-         color = "Legend") +
-    theme_minimal()
-  
-  return(p)
-}
-
-
-standard_deviation_exposure <-
-  coloured_histogram_sd(dt_19, col_name = "forgiveness", binwidth = .5)
-
-standard_deviation_exposure
-
-#here_save( standard_deviation_exposure, "standard_deviation_exposure")
-
-ggsave(
-  standard_deviation_exposure,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "standard_deviation_exposure.jpeg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-
-library(ggplot2)
-library(dplyr)
-library(ggplot2)
-library(dplyr)
-
-library(ggplot2)
-library(dplyr)
-
-coloured_histogram_shift <- function(df, col_name, binwidth = 30, range_highlight = NULL) {
-  # Compute statistics
-  avg_val <- mean(df[[col_name]], na.rm = TRUE)
-  
-  # Adjust fill color based on the range_highlight parameter
-  fill_color <- case_when(
-    range_highlight == "below" & df[[col_name]] >= avg_val ~ "grey60",
-    range_highlight == "above" & df[[col_name]] <= avg_val ~ "grey60",
-    TRUE ~ ifelse(range_highlight == "below", "dodgerblue", "gold2")
-  )
-  
-  # Create the base histogram plot
-  p <- ggplot(df, aes_string(x = col_name)) +
-    geom_histogram(aes(y = ..count.., fill = fill_color),
-                   binwidth = binwidth, color = "black") +
-    scale_fill_identity() +
-    geom_vline(xintercept = avg_val, color = "black", size = 1.5) +
-    labs(title = "Histogram of Shift Function",
-         subtitle = "Coloured shows population shifted",
-         fill = "Legend") +
-    theme_minimal()
-  
-  # Add arrow based on range_highlight
-  if (!is.null(range_highlight)) {
-    if (range_highlight == "below") {
-      lowest_val <- min(df[[col_name]], na.rm = TRUE)
-      p <- p + geom_segment(
-        aes(
-          x = lowest_val,
-          y = 0,
-          xend = avg_val,
-          yend = 0
-        ),
-        arrow = arrow(
-          type = "closed",
-          ends = "last",
-          length = unit(0.2, "inches")
-        ),
-        color = "black",
-        size = 1.5
-      )
-    } else if (range_highlight == "above") {
-      highest_val <- max(df[[col_name]], na.rm = TRUE)
-      p <- p + geom_segment(
-        aes(
-          x = highest_val,
-          y = 0,
-          xend = avg_val,
-          yend = 0
-        ),
-        arrow = arrow(
-          type = "closed",
-          ends = "last",
-          length = unit(0.2, "inches")
-        ),
-        color = "black",
-        size = 1.5
-      )
-    }
-  }
-  
-  return(p)
-}
-
-# Example usage
-
-histogram_shift <- coloured_histogram_shift(dt_19, col_name = "forgiveness", binwidth = .5, range_highlight = "below")
-
-
-
-
-ggsave(
-  histogram_shift,
-  path = here::here(here::here(push_mods, "figs")),
-  width = 12,
-  height = 8,
-  units = "in",
-  filename = "histogram_shift.jpg",
-  device = 'jpeg',
-  limitsize = FALSE,
-  dpi = 600
-)
-
-
-# set variables for baseline exposure and outcome -------------------------
+# name variables
 
 baseline_vars = c(
   "male",
@@ -1255,50 +808,461 @@ outcome_vars = c(
   "belong",
   "support"
 )
+
+
+
+exposure_var
+baseline_vars <-
+  setdiff(baseline_vars,
+          c("id","wave", "alert_level_combined_lead", "sample_weights"))
+
+# c(outcome_vars, 'id', 'wave'))
+baseline_vars
+baseline_vars <- sort(baseline_vars)
+
+baseline_vars
+
+# just core baseline variables
+base_var <-
+  setdiff(baseline_vars, c("censored", "sample_weights", "alert_level_combined_lead", outcome_vars))
+base_var
+
+
+dt_positivity_full <- dat_long |>
+  filter(wave == 2018 | wave == 2019) |>
+  select(wave, id, forgiveness) |>
+  mutate(forgiveness_round = round(forgiveness, 0))
+
+
+
+# create transition matrix
+out <-
+  margot::create_transition_matrix(data=dt_positivity_full,  id_var = "id",
+                           state_var = "forgiveness_round")
+
+
+# t_tab_2_labels <- c("< weekly", ">= weekly")
+# transition table
+
+transition_table  <- margot::transition_table(out)
+transition_table
+# for import later
+margot::here_save(transition_table, "transition_table")
+
+# sd values ---------------------------------------------------------------
+
+dt_outcome <-
+  dat_long |>
+  filter(wave == 2020)
+
+
+# dt_outcome$religion_church_round
+# mean_donations <-
+#   mean(dt_outcome$charity_donate, na.rm = TRUE)
+# mean_volunteer <-
+#   mean(dt_outcome$hours_charity, na.rm = TRUE)
+# 
+# 
+# mean_donations
+# margot::here_save(mean_donations, "mean_donations")
+# mean_volunteer
+# margot::here_save(mean_volunteer, "mean_volunteer")
+# 
+# push_mods
+# 
+# 
+# sd_donations <-
+#   sd(dt_outcome$charity_donate, na.rm = TRUE)
+# sd_volunteer <-
+#   sd(dt_outcome$hours_charity, na.rm = TRUE)
+# 
+# 
+# 
+# # save for manuscript
+# here_save(sd_donations, "sd_donations")
+# here_save(sd_volunteer, "sd_volunteer")
+# 
+# # read
+# sd_donations <-
+#   here_read("sd_donations")
+# sd_volunteer <-
+#   here_read("sd_volunteer")
+#
+# check associations only -------------------------------------------------
+
+dt_18 <- dat_long|>
+  filter(wave == 2018)
+
+
+# table(dt_18$censored)
+
+
+
+# check association only
+# #dt_18_miss$sample_weights
+# 
+# dt_18_miss <- dt_18 |> 
+#   mutate(hours_charity_z = scale(hours_charity))
+# 
+# naniar::vis_miss(dt_18_miss, warn_large_data = F)
+# 
+# table((dt_18_miss$hours_religious_community))
+# dev.off()
+# 
+# # base_vars set above
+# fit_church_on_charity_donate <-
+#   margot::regress_with_covariates(
+#     dt_18_miss,
+#     outcome = "charity_donate",
+#     exposure = "religion_church_round",
+#     baseline_vars = base_var,
+#     sample_weights = "sample_weights"
+#   )
+# parameters::model_parameters(fit_church_on_charity_donate, ci_method="wald")[2, ] 
+# margot::here_save(fit_church_on_charity_donate, "fit_church_on_charity_donate")
+# 
+# #fit_church_on_hours_charity
+# #(0.198274  + 0.168511) * 60
+# 
+# fit_church_on_hours_charity <-
+#   margot::regress_with_covariates(
+#     dt_18_miss,
+#     outcome = "hours_charity",
+#     exposure = "religion_church_round",
+#     baseline_vars = base_var,
+#     sample_weights = "sample_weights"
+#   )
+# parameters::model_parameters(fit_church_on_hours_charity, ci_method="wald")[2, ]
+# margot::here_save(fit_church_on_hours_charity, "fit_church_on_hours_charity")
+# 
+# fit_church_on_community_time_binary <-
+#   margot::regress_with_covariates(
+#     dt_18,
+#     outcome = "community_time_binary",
+#     exposure = "religion_church_round",
+#     baseline_vars = base_var,
+#     family = "poisson"
+#   )
+# parameters::model_parameters(fit_church_on_community_time_binary, ci_method="wald")[2, ]
+# here_save(fit_church_on_community_time_binary, "fit_church_on_community_time_binary")
+# 
+# 
+# fit_church_on_community_money_binary <-
+#   margot::regress_with_covariates(
+#     dt_18,
+#     outcome = "community_money_binary",
+#     exposure = "religion_church_round",
+#     baseline_vars = base_var,
+#     family = "poisson"
+#   )
+# parameters::model_parameters(fit_church_on_community_money_binary, ci_method="wald")[2, ]
+# 
+# margot::here_save(fit_church_on_community_money_binary, "fit_church_on_community_money_binary")
+# 
+# fit_church_on_charity_donate<- margot::here_read('fit_church_on_charity_donate')
+# fit_church_on_hours_charity<- margot::here_read('fit_church_on_hours_charity')
+# fit_church_on_community_time_binary<- margot::here_read('fit_church_on_community_time_binary')
+# fit_church_on_community_money_binary<- margot::here_read('fit_church_on_community_money_binary')
+# 
+
+# run once then comment out
+
+# lm_coef_fit_church_on_charity_donate <- tbl_regression(fit_church_on_charity_donate)
+# b_church_on_charity_donate <-inline_text(lm_coef_fit_church_on_charity_donate, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# # # #
+# b_church_on_charity_donate
+# here_save(b_church_on_charity_donate, "b_church_on_charity_donate")
+# 
+# lm_coef_fit_church_on_hours_charity <- tbl_regression(fit_church_on_hours_charity)
+# lm_coef_fit_church_on_hours_charity
+# b_church_on_hours_charity <-inline_text(lm_coef_fit_church_on_hours_charity, variable = religion_church_round, pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# b_church_on_hours_charity
+# # b_church_on_charity_donate
+# here_save(b_church_on_hours_charity, "b_church_on_hours_charity")
+
+# tables ------------------------------------------------------------------
+library(gtsummary)
+
+# table baseline ----------------------------------------------------------
+# get names
+
+selected_base_cols <-
+  dt_18 |> select(all_of(base_var))
+
+#check
+colnames(selected_base_cols)
+
+#chck
+#selected_base_cols <- setdiff(selected_base_cols)
+# baseline table
+
+str(selected_base_cols)
+
+library(gtsummary)
+table_baseline <- selected_base_cols |> 
+  janitor::clean_names(case = "title") |> 
+  tbl_summary(
+    missing = "ifany",
+    percent = "column",
+    statistic = list(
+      all_continuous() ~ c(
+        "{mean} ({sd})", # Mean and SD
+        "{min}, {max}", # Range (Min, Max)
+        "{p25}, {p75}" # IQR (25th percentile, 75th percentile)
+      )
+    ),
+    type = all_continuous() ~ "continuous2"
+  ) |>
+  modify_header(label = "**Exposure + Demographic Variables**") |> # update the column header
+  bold_labels() 
+
+
+
+table_baseline
+# save baseline
+here_save(table_baseline, "table_baseline")
+# 
+
+# table exposure ----------------------------------------------------------
+
+# get first and second wave
+dt_18_19 <- dat_long |> 
+  dplyr::filter(wave == 2018 | wave == 2019) |> 
+  droplevels()
+
+# get vars.
+selected_exposure_cols <-
+  dt_18_19 %>% select(
+    c(
+      "forgiveness",
+      "alert_level_combined",
+      "wave"
+    )
+  )
+
+# check
+str(selected_exposure_cols)
+
+
+library(gtsummary)
+
+table_exposures <- selected_exposure_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+  #  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Exposure Variables by Wave**") %>%  # Update the column header
+  bold_labels()
+
+table_exposures
+
+
+# save baseline
+here_save(table_exposures, "table_exposures")
+
+table_exposures
+
+
+# outcome table -----------------------------------------------------------
+dt_18_20 <- dat_long |> 
+  dplyr::filter(wave == 2018 | wave == 2020) |> 
+  droplevels()
+
+names_outcomes_tab <- setdiff(outcome_vars, dt_18_20)
+names_outcomes_sorted <- sort(names_outcomes_tab)
+names_outcomes_final <- names_outcomes_sorted # consistent workflow
+
+names_outcomes_final
+
+names_outcomes_final
+
+
+
+# names_outcomes_final
+# better names
+selected_outcome_cols <-
+  dt_18_20 %>% select(all_of(names_outcomes_final),
+                      wave) #|>
+  # mutate(Volunteers_binary = factor(ifelse(hours_charity > 0, "yes", "no"),
+  #                                   levels = c("no", "yes"))) |> 
+ # rename(
+    # Social_belonging = belong,
+    # Annual_charity = charity_donate,
+    # Volunteering_hours = hours_charity,
+    # Community_gives_money_binary = community_money_binary,
+    # Community_gives_time_binary = community_time_binary,
+    # Family_gives_money_binary = family_money_binary,
+    # Family_gives_time_binary = family_time_binary,
+    # Friends_give_money_binary = friends_money_binary,
+    # Friends_give_time = friends_time_binary,
+    # Social_support = support,
+    # Sense_neighbourhood_community = neighbourhood_community
+  )
+
+# order names correctly
+selected_outcome_cols <- selected_outcome_cols %>%
+  select(sort(names(selected_outcome_cols)))
+
+# checks
+str(selected_outcome_cols)
+colnames(selected_outcome_cols)
+
+table_outcomes <- selected_outcome_cols %>%
+  janitor::clean_names(case = "title") %>% 
+  labelled::to_factor() %>%  # ensure consistent use of pipe operator
+  tbl_summary(
+    by = "Wave",  #specify the grouping variable. Adjust "Wave" to match the cleaned column name
+    missing = "always", 
+    percent = "column",
+    # statistic = list(all_continuous() ~ "{mean} ({sd})")  # Uncomment and adjust if needed for continuous variables
+  ) %>%
+  #  add_n() %>%  # Add column with total number of non-missing observations
+  modify_header(label = "**Outcome Variables by Wave**") %>%  # Update the column header
+  bold_labels()
+
+table_outcomes
+
+here_save(table_outcomes, "table_outcomes")
+table_outcomes <- here_read("table_outcomes")
+table_outcomes
+# histogram exposure ------------------------------------------------------
+
+dt_19 <- dat_long |> 
+  filter(wave == 2019)
+
+library(ggplot2)
+library(dplyr)
+
+
+
+
+# make shift intervention data --------------------------------------------
+dt_19 <- dat_long |>
+  filter(year_measured ==1 & wave == 2019) |> 
+  mutate(forgiveness_z = scale(forgiveness))
+
+
+dt_19 |> 
+  select(forgiveness) |> 
+  filter(forgiveness < 2) |> 
+  count(n = n())
+dt_19 |> 
+  select(forgiveness) |> 
+  filter(forgiveness > 6) |> 
+  count(n = n())
+
+dt_19 |> 
+  select(forgiveness) |> 
+  filter(forgiveness >=2  &  forgiveness <=6) |> 
+  count(n = n())
+
+
+hist(dt_19$forgiveness_z)
+table(dt_19$forgiveness_z)
+dev.off()
+
+mean_exposure <- mean(dt_19$forgiveness,
+                      na.rm = TRUE)
+
+# just to view, do not use in function
+mean_exposure
+
+# make sure to use the sd
+min_score <- min(dt_19$forgiveness_z, na.rm = TRUE)
+
+max_score <- max(dt_19$forgiveness_z, na.rm = TRUE)
+max_score
+
+sd_exposure <- sd(dt_19$forgiveness,
+                  na.rm = TRUE)
+sd_exposure
+
+one_point_in_sd_units <- 1/sd_exposure
+one_point_in_sd_units
+
+# half_sd <- sd_exposure / 2
+# half_sd
+
+
+
+#  increase everyone by one point, contrasted with what they would be anyway.
+# only use this function for raw scores
+f_1
+f
+graph_density_of_exposure_mean <- margot::coloured_histogram_shift(
+  dt_19,
+  range_highlight = c(1, mean_exposure),
+  col_name = "forgiveness",
+  binwidth = .1
+)
+graph_density_of_exposure_mean
+here_save(graph_density_of_exposure_mean, "graph_density_of_exposure_mean")
+
+#
+# # generate bar plot
+graph_density_of_exposure_up <- margot::coloured_histogram(
+  dt_19,
+  col_name = "forgiveness",
+  highlight_range = "highest",
+  binwidth = .1
+)
+graph_density_of_exposure_up
+
+
+push_mods
+here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
+
+# impute baseline ---------------------------------------------------------
 # impute baseline data (we use censoring for the outcomes)
 #colnames(dat_long)
 # function imputes only baseline not outcome
-
-
-
-# make data wide and impute baseline missing values -----------------------
-
-
-# custom function
-prep_coop_all <- margot_wide_impute_baseline(
-  dat_long,
-  baseline_vars = baseline_vars,
-  exposure_var = exposure_var,
-  outcome_vars = outcome_vars
-)
-
-# check mi model
-# outlist <-
-#   row.names(prep_coop_all)[prep_coop_all$outflux < 0.5]
-# length(outlist)
 #
-# # checks. We do not impute with weights: area of current research
-# head(prep_coop_all$loggedEvents, 10)
+#devtools::install_github("go-bayes/margot")
 
-push_mods
+dat_long$sample_weights
+dat_long_df <- data.frame(dat_long)
+
+my_data_filtered <- as.data.frame(dat_long_df)
+my_data_filtered <- haven::zap_formats(dat_long_df)
+my_data_filtered <- haven::zap_label(dat_long_df)
+my_data_filtered <- haven::zap_widths(dat_long_df)
+
+# needs to be a data frame
+dat_long_df <- data.frame(dat_long)
+
+# check before committing
+colnames(dat_long_df)
+baseline_vars
+prep_coop_all <-
+  margot_wide_impute_baseline(
+    dat_long_df,
+    baseline_vars = baseline_vars,
+    exposure_var = exposure_var,
+    outcome_vars = outcome_vars
+  )
+
+
+
+# return variables to the imputed data frame
+# sample weights
+prep_coop_all$t0_sample_weights <- dt_18$sample_weights
+
+# alert_level
+prep_coop_all$t0_alert_level_combined_lead <- dt_18$alert_level_combined_lead
+
+prep_coop_all$t0_sample_weights
+prep_coop_all$t0_alert_level_combined
+prep_coop_all$t1_alert_level_combined
+
+margot::here_save(prep_coop_all, "prep_coop_all")
 
 # save function -- will save to your "push_mod" directory
-here_save(prep_coop_all, "prep_coop_all")
-
-# read function
-prep_coop_all <- here_read("prep_coop_all")
-
-head(prep_coop_all)
-naniar::vis_miss(prep_coop_all, warn_large_data = FALSE)
-dev.off()
-
-
-#check must be a dataframe
-str(prep_coop_all)
-nrow(prep_coop_all)
-colnames(prep_coop_all)
-
-prep_coop_all <- as.data.frame(prep_coop_all)
+margot::here_save(prep_coop_all, "prep_coop_all")
 
 # arrange data for analysis -----------------------------------------------
 # spit and shine
@@ -1410,7 +1374,8 @@ print(W)
 # check shift
 f
 
-
+f
+f_1
 # make test data (if needed)
 df_clean_test <- df_clean |>
   slice_head(n = 2000)
@@ -4069,7 +4034,7 @@ contrast_t2_smoker_binary <-
 
 
 tab_contrast_t2_smoker_binary <-
-  margot_tab_lmtp(contrast_t2_smoker_binary,
+  margot_lmtp_tab(contrast_t2_smoker_binary,
                   scale = "RR",
                   new_name = "Smoker")
 
@@ -4090,8 +4055,9 @@ contrast_t2_smoker_binary_1 <-
                 type = "rr")
 
 
+
 tab_contrast_t2_smoker_binary_1 <-
-  margot_tab_lmtp(contrast_t2_smoker_binary_1,
+  margot_lmtp_tab(contrast_t2_smoker_binary_1,
                   scale = "RR",
                   new_name = "Smoker")
 
@@ -4115,7 +4081,7 @@ out_tab_contrast_t2_smoker_binary_1
 #                                         type = "additive")
 #
 # tab_contrast_t2_sfhealth_z <-
-#   margot_tab_lmtp(contrast_t2_sfhealth_z,
+#   margot_lmtp_tab(contrast_t2_sfhealth_z,
 #                   scale = "RD",
 #                   new_name = "Short form health")
 #
@@ -4141,7 +4107,7 @@ contrast_t2_sfhealth_your_health_z <-
                 type = "additive")
 
 tab_contrast_t2_sfhealth_your_health_z <-
-  margot_tab_lmtp(contrast_t2_sfhealth_your_health_z,
+  margot_lmtp_tab(contrast_t2_sfhealth_your_health_z,
                   scale = "RD",
                   new_name = "Short form health, your health")
 
@@ -4161,7 +4127,7 @@ contrast_t2_sfhealth_your_health_z_1 <-
 
 
 tab_contrast_t2_sfhealth_your_health_z_1 <-
-  margot_tab_lmtp(contrast_t2_sfhealth_your_health_z_1,
+  margot_lmtp_tab(contrast_t2_sfhealth_your_health_z_1,
                   scale = "RD",
                   new_name = "Short form health, your health")
 
@@ -4191,7 +4157,7 @@ contrast_t2_hours_exercise_log_z <-
                 type = "additive")
 
 tab_contrast_t2_hours_exercise_log_z <-
-  margot_tab_lmtp(contrast_t2_hours_exercise_log_z,
+  margot_lmtp_tab(contrast_t2_hours_exercise_log_z,
                   scale = "RD",
                   new_name = "Hours excercise")
 
@@ -4209,7 +4175,7 @@ contrast_t2_hours_exercise_log_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_hours_exercise_log_z_1 <-
-  margot_tab_lmtp(contrast_t2_hours_exercise_log_z_1,
+  margot_lmtp_tab(contrast_t2_hours_exercise_log_z_1,
                   scale = "RD",
                   new_name = "Hours excercise")
 
@@ -4239,7 +4205,7 @@ contrast_t2_alcohol_frequency_z <-
 
 
 tab_contrast_t2_alcohol_frequency_z <-
-  margot_tab_lmtp(contrast_t2_alcohol_frequency_z ,
+  margot_lmtp_tab(contrast_t2_alcohol_frequency_z ,
                   scale = "RD",
                   new_name = "Alcohol frequency")
 
@@ -4258,7 +4224,7 @@ contrast_t2_alcohol_frequency_z_1 <-
 
 
 tab_contrast_t2_alcohol_frequency_z_1 <-
-  margot_tab_lmtp(contrast_t2_alcohol_frequency_z_1,
+  margot_lmtp_tab(contrast_t2_alcohol_frequency_z_1,
                   scale = "RD",
                   new_name = "Alcohol frequency")
 
@@ -4290,7 +4256,7 @@ contrast_t2_alcohol_intensity_z <-
 
 
 tab_contrast_t2_alcohol_intensity_z <-
-  margot_tab_lmtp(contrast_t2_alcohol_intensity_z,
+  margot_lmtp_tab(contrast_t2_alcohol_intensity_z,
                   scale = "RD",
                   new_name = "Alcohol intensity")
 
@@ -4309,7 +4275,7 @@ contrast_t2_alcohol_intensity_z_1 <-
 
 
 tab_contrast_t2_alcohol_intensity_z_1 <-
-  margot_tab_lmtp(contrast_t2_alcohol_intensity_z_1,
+  margot_lmtp_tab(contrast_t2_alcohol_intensity_z_1,
                   scale = "RD",
                   new_name = "Alcohol intensity")
 
@@ -4336,7 +4302,7 @@ contrast_t2_hours_sleep_z <-
                 type = "additive")
 
 tab_contrast_t2_hours_sleep_z <-
-  margot_tab_lmtp(contrast_t2_hours_sleep_z,
+  margot_lmtp_tab(contrast_t2_hours_sleep_z,
                   scale = "RD",
                   new_name = "Hours sleep")
 
@@ -4354,7 +4320,7 @@ contrast_t2_hours_sleep_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_hours_sleep_z_1 <-
-  margot_tab_lmtp(contrast_t2_hours_sleep_z_1,
+  margot_lmtp_tab(contrast_t2_hours_sleep_z_1,
                   scale = "RD",
                   new_name = "Hours sleep")
 
@@ -4378,7 +4344,7 @@ contrast_t2_bmi_z <- lmtp_contrast(t2_hlth_bmi_z,
                                    type = "additive")
 
 tab_contrast_t2_bmi_z <-
-  margot_tab_lmtp(contrast_t2_bmi_z, scale = "RD", new_name = "BMI")
+  margot_lmtp_tab(contrast_t2_bmi_z, scale = "RD", new_name = "BMI")
 
 
 out_tab_contrast_t2_bmi_z <-
@@ -4394,7 +4360,7 @@ contrast_t2_bmi_z_1 <- lmtp_contrast(t2_hlth_bmi_z_1,
                                      type = "additive")
 
 tab_contrast_t2_bmi_z_1  <-
-  margot_tab_lmtp(contrast_t2_bmi_z_1, scale = "RD", new_name = "BMI")
+  margot_lmtp_tab(contrast_t2_bmi_z_1, scale = "RD", new_name = "BMI")
 
 
 out_tab_contrast_t2_bmi_z_1  <-
@@ -4417,7 +4383,7 @@ contrast_t2_bodysat_z <- lmtp_contrast(t2_bodysat_z,
                                        type = "additive")
 contrast_t2_bodysat_z
 tab_contrast_t2_bodysat_z <-
-  margot_tab_lmtp(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction")
+  margot_lmtp_tab(contrast_t2_bodysat_z, scale = "RD", new_name = "Body satisfaction")
 
 
 out_tab_contrast_t2_bodysat_z <-
@@ -4432,7 +4398,7 @@ contrast_t2_bodysat_z_1 <- lmtp_contrast(t2_bodysat_z_1,
                                          type = "additive")
 contrast_t2_bodysat_z_1
 tab_contrast_t2_bodysat_z_1 <-
-  margot_tab_lmtp(contrast_t2_bodysat_z_1, scale = "RD", new_name = "Body satisfaction")
+  margot_lmtp_tab(contrast_t2_bodysat_z_1, scale = "RD", new_name = "Body satisfaction")
 
 
 out_tab_contrast_t2_bodysat_z_1 <-
@@ -4453,7 +4419,7 @@ out_tab_contrast_t2_bodysat_z_1
 #                 type = "additive")
 #
 # tab_contrast_t2_kessler6_sum_z <-
-#   margot_tab_lmtp(contrast_t2_kessler6_sum_z,
+#   margot_lmtp_tab(contrast_t2_kessler6_sum_z,
 #                   scale = "RD",
 #                   new_name = "Kessler 6 distress")
 #
@@ -4485,7 +4451,7 @@ contrast_t2_kessler_latent_depression_z <-
                 type = "additive")
 
 tab_contrast_t2_kessler_latent_depression_z <-
-  margot_tab_lmtp(contrast_t2_kessler_latent_depression_z,
+  margot_lmtp_tab(contrast_t2_kessler_latent_depression_z,
                   scale = "RD",
                   new_name = "Kessler 6 depression")
 
@@ -4504,7 +4470,7 @@ contrast_t2_kessler_latent_depression_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_kessler_latent_depression_z_1 <-
-  margot_tab_lmtp(contrast_t2_kessler_latent_depression_z_1,
+  margot_lmtp_tab(contrast_t2_kessler_latent_depression_z_1,
                   scale = "RD",
                   new_name = "Kessler 6 depression")
 
@@ -4534,7 +4500,7 @@ contrast_t2_kessler_latent_anxiety_z <-
                 type = "additive")
 
 tab_contrast_t2_kessler_latent_anxiety_z <-
-  margot_tab_lmtp(contrast_t2_kessler_latent_anxiety_z,
+  margot_lmtp_tab(contrast_t2_kessler_latent_anxiety_z,
                   scale = "RD",
                   new_name = "Kessler 6 anxiety")
 
@@ -4552,7 +4518,7 @@ contrast_t2_kessler_latent_anxiety_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_kessler_latent_anxiety_z_1 <-
-  margot_tab_lmtp(contrast_t2_kessler_latent_anxiety_z_1,
+  margot_lmtp_tab(contrast_t2_kessler_latent_anxiety_z_1,
                   scale = "RD",
                   new_name = "Kessler 6 anxiety")
 
@@ -4580,7 +4546,7 @@ contrast_t2_hlth_fatigue_z <-
 
 
 tab_contrast_t2_hlth_fatigue_z <-
-  margot_tab_lmtp(contrast_t2_hlth_fatigue_z ,
+  margot_lmtp_tab(contrast_t2_hlth_fatigue_z ,
                   scale = "RD",
                   new_name = "Fatigue")
 
@@ -4600,7 +4566,7 @@ contrast_t2_hlth_fatigue_z_1 <-
 
 
 tab_contrast_t2_hlth_fatigue_z_1  <-
-  margot_tab_lmtp(contrast_t2_hlth_fatigue_z_1,
+  margot_lmtp_tab(contrast_t2_hlth_fatigue_z_1,
                   scale = "RD",
                   new_name = "Fatigue")
 
@@ -4624,7 +4590,7 @@ contrast_t2_rumination_z <-
                 type = "additive")
 
 tab_contrast_t2_rumination_z <-
-  margot_tab_lmtp(contrast_t2_rumination_z ,
+  margot_lmtp_tab(contrast_t2_rumination_z ,
                   scale = "RD",
                   new_name = "Rumination")
 
@@ -4641,7 +4607,7 @@ contrast_t2_rumination_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_rumination_z_1 <-
-  margot_tab_lmtp(contrast_t2_rumination_z_1 ,
+  margot_lmtp_tab(contrast_t2_rumination_z_1 ,
                   scale = "RD",
                   new_name = "Rumination")
 
@@ -4673,7 +4639,7 @@ contrast_t2_sexual_satisfaction_z <-
 
 
 tab_contrast_t2_sexual_satisfaction_z <-
-  margot_tab_lmtp(contrast_t2_sexual_satisfaction_z,
+  margot_lmtp_tab(contrast_t2_sexual_satisfaction_z,
                   scale = "RD",
                   new_name = "Sexual satisfaction")
 
@@ -4693,7 +4659,7 @@ contrast_t2_sexual_satisfaction_z_1 <-
 
 
 tab_contrast_t2_sexual_satisfaction_z_1 <-
-  margot_tab_lmtp(contrast_t2_sexual_satisfaction_z_1,
+  margot_lmtp_tab(contrast_t2_sexual_satisfaction_z_1,
                   scale = "RD",
                   new_name = "Sexual satisfaction")
 
@@ -4726,7 +4692,7 @@ contrast_t2_power_no_control_composite_z <-
 
 
 tab_contrast_t2_power_no_control_composite_z <-
-  margot_tab_lmtp(contrast_t2_power_no_control_composite_z,
+  margot_lmtp_tab(contrast_t2_power_no_control_composite_z,
                   scale = "RD",
                   new_name = "Power no control")
 
@@ -4747,7 +4713,7 @@ contrast_t2_power_no_control_composite_z_1  <-
 
 
 tab_contrast_t2_power_no_control_composite_z_1  <-
-  margot_tab_lmtp(contrast_t2_power_no_control_composite_z_1 ,
+  margot_lmtp_tab(contrast_t2_power_no_control_composite_z_1 ,
                   scale = "RD",
                   new_name = "Power no control")
 
@@ -4775,7 +4741,7 @@ contrast_t2_self_esteem_z <-
 
 
 tab_contrast_t2_self_esteem_z <-
-  margot_tab_lmtp(contrast_t2_self_esteem_z,
+  margot_lmtp_tab(contrast_t2_self_esteem_z,
                   scale = "RD",
                   new_name = "Self esteem")
 
@@ -4795,7 +4761,7 @@ contrast_t2_self_esteem_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_self_esteem_z_1 <-
-  margot_tab_lmtp(contrast_t2_self_esteem_z_1,
+  margot_lmtp_tab(contrast_t2_self_esteem_z_1,
                   scale = "RD",
                   new_name = "Self esteem")
 
@@ -4819,7 +4785,7 @@ contrast_t2_perfectionism_z <-
 
 
 tab_contrast_t2_perfectionism_z <-
-  margot_tab_lmtp(contrast_t2_perfectionism_z ,
+  margot_lmtp_tab(contrast_t2_perfectionism_z ,
                   scale = "RD",
                   new_name = "Perfectionism")
 
@@ -4839,7 +4805,7 @@ contrast_t2_perfectionism_z_1 <-
 
 
 tab_contrast_t2_perfectionism_z_1 <-
-  margot_tab_lmtp(contrast_t2_perfectionism_z_1,
+  margot_lmtp_tab(contrast_t2_perfectionism_z_1,
                   scale = "RD",
                   new_name = "Perfectionism")
 
@@ -4869,7 +4835,7 @@ contrast_t2_self_control_have_lots_z <-
 
 
 tab_contrast_t2_self_control_have_lots_z <-
-  margot_tab_lmtp(contrast_t2_self_control_have_lots_z ,
+  margot_lmtp_tab(contrast_t2_self_control_have_lots_z ,
                   scale = "RD",
                   new_name = "Self control have")
 
@@ -4889,7 +4855,7 @@ contrast_t2_self_control_have_lots_z_1 <-
 
 
 tab_contrast_t2_self_control_have_lots_z_1 <-
-  margot_tab_lmtp(contrast_t2_self_control_have_lots_z_1,
+  margot_lmtp_tab(contrast_t2_self_control_have_lots_z_1,
                   scale = "RD",
                   new_name = "Self control have")
 
@@ -4920,7 +4886,7 @@ contrast_t2_self_control_wish_more_reversed_z <-
                 type = "additive")
 
 tab_contrast_t2_self_control_wish_more_reversed_z <-
-  margot_tab_lmtp(
+  margot_lmtp_tab(
     contrast_t2_self_control_wish_more_reversed_z,
     scale = "RD",
     new_name = "Self control wish more (reversed)"
@@ -4941,7 +4907,7 @@ contrast_t2_self_control_wish_more_reversed_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_self_control_wish_more_reversed_z_1 <-
-  margot_tab_lmtp(
+  margot_lmtp_tab(
     contrast_t2_self_control_wish_more_reversed_z_1,
     scale = "RD",
     new_name = "Self control wish more (reversed)"
@@ -4971,7 +4937,7 @@ contrast_t2_emotion_regulation_out_control_z <-
                 type = "additive")
 
 tab_contrast_t2_emotion_regulation_out_control_z <-
-  margot_tab_lmtp(
+  margot_lmtp_tab(
     contrast_t2_emotion_regulation_out_control_z ,
     scale = "RD",
     new_name = "Emotional regulation (out of control)"
@@ -4993,7 +4959,7 @@ contrast_t2_emotion_regulation_out_control_z_1 <-
 
 
 tab_contrast_t2_emotion_regulation_out_control_z_1 <-
-  margot_tab_lmtp(
+  margot_lmtp_tab(
     contrast_t2_emotion_regulation_out_control_z_1 ,
     scale = "RD",
     new_name = "Emotional regulation (out of control)"
@@ -5025,7 +4991,7 @@ contrast_t2_permeability_individual_z <-
                 type = "additive")
 
 tab_contrast_t2_permeability_individual_z <-
-  margot_tab_lmtp(contrast_t2_permeability_individual_z ,
+  margot_lmtp_tab(contrast_t2_permeability_individual_z ,
                   scale = "RD",
                   new_name = "Permeability self")
 
@@ -5044,7 +5010,7 @@ contrast_t2_permeability_individual_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_permeability_individual_z_1 <-
-  margot_tab_lmtp(contrast_t2_permeability_individual_z_1,
+  margot_lmtp_tab(contrast_t2_permeability_individual_z_1,
                   scale = "RD",
                   new_name = "Permeability self")
 
@@ -5080,7 +5046,7 @@ contrast_t2_gratitude_z <- lmtp_contrast(t2_gratitude_z,
                                          ref = t2_gratitude_z_null,
                                          type = "additive")
 tab_contrast_t2_gratitude_z <-
-  margot_tab_lmtp(contrast_t2_gratitude_z,
+  margot_lmtp_tab(contrast_t2_gratitude_z,
                   scale = "RD",
                   new_name = "Gratitude")
 
@@ -5096,7 +5062,7 @@ contrast_t2_gratitude_z_1 <- lmtp_contrast(t2_gratitude_z_1,
                                            ref = t2_gratitude_z_null,
                                            type = "additive")
 tab_contrast_t2_gratitude_z_1 <-
-  margot_tab_lmtp(contrast_t2_gratitude_z_1 ,
+  margot_lmtp_tab(contrast_t2_gratitude_z_1 ,
                   scale = "RD",
                   new_name = "Gratitude")
 
@@ -5123,7 +5089,7 @@ out_tab_contrast_t2_gratitude_z_1
 #                 type = "additive")
 # 
 # tab_contrast_t2_vengeful_rumin_z <-
-#   margot_tab_lmtp(contrast_t2_vengeful_rumin_z,
+#   margot_lmtp_tab(contrast_t2_vengeful_rumin_z,
 #                   scale = "RD",
 #                   new_name = "Vengefulness (forgiveness)")
 # 
@@ -5142,7 +5108,7 @@ out_tab_contrast_t2_gratitude_z_1
 #                 type = "additive")
 # 
 # tab_contrast_t2_vengeful_rumin_z_1  <-
-#   margot_tab_lmtp(contrast_t2_vengeful_rumin_z_1 ,
+#   margot_lmtp_tab(contrast_t2_vengeful_rumin_z_1 ,
 #                   scale = "RD",
 #                   new_name = "Vengefulness (forgiveness")
 # 
@@ -5172,7 +5138,7 @@ contrast_t2_pwb_your_health_z <-
                 type = "additive")
 
 tab_contrast_t2_pwb_your_health_z <-
-  margot_tab_lmtp(contrast_t2_pwb_your_health_z,
+  margot_lmtp_tab(contrast_t2_pwb_your_health_z,
                   scale = "RD",
                   new_name = "PWB your health")
 
@@ -5190,7 +5156,7 @@ contrast_t2_pwb_your_health_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_pwb_your_health_z_1 <-
-  margot_tab_lmtp(contrast_t2_pwb_your_health_z_1,
+  margot_lmtp_tab(contrast_t2_pwb_your_health_z_1,
                   scale = "RD",
                   new_name = "PWB your health")
 
@@ -5219,7 +5185,7 @@ contrast_t2_pwb_your_future_security_z <-
                 type = "additive")
 
 tab_contrast_t2_pwb_your_future_security_z <-
-  margot_tab_lmtp(contrast_t2_pwb_your_future_security_z,
+  margot_lmtp_tab(contrast_t2_pwb_your_future_security_z,
                   scale = "RD",
                   new_name = "PWB your future security")
 
@@ -5237,7 +5203,7 @@ contrast_t2_pwb_your_future_security_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_pwb_your_future_security_z_1 <-
-  margot_tab_lmtp(contrast_t2_pwb_your_future_security_z_1,
+  margot_lmtp_tab(contrast_t2_pwb_your_future_security_z_1,
                   scale = "RD",
                   new_name = "PWB your future security")
 
@@ -5269,7 +5235,7 @@ contrast_t2_pwb_your_relationships_z <-
 
 
 tab_contrast_t2_pwb_your_relationships_z <-
-  margot_tab_lmtp(contrast_t2_pwb_your_relationships_z ,
+  margot_lmtp_tab(contrast_t2_pwb_your_relationships_z ,
                   scale = "RD",
                   new_name = "PWB your relationships")
 
@@ -5289,7 +5255,7 @@ contrast_t2_pwb_your_relationships_z_1 <-
 
 
 tab_contrast_t2_pwb_your_relationships_z_1  <-
-  margot_tab_lmtp(contrast_t2_pwb_your_relationships_z_1 ,
+  margot_lmtp_tab(contrast_t2_pwb_your_relationships_z_1 ,
                   scale = "RD",
                   new_name = "PWB your relationships")
 
@@ -5320,7 +5286,7 @@ contrast_t2_pwb_standard_living_z <-
                 type = "additive")
 
 tab_contrast_t2_pwb_standard_living_z <-
-  margot_tab_lmtp(contrast_t2_pwb_standard_living_z ,
+  margot_lmtp_tab(contrast_t2_pwb_standard_living_z ,
                   scale = "RD",
                   new_name = "PWB your standard living")
 
@@ -5339,7 +5305,7 @@ contrast_t2_pwb_standard_living_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_pwb_standard_living_z_1 <-
-  margot_tab_lmtp(contrast_t2_pwb_standard_living_z_1 ,
+  margot_lmtp_tab(contrast_t2_pwb_standard_living_z_1 ,
                   scale = "RD",
                   new_name = "PWB your standard living")
 
@@ -5363,7 +5329,7 @@ out_tab_contrast_t2_pwb_standard_living_z_1
 #                 type = "additive")
 # 
 # tab_contrast_t2_lifemeaning_z <-
-#   margot_tab_lmtp(contrast_t2_lifemeaning_z,
+#   margot_lmtp_tab(contrast_t2_lifemeaning_z,
 #                   scale = "RD",
 #                   new_name = "Meaning in life")
 # 
@@ -5388,7 +5354,7 @@ contrast_t2_meaning_purpose_z <-
                 type = "additive")
 
 tab_contrast_t2_meaning_purpose_z <-
-  margot_tab_lmtp(contrast_t2_meaning_purpose_z,
+  margot_lmtp_tab(contrast_t2_meaning_purpose_z,
                   scale = "RD",
                   new_name = "Meaning: clear sense of purpose")
 
@@ -5406,7 +5372,7 @@ contrast_t2_meaning_purpose_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_meaning_purpose_z_1  <-
-  margot_tab_lmtp(contrast_t2_meaning_purpose_z_1 ,
+  margot_lmtp_tab(contrast_t2_meaning_purpose_z_1 ,
                   scale = "RD",
                   new_name = "Meaning: clear sense of purpose")
 
@@ -5435,7 +5401,7 @@ contrast_t2_meaning_sense_z <-
                 type = "additive")
 
 tab_contrast_t2_meaning_sense_z <-
-  margot_tab_lmtp(contrast_t2_meaning_sense_z,
+  margot_lmtp_tab(contrast_t2_meaning_sense_z,
                   scale = "RD",
                   new_name = "Meaning: good sense of what makes my life meaningful")
 
@@ -5454,7 +5420,7 @@ contrast_t2_meaning_sense_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_meaning_sense_z_1 <-
-  margot_tab_lmtp(contrast_t2_meaning_sense_z_1,
+  margot_lmtp_tab(contrast_t2_meaning_sense_z_1,
                   scale = "RD",
                   new_name = "Meaning: good sense of what makes my life meaningful")
 
@@ -5481,7 +5447,7 @@ contrast_t2_lifesat_z <- lmtp_contrast(t2_lifesat_z,
                                        type = "additive")
 
 tab_contrast_t2_lifesat_z <-
-  margot_tab_lmtp(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life")
+  margot_lmtp_tab(contrast_t2_lifesat_z, scale = "RD", new_name = "Satisfaction with life")
 
 
 out_tab_contrast_t2_lifesat_z <-
@@ -5496,7 +5462,7 @@ contrast_t2_lifesat_z_1 <- lmtp_contrast(t2_lifesat_z_1,
                                          type = "additive")
 
 tab_contrast_t2_lifesat_z_1 <-
-  margot_tab_lmtp(contrast_t2_lifesat_z_1, scale = "RD", new_name = "Satisfaction with life")
+  margot_lmtp_tab(contrast_t2_lifesat_z_1, scale = "RD", new_name = "Satisfaction with life")
 
 
 out_tab_contrast_t2_lifesat_z_1 <-
@@ -5517,7 +5483,7 @@ contrast_t2_support_z <- lmtp_contrast(t2_support_z,
                                        ref = t2_support_z_null,
                                        type = "additive")
 tab_contrast_t2_support_z <-
-  margot_tab_lmtp(contrast_t2_support_z, scale = "RD", new_name = "Social support")
+  margot_lmtp_tab(contrast_t2_support_z, scale = "RD", new_name = "Social support")
 
 
 out_tab_contrast_t2_support_z <-
@@ -5531,7 +5497,7 @@ contrast_t2_support_z_1 <- lmtp_contrast(t2_support_z_1,
                                          ref = t2_support_z_null,
                                          type = "additive")
 tab_contrast_t2_support_z_1 <-
-  margot_tab_lmtp(contrast_t2_support_z_1, scale = "RD", new_name = "Social support")
+  margot_lmtp_tab(contrast_t2_support_z_1, scale = "RD", new_name = "Social support")
 
 
 out_tab_contrast_t2_support_z_1 <-
@@ -5558,7 +5524,7 @@ contrast_t2_neighbourhood_community_z <-
                 type = "additive")
 
 tab_contrast_t2_neighbourhood_community_z <-
-  margot_tab_lmtp(contrast_t2_neighbourhood_community_z,
+  margot_lmtp_tab(contrast_t2_neighbourhood_community_z,
                   scale = "RD",
                   new_name = "Neighbourhood community")
 
@@ -5576,7 +5542,7 @@ contrast_t2_neighbourhood_community_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_neighbourhood_community_z_1 <-
-  margot_tab_lmtp(contrast_t2_neighbourhood_community_z_1,
+  margot_lmtp_tab(contrast_t2_neighbourhood_community_z_1,
                   scale = "RD",
                   new_name = "Neighbourhood community")
 
@@ -5599,7 +5565,7 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 
 tab_contrast_t2_belong_z <-
-  margot_tab_lmtp(contrast_t2_belong_z, scale = "RD",
+  margot_lmtp_tab(contrast_t2_belong_z, scale = "RD",
                   new_name = "Social belonging")
 
 
@@ -5616,7 +5582,7 @@ contrast_t2_belong_z_1 <- lmtp_contrast(t2_belong_z_1 ,
 
 
 tab_contrast_t2_belong_z_1  <-
-  margot_tab_lmtp(contrast_t2_belong_z_1 , scale = "RD",
+  margot_lmtp_tab(contrast_t2_belong_z_1 , scale = "RD",
                   new_name = "Social belonging")
 
 
@@ -5632,7 +5598,7 @@ out_tab_contrast_t2_belong_z_1
 # don't forget to report smoking
 
 
-
+f_1
 # bind individual tables
 
 tab_health <- rbind(
@@ -5942,6 +5908,7 @@ tab_health_1 <- rbind(
 )
 tab_health_1
 
+here_save(tab_health_1, "tab_health_1")
 
 tab_body_1 <- rbind(
   out_tab_contrast_t2_bodysat_z_1,
@@ -5953,6 +5920,7 @@ tab_body_1 <- rbind(
 )
 tab_body_1
 
+here_save(tab_body_1, "tab_body_1")
 
 tab_ego_1 <- rbind(
   out_tab_contrast_t2_emotion_regulation_out_control_z_1,
@@ -5966,6 +5934,7 @@ tab_ego_1 <- rbind(
 
 tab_ego_1
 
+here_save(tab_ego_1, "tab_ego_1")
 
 tab_reflective_1 <- rbind(
   out_tab_contrast_t2_gratitude_z_1,
@@ -5979,6 +5948,7 @@ tab_reflective_1 <- rbind(
 )
 tab_reflective_1
 
+here_save(tab_reflective_1, "tab_reflective_1")
 
 tab_social_1 <- rbind(
   out_tab_contrast_t2_belong_z_1,
@@ -5986,6 +5956,7 @@ tab_social_1 <- rbind(
   out_tab_contrast_t2_support_z_1
 )
 tab_social_1
+here_save(tab_social_1, "tab_social_1")
 
 # make group table
 group_tab_health_1 <- group_tab(tab_health_1, type = "RD")
@@ -6026,7 +5997,7 @@ group_tab_ego_1 <- here_read("group_tab_ego_1")
 group_tab_reflective_1 <- here_read("group_tab_reflective_1")
 group_tab_social_1 <- here_read("group_tab_social_1")
 
-
+A
 # create plots -------------------------------------------------------------
 
 f
