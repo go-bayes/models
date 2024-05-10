@@ -72,6 +72,11 @@ pull_path <-
 
 dat <- qs::qread(here::here(pull_path))
 
+names <- colnames(dat)
+
+names <- sort(names)
+names
+
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
 

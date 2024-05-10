@@ -64,7 +64,7 @@ dat <- haven::zap_label(dat)
 dat <- haven::zap_widths(dat)
 
 
-
+colnames(dat)
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
@@ -114,9 +114,9 @@ f <- function(data, trt) {
 
 # shift functions
 #  decrease everyone by one point, contrasted with what they would be anyway.
-# f <- function(data, trt) {
-#   ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
-# }
+f <- function(data, trt) {
+  ifelse(data[[trt]] >= min_score + one_point_in_sd_units, data[[trt]] - one_point_in_sd_units,  min_score)
+}
 # 
 # f
 
@@ -1132,13 +1132,6 @@ table_outcomes <- here_read("table_outcomes")
 table_outcomes
 # histogram exposure ------------------------------------------------------
 
-dt_19 <- dat_long |> 
-  filter(wave == 2019)
-
-library(ggplot2)
-library(dplyr)
-
-
 
 
 # make shift intervention data --------------------------------------------
@@ -1165,6 +1158,9 @@ dt_19 |>
 hist(dt_19$forgiveness_z)
 table(dt_19$forgiveness_z)
 dev.off()
+
+
+# test --------------------------------------------------------------------
 
 mean_exposure <- mean(dt_19$forgiveness,
                       na.rm = TRUE)
@@ -1194,6 +1190,7 @@ one_point_in_sd_units
 # only use this function for raw scores
 f_1
 f
+
 graph_density_of_exposure_mean <- margot::coloured_histogram_shift(
   dt_19,
   range_highlight = c(1, mean_exposure),
@@ -1215,7 +1212,7 @@ graph_density_of_exposure_up
 
 
 push_mods
-here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
+margot::here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
 
 # impute baseline ---------------------------------------------------------
 # impute baseline data (we use censoring for the outcomes)
@@ -4047,6 +4044,7 @@ out_tab_contrast_t2_smoker_binary <-
 
 out_tab_contrast_t2_smoker_binary
 
+here_save(out_tab_contrast_t2_smoker_binary, "out_tab_contrast_t2_smoker_binary")
 
 # second contrast
 contrast_t2_smoker_binary_1 <-
@@ -4070,6 +4068,7 @@ out_tab_contrast_t2_smoker_binary_1 <-
 
 out_tab_contrast_t2_smoker_binary_1
 
+here_save(out_tab_contrast_t2_smoker_binary_1, "out_tab_contrast_t2_smoker_binary_1")
 
 # # sf health
 # t2_sfhealth_z <- here_read("t2_sfhealth_z")
@@ -5601,6 +5600,12 @@ out_tab_contrast_t2_belong_z_1
 f_1
 # bind individual tables
 
+tab_health_smoker <- rbind(
+  out_tab_contrast_t2_smoker_binary
+)
+tab_health
+
+
 tab_health <- rbind(
   out_tab_contrast_t2_hours_exercise_log_z,
   out_tab_contrast_t2_alcohol_frequency_z,
@@ -5648,7 +5653,8 @@ tab_reflective <- rbind(
   out_tab_contrast_t2_pwb_your_future_security_z,
   out_tab_contrast_t2_pwb_your_health_z,
   out_tab_contrast_t2_pwb_your_relationships_z,
-  out_tab_contrast_t2_pwb_standard_living_z#,
+  out_tab_contrast_t2_pwb_standard_living_z,
+  out_tab_contrast_t2_lifesat_z
   # out_tab_contrast_t2_vengeful_rumin_z
 )
 tab_reflective
@@ -5683,10 +5689,12 @@ group_tab_ego <- group_tab(tab_ego, type = "RD")
 # save
 here_save(group_tab_ego, "group_tab_ego")
 
-# make group table
-group_tab_reflective <-
-  group_tab(tab_reflective, type = "RD")
 
+
+
+# make group table
+group_tab_reflective <- group_tab(tab_reflective, type = "RD")
+tab_reflective
 # save
 here_save(group_tab_reflective, "group_tab_reflective")
 
@@ -5943,7 +5951,8 @@ tab_reflective_1 <- rbind(
   out_tab_contrast_t2_pwb_your_future_security_z_1,
   out_tab_contrast_t2_pwb_your_health_z_1,
   out_tab_contrast_t2_pwb_your_relationships_z_1,
-  out_tab_contrast_t2_pwb_standard_living_z_1#,
+  out_tab_contrast_t2_pwb_standard_living_z_1,
+  out_tab_contrast_t2_lifesat_z_1
   # out_tab_contrast_t2_vengeful_rumin_z_1
 )
 tab_reflective_1
