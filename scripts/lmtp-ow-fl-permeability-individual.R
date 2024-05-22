@@ -46,7 +46,7 @@ dat <- arrow::read_parquet(pull_path)
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 push_mods <-
-  fs::path_expand("/Users/joseph/v-project\ Dropbox/data/nzvs_mods/00drafts/23-lmtp-ow-fl-permeability-individual")
+  fs::path_expand("/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/nzvs_mods/00drafts/23-lmtp-ow-fl-permeability-individual")
 
 # check path:is this correct?  check so you know you are not overwriting other directors
 push_mods
