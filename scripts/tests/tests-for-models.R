@@ -5,7 +5,7 @@
 ### ALWAYS RESTART R IN A FRESH SESSION ####
 listWrappers()
 push_mods <-  fs::path_expand(
-  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/24-church-prejudice"
+  "/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/test"
 )
 
 #devtools::install_github("go-bayes/margot")
@@ -93,12 +93,18 @@ n_total
 # save n for manuscript
 margot::here_save(n_total, "n_total")
 
+
+
+# check name
+# 
+summary( dat$power_self_nocontrol )
+
 # set exposure here
-nzavs_exposure <- "religion_church_round"
+nzavs_exposure <- "hours_exercise"
 
 
 !!sym(exposure_var_string)
-name_exposure_raw <- "religion_church"
+name_exposure_raw <- "hours_exercise"
 
 # set number of folds for ML here. use a minimum of 5 and a max of 10
 SL_folds = 10
@@ -114,6 +120,8 @@ n_cores <- parallel::detectCores()-1
 
 listWrappers()
 
+
+dat$power
 # super learner libraries
 sl_lib <- c("SL.glmnet",
             "SL.ranger",
@@ -124,8 +132,6 @@ sl_lib <- c("SL.glmnet",
 push_mods
 
 # check colnames
-colnames(dat)
-name_exposure_raw <- "religion_church"
 # Obtain IDs for individuals who participated in 2018 and have no missing baseline exposure
 ids_2018 <- dat %>%
   filter(year_measured == 1, wave == 2018) %>%
@@ -161,6 +167,7 @@ dat_long <- dat |>
     "year_measured",
     # "edu",
     "religion_church",
+    "power_self_nocontrol",
     # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing)  Combined highschool levels See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pdf
     "male",
     # 0 = female, 0.5 = neither female nor male, 1 = male.
@@ -378,7 +385,8 @@ dat_long <- dat |>
     "friends_money",
     "community_money",
     "alert_level_combined_lead",
-    "alert_level_combined"
+    "alert_level_combined",
+    "w_gend_age_euro"
   ) |>
   mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
   mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
@@ -409,7 +417,7 @@ dat_long <- dat |>
     hours_housework_log = log(hours_housework + 1),
     household_inc_log = log(household_inc + 1),
     #  hours_charity_log = log(hours_charity + 1),
-    hours_exercise_log = log(hours_exercise + 1),
+   # hours_exercise_log = log(hours_exercise + 1),
     hours_children_log = log(hours_children + 1),
     # total_siblings_log = log(total_siblings + 1),
     # hours_community_log = log(hours_community + 1),
@@ -423,7 +431,7 @@ dat_long <- dat |>
       hours_work,
       hours_housework,
       household_inc,
-      hours_exercise,
+    #  hours_exercise,
       hours_children,
       has_siblings,
       hours_community
@@ -432,7 +440,7 @@ dat_long <- dat |>
     )
   ) |>
   droplevels() |>
-  dplyr::rename(#sample_weights = w_gend_age_ethnic,
+  dplyr::rename(sample_weights = w_gend_age_euro,
     sample_origin =  sample_origin_names_combined) |>
   dplyr::mutate(
     # make indicators binary
@@ -453,6 +461,7 @@ dat_long <- dat |>
       # hours_community,
       #  hours_family,
       #  hours_friends,
+    #  w_gend_age_euro,
       community_money,
       friends_money,
       family_money#,
@@ -503,26 +512,27 @@ n_participants
 
 # create sample weights for male female -----------------------------------
 
-# calculate gender weights assuming male is coded as 1 and female as 0
-prop_male_population <- 0.5  # target proportion of males in the population
-prop_female_population <- 0.5  # target proportion of females in the population
-
-prop_male_sample <- mean(dat_long$male)
-prop_female_sample <- 1 - prop_male_sample
-
-gender_weight_male <- prop_male_population / prop_male_sample
-gender_weight_female <- prop_female_population / prop_female_sample
-
-dat_long$sample_weights <- ifelse(dat_long$male == 1, gender_weight_male, gender_weight_female)
-
-hist(dat_long$sample_weights)
-
-# check male are upweighted
-head(dat_long[, c("male", "sample_weights")])
-
-
+# # calculate gender weights assuming male is coded as 1 and female as 0
+# prop_male_population <- 0.5  # target proportion of males in the population
+# prop_female_population <- 0.5  # target proportion of females in the population
+# 
+# prop_male_sample <- mean(dat_long$male)
+# prop_female_sample <- 1 - prop_male_sample
+# 
+# gender_weight_male <- prop_male_population / prop_male_sample
+# gender_weight_female <- prop_female_population / prop_female_sample
+# 
+# dat_long$sample_weights <- ifelse(dat_long$male == 1, gender_weight_male, gender_weight_female)
+# 
+# hist(dat_long$sample_weights)
+# 
+# # check male are upweighted
+# head(dat_long[, c("male", "sample_weights")])
 
 
+names_dat <- colnames(dat)
+names_dat <- sort(names_dat)
+names_dat
 # baseline vars -----------------------------------------------------------
 str(dat_long)
 # check
@@ -547,7 +557,7 @@ dat_long_colnames
 
 # set baseline exposure and outcomes --------------------------------------
 
-exposure_var = c("religion_church_round",
+exposure_var = c("hours_exercise",
                  "censored"#,
 ) #
 
@@ -567,6 +577,8 @@ outcome_vars = c(
   "support",
   "belong"
 )
+
+hist(dat_long$power_self_nocontrol)
 
 dat_long_colnames <- colnames(dat_long)
 #
@@ -602,69 +614,33 @@ push_mods
 colnames(dat)
 
 # assess positivity
-dat_long$wave
+dat_long$power_self_nocontrol
 
 dt_positivity_full <- dat_long |>
   filter(wave == 2018 | wave == 2019) |>
-  select(wave, id, religion_church_round, sample_weights) |>
-  mutate(religion_church_shift_gain = ifelse(religion_church_round >= 4, 1, 0)) |> 
-  mutate(religion_church_shift_zero = ifelse(religion_church_round > 0, 1, 0))
+  select(wave, id, hours_exercise) |> 
+  mutate(hours_exercise_who = ifelse(hours_exercise >= 5, 1, 0))
+  # mutate(religion_church_shift_zero = ifelse(religion_church_round > 0, 1, 0))
 
-
-
-
-# create transition matrix
-out <-
-  msm::statetable.msm(religion_church_round, id, data = dt_positivity_full)
 
 
 library(margot)
 
-out <-margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_round", id_var = "id")
+out <-margot::create_transition_matrix(data = dt_positivity_full, state_var = "hours_exercise_who", id_var = "id")
 
 
 # t_tab_2_labels <- c("< weekly", ">= weekly")
 # transition table
 
-transition_table  <- margot::transition_table(out)
+labels_who_five <- c("0", "=> 5")
+
+
+transition_table  <- margot::transition_table(out, labels_who_five)
 transition_table
 # for import later
 margot::here_save(transition_table, "transition_table")
+transition_table$table
 
-
-
-out_church_zero <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_shift_zero", id_var = "id")
-
-
-t_tab_2_labels_zero <- c("0", "> 0")
-
-transition_table_binary_zero <-
-  margot::transition_table(out_church_zero,
-                           state_names = t_tab_2_labels_zero)
-
-transition_table_binary_zero
-
-# for import later
-here_save(transition_table_binary_zero,
-          "transition_table_binary_zero")
-
-
-
-# transition table
-out_church_gain <- margot::create_transition_matrix(data = dt_positivity_full, state_var = "religion_church_shift_gain", id_var = "id")
-
-
-t_tab_2_labels_gain <- c(">=4", "< 4")
-
-transition_table_binary_gain <-
-  margot::transition_table(out_church_gain,
-                           state_names = t_tab_2_labels_gain)
-
-transition_table_binary_gain
-
-# for import later
-here_save(transition_table_binary_gain,
-          "transition_table_binary_gain")
 
 
 # sd values ---------------------------------------------------------------
@@ -674,14 +650,12 @@ dt_outcome <-
   filter(wave == 2020)
 
 
-dt_outcome$religion_church_round
+
 mean_donations <-
   mean(dt_outcome$charity_donate, na.rm = TRUE)
 mean_volunteer <-
   mean(dt_outcome$hours_charity, na.rm = TRUE)
 
-
-mean_donations
 margot::here_save(mean_donations, "mean_donations")
 mean_volunteer
 margot::here_save(mean_volunteer, "mean_volunteer")
@@ -693,7 +667,6 @@ sd_donations <-
   sd(dt_outcome$charity_donate, na.rm = TRUE)
 sd_volunteer <-
   sd(dt_outcome$hours_charity, na.rm = TRUE)
-
 
 
 # save for manuscript
@@ -742,56 +715,56 @@ fit_church_on_charity_donate <-
   margot::regress_with_covariates(
     dt_18_miss,
     outcome = "charity_donate",
-    exposure = "religion_church_round",
+    exposure = "hours_exercise",
     baseline_vars = base_var,
     sample_weights = "sample_weights"
   )
 parameters::model_parameters(fit_church_on_charity_donate, ci_method="wald")[2, ] 
-margot::here_save(fit_church_on_charity_donate, "fit_church_on_charity_donate")
+margot::here_save(fit_X_charity_donate, "fit_X_on_charity_donate")
 
 #fit_church_on_hours_charity
 #(0.198274  + 0.168511) * 60
 
-fit_church_on_hours_charity <-
+fit_X_hours_charity <-
   margot::regress_with_covariates(
     dt_18_miss,
     outcome = "hours_charity",
-    exposure = "religion_church_round",
+    exposure = "hours_exercise",
     baseline_vars = base_var,
     sample_weights = "sample_weights"
   )
-parameters::model_parameters(fit_church_on_hours_charity, ci_method="wald")[2, ]
-margot::here_save(fit_church_on_hours_charity, "fit_church_on_hours_charity")
-
-fit_church_on_community_time_binary <-
-  margot::regress_with_covariates(
-    dt_18,
-    outcome = "community_time_binary",
-    exposure = "religion_church_round",
-    baseline_vars = base_var,
-    family = "poisson"
-  )
-parameters::model_parameters(fit_church_on_community_time_binary, ci_method="wald")[2, ]
-here_save(fit_church_on_community_time_binary, "fit_church_on_community_time_binary")
-
-
-fit_church_on_community_money_binary <-
-  margot::regress_with_covariates(
-    dt_18,
-    outcome = "community_money_binary",
-    exposure = "religion_church_round",
-    baseline_vars = base_var,
-    family = "poisson"
-  )
-parameters::model_parameters(fit_church_on_community_money_binary, ci_method="wald")[2, ]
-
-margot::here_save(fit_church_on_community_money_binary, "fit_church_on_community_money_binary")
-
-fit_church_on_charity_donate<- margot::here_read('fit_church_on_charity_donate')
-fit_church_on_hours_charity<- margot::here_read('fit_church_on_hours_charity')
-fit_church_on_community_time_binary<- margot::here_read('fit_church_on_community_time_binary')
-fit_church_on_community_money_binary<- margot::here_read('fit_church_on_community_money_binary')
-
+parameters::model_parameters(fit_X_hours_charity, ci_method="wald")[2, ]
+margot::here_save(fit_X_hours_charity, "fit_X_hours_charity")
+# 
+# fit_church_on_community_time_binary <-
+#   margot::regress_with_covariates(
+#     dt_18,
+#     outcome = "community_time_binary",
+#     exposure = "religion_church_round",
+#     baseline_vars = base_var,
+#     family = "poisson"
+#   )
+# parameters::model_parameters(fit_church_on_community_time_binary, ci_method="wald")[2, ]
+# here_save(fit_church_on_community_time_binary, "fit_church_on_community_time_binary")
+# 
+# 
+# fit_church_on_community_money_binary <-
+#   margot::regress_with_covariates(
+#     dt_18,
+#     outcome = "community_money_binary",
+#     exposure = "religion_church_round",
+#     baseline_vars = base_var,
+#     family = "poisson"
+#   )
+# parameters::model_parameters(fit_church_on_community_money_binary, ci_method="wald")[2, ]
+# 
+# margot::here_save(fit_church_on_community_money_binary, "fit_church_on_community_money_binary")
+# 
+# fit_church_on_charity_donate<- margot::here_read('fit_church_on_charity_donate')
+# fit_church_on_hours_charity<- margot::here_read('fit_church_on_hours_charity')
+# fit_church_on_community_time_binary<- margot::here_read('fit_church_on_community_time_binary')
+# fit_church_on_community_money_binary<- margot::here_read('fit_church_on_community_money_binary')
+# 
 
 # run once then comment out
 
@@ -852,7 +825,7 @@ here_save(table_baseline, "table_baseline")
 # table exposure ----------------------------------------------------------
 
 # get first and second wave
-dt_18_19 <- dat_long_full |> 
+dt_18_19 <- dat_long |> 
   dplyr::filter(wave == 2018 | wave == 2019) |> 
   droplevels()
 
@@ -860,7 +833,7 @@ dt_18_19 <- dat_long_full |>
 selected_exposure_cols <-
   dt_18_19 %>% select(
     c(
-      "religion_church_round",
+      "hours_exercise",
       "alert_level_combined",
       "wave"
     )
@@ -895,7 +868,7 @@ table_exposures
 
 
 # outcome table -----------------------------------------------------------
-dt_18_20 <- dat_long_full |> 
+dt_18_20 <- dat_long|> 
   dplyr::filter(wave == 2018 | wave == 2020) |> 
   droplevels()
 
@@ -965,29 +938,31 @@ library(ggplot2)
 library(dplyr)
 #
 # # generate bar plot
+max_19 <- max( dt_19$hours_exercise, na.rm = TRUE) 
+
 graph_density_of_exposure_up <- margot::coloured_histogram_shift(
   dt_19,
-  col_name = "religion_church_round",
+  col_name = "hours_exercise",
   binwidth = .5, 
-  range_highlight = c(0,3.9)
+  range_highlight = c(0,5)
 )
 graph_density_of_exposure_up
 
-
-graph_density_of_exposure_down <- margot::coloured_histogram_shift(
-  dt_19,
-  shift = "down",
-  col_name = "religion_church_round",
-  binwidth = .5, 
-  range_highlight = c(1,8)
-)
-graph_density_of_exposure_up
-
-graph_density_of_exposure_down
-
-here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
-here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
-#
+# 
+# graph_density_of_exposure_down <- margot::coloured_histogram_shift(
+#   dt_19,
+#   shift = "down",
+#   col_name = "religion_church_round",
+#   binwidth = .5, 
+#   range_highlight = c(1,8)
+# )
+# graph_density_of_exposure_up
+# 
+# graph_density_of_exposure_down
+# 
+# here_save(graph_density_of_exposure_up, "graph_density_of_exposure_up")
+# here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
+# #
 # graph_density_of_exposure
 #
 # here_save(graph_density_of_exposure, "graph_density_of_exposure")
@@ -1017,7 +992,7 @@ here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
 # 
 
 
-
+exposure_var
 # WARNING:  COMMENT THIS OUT. JB DOES THIS FOR WORKING WITHOUT WIFI
 # source("/Users/joseph/GIT/templates/functions/funs.R")
 
@@ -1038,6 +1013,8 @@ here_save(graph_density_of_exposure_down, "graph_density_of_exposure_down")
 dat_long$sample_weights
 dat_long_df <- data.frame(dat_long)
 
+baseline_vars
+
 my_data_filtered <- as.data.frame(dat_long_df)
 my_data_filtered <- haven::zap_formats(dat_long_df)
 my_data_filtered <- haven::zap_label(dat_long_df)
@@ -1057,7 +1034,7 @@ prep_coop_all <-
     outcome_vars = outcome_vars
   )
 
-
+hours_exercise
 
 # return variables to the imputed data frame
 # sample weights
@@ -1069,8 +1046,6 @@ prep_coop_all$t0_alert_level_combined_lead <- dt_18$alert_level_combined_lead
 prep_coop_all$t0_sample_weights
 prep_coop_all$t0_alert_level_combined
 prep_coop_all$t1_alert_level_combined
-
-margot::here_save(prep_coop_all, "prep_coop_all")
 
 # save function -- will save to your "push_mod" directory
 margot::here_save(prep_coop_all, "prep_coop_all")
@@ -1090,13 +1065,12 @@ margot::here_save(prep_coop_all, "prep_coop_all")
 
 
 
+prep_coop_all$t0_hours_exercise
 
 
-
-
+prep_coop_all <- margot::here_read("prep_coop_all")
+prep_coop_all
 # spit shine --------------------------------------------------------------
-
-
 df_wide_censored <- prep_coop_all |>
   mutate(
     t0_eth_cat = as.factor(t0_eth_cat),
@@ -1123,7 +1097,7 @@ t0_na_condition <- rowSums(is.na(select(df_wide_censored, starts_with("t1_")))) 
 # check
 naniar::vis_miss(df_wide_censored, warn_large_data = FALSE)
 
-
+df_wide_censored$t0_hours_exercise
 # Assuming df_wide_censored is your dataframe
 
 # Calculate the conditions before the mutate steps
@@ -1156,10 +1130,10 @@ df_clean <- df_wide_censored %>%
         !t0_family_money_binary &
         !t0_friends_money_binary &
         !t0_community_money_binary &
-        !t0_religion_church_round &
+        !t0_hours_exercise &
         !t0_alert_level_combined_lead &
         #  !t0_charity_donate & !t0_sample_weights &
-        !t1_religion_church_round &
+        !t1_hours_exercise &
         #    !t1_alert_level_combined &
         !t1_censored &
         # !t2_charity_donate &!t2_volunteers_binary &
@@ -1192,10 +1166,10 @@ df_clean <- df_wide_censored %>%
     t0_community_money_binary,
     t0_sample_weights,
     # t0_total_siblings,
-    t0_religion_church_round,
+    t0_hours_exercise,
     t0_censored,
     #  t1_alert_level_combined,
-    t1_religion_church_round,
+    t1_hours_exercise,
     #t1_hours_community_round,
     t1_censored,
     # t2_charity_donate,
@@ -1353,9 +1327,12 @@ registerDoParallel(cl)
 
 str(df_clean_hot_code[full_predictor_vars])
 
-match_lib = c("SL.glmnet", "SL.xgboost", "SL.ranger")
+
+# USE AT LEAST THREE
+match_lib = c("SL.glmnet") #"SL.xgboost", "SL.ranger")
 
 
+### GIVE CENSORING WEIGHTS FOR LOST TO FOLLOW UP FROM BASELINE TO TREATMENT WAVE
 sl <- SuperLearner(
   Y = df_clean_hot_code$t0_lost, 
   X = df_clean_hot_code[full_predictor_vars],  # Use all specified predictors
@@ -1398,16 +1375,24 @@ df_clean_hot_code$weights <- ifelse(df_clean_hot_code$t0_lost == 1, 1 / df_clean
 hist(df_clean_hot_code$weights)
 min(df_clean_hot_code$weights)
 max(df_clean_hot_code$weights)
+
+
+
+
 # obtain stabalizing var (no need)
-#df_clean_hot_code <- mean(df_clean_hot_code$t0_lost)
-
-# stabalized weights
-# #df_clean_hot_code$weights_stabilized <- ifelse(df_clean_hot_code$t0_lost == 1, 
-#                                   marginal_censored / df_clean_hot_code$pscore, 
-#                                   (1 - marginal_censored) / (1 - df_clean_hot_code$pscore))
+marginal_censored <- mean(df_clean_hot_code$t0_lost)
 
 
+df_clean_hot_code$weights_stabilized <- ifelse(df_clean_hot_code$t0_lost == 1,
+                                  marginal_censored / df_clean_hot_code$pscore,
+                                  (1 - marginal_censored) / (1 - df_clean_hot_code$pscore))
 
+
+
+
+hist(df_clean_hot_code$weights_stabilized)
+min(df_clean_hot_code$weights_stabilized)
+max(df_clean_hot_code$weights_stabilized)
 
 
 
@@ -1417,7 +1402,9 @@ head(df_clean_hot_code)
 df_clean
 
 # new weights
-df_clean$t0_combo_weights = df_clean_hot_code$weights * df_clean$t0_sample_weights
+
+# use either stabalised or unstabalised
+df_clean$t0_combo_weights = df_clean_hot_code$weights_stabilized * df_clean$t0_sample_weights
 df_clean$t0_alert_level_combined_lead <- df_clean$t0_alert_level_combined_lead
 
 min( df_clean$t0_combo_weights)
@@ -1500,7 +1487,8 @@ str(df_clean_t2)
 
 names_base <-
   df_clean_t2 |> select(starts_with("t0"),
-                        -t0_sample_weights, -t0_combo_weights,
+                        -t0_sample_weights, 
+                        -t0_combo_weights,
                         -t0_censored) |> colnames()
 
 names_base
@@ -1587,7 +1575,7 @@ plan(multisession)
 
 # check imbalance ---------------------------------------------------------
 
-df_clean_no_na_treatment_one <- df_clean_t2_hot_code |> filter(!is.na(t1_religion_church_round))
+df_clean_no_na_treatment_one <- df_clean_t2_hot_code |> filter(!is.na(t1_hours_exercise))
 
 # df_clean_no_na_treatment_base <- df_clean |> filter(!is.na(t0_religion_church_round)) 
 # 
@@ -1621,7 +1609,7 @@ names_base_base
 
 
 match_ebal_one<- match_mi_general(data = df_clean_t2_hot_code,
-                                  X = "t1_religion_church_round",
+                                  X = "t1_hours_exercise",
                                   baseline_vars = names_base_base,
                                   estimand = "ATE",
                                   #  focal = 0, #for ATT
@@ -1669,7 +1657,7 @@ plot(summary_match_ebal)
 # L <- list(c("t0_alert_level_combined"), c("t1_alert_level_combined")) # COULD PUT NULL HERE
 # 
 names_base
-A <- c("t1_religion_church_round")
+A <- c("t1_hours_exercise")
 C <- c("t1_censored")
 #L <- list(c("t0_alert_level_combined"), c("t1_alert_level_combined")) # COULD PUT NULL HERE
 
@@ -1764,7 +1752,7 @@ C <- c("t1_censored")
 
 # # 
 gain_A <- function(data, trt) {
-  ifelse(data[[trt]] < 4, 4,  data[[trt]])
+  ifelse(data[[trt]] < 5, 5,  data[[trt]])
 }
 # 
 zero_A <- function(data, trt){
@@ -1891,6 +1879,8 @@ sl_lib
 # )
 # t2_charity_donate_z_test_gain_time_vary
 
+A
+C
 
 t2_charity_donate_z_test_gain <- lmtp_tmle(
   outcome = "t2_charity_donate_z",
