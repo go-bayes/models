@@ -42,7 +42,101 @@ pull_path <-
 
 dat <- qs::qread(here::here(pull_path))
 
+library(margot)
 
+dat |> 
+  filter(year_measured == 1) |> 
+  group_by(wave) |> 
+  summarize(number = n_distinct(id))
+df <- dat |> 
+  filter(year_measured == 1) |> 
+  group_by(wave) |> 
+  summarize(number = n_distinct(id))
+print(df)
+# Create a pretty table using gt
+df %>%
+  gt() %>%
+  tab_header(
+    title = "Unique IDs by Wave",
+    subtitle = "Year given starts in October and runs to October the following year"
+  ) %>%
+  fmt_number(
+    columns = vars(number),
+    decimals = 0
+  ) %>%
+  cols_label(
+    wave = "Wave",
+    number = "Number of Unique IDs"
+  )
+
+id_wave_counts <- dat %>%
+  filter(year_measured == 1) %>%
+  group_by(id) %>%
+  summarize(wave_count = n_distinct(wave)) %>%
+  ungroup()
+
+# Summarize the number of participants by the number of waves they participated in
+wave_summary <- id_wave_counts %>%
+  group_by(wave_count) %>%
+  summarize(number_of_participants = n())
+
+# Print the summary table
+print(wave_summary)
+
+wave_summary %>%
+  gt() %>%
+  tab_header(
+    title = "Participant Wave Summary",
+    subtitle = "Number of participants by the number of waves they participated in"
+  ) %>%
+  cols_label(
+    wave_count = "Number of Waves",
+    number_of_participants = "Number of Participants"
+  ) %>%
+  fmt_number(
+    columns = vars(number_of_participants),
+    decimals = 0
+  ) %>%
+  tab_options(
+    table.font.size = 12,
+    heading.title.font.size = 14,
+    heading.subtitle.font.size = 12
+  )
+
+Count the number of waves each person participated in
+id_wave_counts <- dat %>%
+  filter(year_measured == 1) %>%
+  group_by(id) %>%
+  summarize(wave_count = n_distinct(wave)) %>%
+  ungroup()
+
+# Summarize the number of participants by the number of waves they participated in
+wave_summary <- id_wave_counts %>%
+  mutate(wave_count = if_else(wave_count >= 3, "3 or more", as.character(wave_count))) %>%
+  group_by(wave_count) %>%
+  summarize(number_of_participants = n()) %>%
+  ungroup()
+
+# Create a pretty table using gt
+wave_summary %>%
+  gt() %>%
+  tab_header(
+    title = "Participant Wave Summary",
+    subtitle = "Number of participants by the number of waves they participated in"
+  ) %>%
+  cols_label(
+    wave_count = "Number of Waves",
+    number_of_participants = "Number of Participants"
+  ) %>%
+  fmt_number(
+    columns = vars(number_of_participants),
+    decimals = 0
+  ) %>%
+  tab_options(
+    table.font.size = 12,
+    heading.title.font.size = 14,
+    heading.subtitle.font.size = 12
+  )
 ### WARNING: THIS PATH WILL NOT WORK FOR YOU. PLEASE SET A PATH TO YOUR OWN COMPUTER!! ###
 ### WARNING: FOR EACH NEW STUDY SET UP A DIFFERENT PATH OTHERWISE YOU WILL WRITE OVER YOUR MODELS
 
