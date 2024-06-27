@@ -103,7 +103,7 @@ wave_summary %>%
     heading.subtitle.font.size = 12
   )
 
-Count the number of waves each person participated in
+#Count the number of waves each person participated in
 id_wave_counts <- dat %>%
   filter(year_measured == 1) %>%
   group_by(id) %>%
