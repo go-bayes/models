@@ -206,19 +206,19 @@ dat_long <- dat |>
     "year_measured",
     "sample_frame_opt_in",
     "hlth_disability",
-    # "religion_identification_level",
+    "religion_identification_level",
     #How important is your religion to how you see yourself?"
     # "religion_prayer",
     # How many times did you pray in the last week?
-    "religion_scripture",
+  #  "religion_scripture",
     # How many times did you read religious scripture in the last week?
-    "religion_church",
+ #   "religion_church", not there
     # How many times did you attend a church or place of worship in the last month?
     # "religion_believe_spirit",
     # #Do you believe in some form of spirit or lifeforce?
-    # "religion_believe_spirit",
+    "religion_believe_spirit",
     # #inverse believe in god
-    # "religion_believe_god",
+    "religion_believe_god",
     # #Do you believe in a God
     # "religion_believe_god_not",
     # #inverse believe in god
@@ -240,13 +240,13 @@ dat_long <- dat |>
     "partner",
     "parent",
     "political_conservative",
-    "has_siblings",
+  #  "has_siblings",
     #"children_num",
     # How many children have you given birth to, fathered, or adopted?
     "hours_children",
     "hours_work",
     "hours_housework",
-    "hours_community",
+  #  "hours_community",
     "charity_donate",
     #How much money have you donated to charity in the last year?
     "hours_charity",
@@ -410,8 +410,10 @@ dat_long <- dat |>
     # #There is no one I can turn to for guidance in times of stress.
     "belong",
   ) |>
+  rename(short_form_health= sfhealth) |> 
   mutate(male = as.numeric(male)) |>
-  mutate(religion_church_binary = ifelse(religion_church > 0, 1, 0),
+  mutate(
+#    religion_church_binary = ifelse(religion_church > 0, 1, 0),
     not_lost = ifelse(lead(year_measured) == 1, 1, 0),
     not_lost = ifelse(is.na(not_lost) &
                         year_measured == 1, 1, not_lost),
@@ -430,12 +432,12 @@ dat_long <- dat |>
   #   )
   # ) |>
   arrange(id, wave) |>
-  mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
+ # mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
+#  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
-    #initialize 'censored'
+    #initialize 'not_lost'
     not_lost = ifelse(lead(year_measured) == 1, 1, 0),
-    # modify 'censored' based on the condition; no need to check for NA here as 'censored' is already defined in the previous step
+    # modify 'not_lost' based on the condition; no need to check for NA here as 'not_lost' is already defined in the previous step
     not_lost =  ifelse(is.na(not_lost) &
                          year_measured == 1, 1, not_lost)
   ) |>
@@ -450,6 +452,7 @@ dat_long <- dat |>
     hours_charity_log = log(hours_charity + 1),
     hours_exercise_log = log(hours_exercise + 1),
     hours_children_log = log(hours_children + 1),
+    charity_donate_log = log(charity_donate + 1)
     # total_siblings_log = log(total_siblings + 1),
     # hours_community_log = log(hours_community + 1),
     # hours_friends_log  = log(hours_friends + 1),
@@ -458,20 +461,23 @@ dat_long <- dat |>
   ) |>
   dplyr::select(
     -c(
-      religion_church,
+    #  religion_church,
       #  hours_work,
+      charity_donate,
       hours_housework,
       household_inc,
-      hours_exercise,
-      hours_community,
-      hours_children
+   #  hours_exercise,
+     # hours_community,
+      hours_children,
+      hours_charity,
+      charity_donate
     )
   ) |>
   droplevels() |>
   dplyr::rename(sample_origin =  sample_origin_names_combined) |>
   dplyr::mutate(
     rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
-    has_siblings = as.numeric(as.character(has_siblings)),
+  #  has_siblings = as.numeric(as.character(has_siblings)),
     parent = as.numeric(as.character(parent)),
     partner = as.numeric(as.character(partner)),
     born_nz = as.numeric(as.character(born_nz)),
@@ -508,69 +514,140 @@ margot::here_save(n_participants, "n_participants")
 # inspect data
 skimr::skim(dat_long)
 
-
+# checkk names
+sort(colnames(dat_long))
 # set baseline variables --------------------------------------------------
 
 # for confounding control
+
 baseline_vars = c(
-  "age",
   "male",
-  "edu",
+  "age",
+  "education_level_coarsen",
+  # factors
   "eth_cat",
-  "partner",
-  "employed",
+  #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
+  #"bigger_doms", #religious denomination
+  "sample_origin",
+  "nz_dep2018",
+  "nzsei_13_l",
   "born_nz",
-  "neighbourhood_community",
+  "hlth_disability",
+  "short_form_health",
+  "kessler_latent_depression",
+  "kessler_latent_anxiety",
+  "support",
+  "belong",
   "household_inc_log",
-  "parent",
-  "religion_religious",
-  "urban",
-  # "sample_weights",
-  "employed"
+  # added: measured with error but OK for imputations
+  "partner",
+  "parent", 
+  "political_conservative",
+  "hours_children_log",
+  # new
+ # "hours_work_log",
+  # new
+  "religion_believe_god",
+  "religion_believe_spirit",
+  "religion_identification_level",
+  "hours_housework_log",
+  #new
+  "hours_exercise_log",
+  "agreeableness",
+  "conscientiousness",
+  "extraversion",
+  "honesty_humility",
+  "openness",
+  "neuroticism",
+ # "modesty",
+  "sample_weights"
+  #"alert_level_combined_lead"
 )
 
 
 # treatment
-exposure_var = c("perfectionism", "censored") # we will use the censored variable later
+exposure_var = c(name_exposure, "not_lost") # we will use the not_lost variable later
+exposure_var
+
 
 # outcome, can be many
-outcome_vars = c("kessler_latent_anxiety", "kessler_latent_depression")
+
+# outcomes
+outcome_vars = c(
+  "alcohol_frequency",
+  "alcohol_intensity",
+  "hlth_bmi",
+  "hours_exercise",
+  "short_form_health",
+  "hlth_sleep_hours",
+  "smoker",
+  "hlth_fatigue",
+  "rumination",
+  "kessler_latent_depression",
+  "kessler_latent_anxiety",
+  "bodysat",
+  "perfectionism",
+  "power_no_control_composite",
+  "self_esteem",
+  "sexual_satisfaction",
+  "self_control_have_lots",
+  "self_control_wish_more_reversed",
+  "emotion_regulation_out_control",
+  "vengeful_rumin",
+  "gratitude",
+  "short_form_health",
+  "pwb_your_relationships",
+  "pwb_your_future_security",
+  "pwb_standard_living",
+  "lifesat",
+  "meaning_purpose",# My life has a clear sense of purpose.
+  "meaning_sense", # I have a good sense of what makes my life meaningful.
+  "permeability_individual",
+  "neighbourhood_community",
+  "belong",
+  "support"
+)
 
 
-# sample weights balanced male / female-------------------------------------# balance on gender weights
-# calculate gender weights assuming male is coded as 1 and female as 0
-prop_male_population <-
-  0.5  # target proportion of males in the population
-prop_female_population <-
-  0.5  # target proportion of females in the population
 
-prop_male_sample <- mean(dat_long$male)
-prop_female_sample <- 1 - prop_male_sample
 
-gender_weight_male <- prop_male_population / prop_male_sample
-gender_weight_female <- prop_female_population / prop_female_sample
 
-dat_long$sample_weights <-
-  ifelse(dat_long$male == 1, gender_weight_male, gender_weight_female)
 
-# we will upweight males and down weight non-males to obtain a balance of gender in the *target* population
-table(round(dat_long$sample_weights, 3))
+# 
+# # sample weights balanced male / female-------------------------------------# balance on gender weights
+# # calculate gender weights assuming male is coded as 1 and female as 0
+# prop_male_population <-
+#   0.5  # target proportion of males in the population
+# prop_female_population <-
+#   0.5  # target proportion of females in the population
+# 
+# prop_male_sample <- mean(dat_long$male)
+# prop_female_sample <- 1 - prop_male_sample
+# 
+# gender_weight_male <- prop_male_population / prop_male_sample
+# gender_weight_female <- prop_female_population / prop_female_sample
+# 
+# dat_long$sample_weights <-
+#   ifelse(dat_long$male == 1, gender_weight_male, gender_weight_female)
+# 
+# # we will upweight males and down weight non-males to obtain a balance of gender in the *target* population
+# table(round(dat_long$sample_weights, 3))
 
 
 # make your tables --------------------------------------------------------
-dt_18 <- dat_long |>
-  filter(wave == 2018)
+dt_baseline <- dat_long #|>
+#  filter(wave == 2020)
 
 # variables for the table
-base_vars <- setdiff(baseline_vars, c("censored", "sample_weights", outcome_vars))
+base_vars <- setdiff(baseline_vars, c("not_lost", "sample_weights", outcome_vars))
 
 
 # get baseline cols
 selected_base_cols <-
-  dt_18 |> select(all_of(base_vars))
+  dt_baseline |> select(all_of(base_vars))
 
 # missing values visualisation
-viss_miss_baseline <- naniar::vis_miss(dt_18, warn_large_data = F)
+viss_miss_baseline <- naniar::vis_miss(dt_baseline, warn_large_data = F)
 here_save(viss_miss_baseline, "base_var")
 
 
@@ -600,14 +677,14 @@ margot::here_save(table_baseline, "table_baseline")
 
 # exposure table ----------------------------------------------------------
 # get first and second wave
-dt_18_19 <- dat_long |>
+dt_baseline_19 <- dat_long |>
   dplyr::filter(wave == 2018 | wave == 2019) |>
   # we need to drop unused levels of the wave
   droplevels()
 
 # get vars.
 selected_exposure_cols <-
-  dt_18_19 |> select(c("perfectionism", "wave"))
+  dt_baseline_19 |> select(c("perfectionism", "wave"))
 
 # check
 #str(selected_exposure_cols)
@@ -633,17 +710,17 @@ table_exposures
 
 
 # outcome table -----------------------------------------------------------
-dt_18_20 <- dat_long |>
+dt_baseline_20 <- dat_long |>
   dplyr::filter(wave == 2018 | wave == 2020) |>
   droplevels()
 
-names_outcomes_tab <- setdiff(outcome_vars, dt_18_20)
+names_outcomes_tab <- setdiff(outcome_vars, dt_baseline_20)
 names_outcomes_sorted <- sort(names_outcomes_tab)
 names_outcomes_final <- names_outcomes_sorted # consistent workflow
 
 # better names if desirable
 selected_outcome_cols <-
-  dt_18_20 |> select(all_of(names_outcomes_final), wave)
+  dt_baseline_20 |> select(all_of(names_outcomes_final), wave)
 # |> # example if you want to rename your variables for the table
 #   rename(
 #     Social_belonging = belong,
@@ -736,14 +813,14 @@ margot::here_save(graph_density_shift_function,
                   "graph_density_shift_function")
 
 # change in exposure ------------------------------------------------------
-dt_18_19_positivity <- dat_long |>
+dt_baseline_19_positivity <- dat_long |>
   dplyr::filter(wave == 2018 |
                   wave == 2019) |>
   dplyr::mutate(perfectionism_round = round(perfectionism, digits = 0)) |>
   dplyr::select(perfectionism_round, id, wave) |>
   droplevels()
 
-out <- margot::create_transition_matrix(data = dt_18_19_positivity,
+out <- margot::create_transition_matrix(data = dt_baseline_19_positivity,
                                         state_var = "perfectionism_round",
                                         id_var = "id")
 
@@ -764,7 +841,7 @@ print(transition_table$explanation)
 
 # example of a cross sectional analysis -----------------------------------
 
-dt_18_regress <- dat_long |>
+dt_baseline_regress <- dat_long |>
   filter(wave == 2018) |>
   mutate(
     #perfectionism_z = scale(perfectionism),
@@ -773,19 +850,19 @@ dt_18_regress <- dat_long |>
   )
 
 # check
-hist(dt_18_regress$kessler_latent_depression_z)
+hist(dt_baseline_regress$kessler_latent_depression_z)
 # check
-hist(dt_18_regress$kessler_latent_anxiety_z)
+hist(dt_baseline_regress$kessler_latent_anxiety_z)
 
 
 # code from above
 base_var <-
-  setdiff(baseline_vars, c("censored", "sample_weights", outcome_vars))
+  setdiff(baseline_vars, c("not_lost", "sample_weights", outcome_vars))
 
 # fit model
 fit_kessler_latent_anxiety <-
   margot::regress_with_covariates(
-    dt_18_regress,
+    dt_baseline_regress,
     outcome = "kessler_latent_anxiety_z",
     exposure = "perfectionism",
     baseline_vars = base_var
@@ -800,7 +877,7 @@ here_save(fit_kessler_latent_anxiety, "fit_kessler_latent_anxiety")
 # view
 fit_kessler_latent_depression <-
   regress_with_covariates(
-    dt_18_regress,
+    dt_baseline_regress,
     outcome = "kessler_latent_depression_z",
     exposure = "perfectionism",
     baseline_vars = base_var
@@ -846,7 +923,7 @@ here_save(b_lm_fit_kessler_latent_depression,
 
 # impute missing values at baseline ---------------------------------------
 
-exposure_vars <- c("perfectionism", "censored")
+exposure_vars <- c("perfectionism", "not_lost")
 baseline_vars <- setdiff(baseline_vars, "sample_weights")
 
 # check
@@ -863,10 +940,10 @@ df_impute_base <- margot::margot_wide_impute_baseline(
 # save
 
 # get sample weights back to data
-dt_18 <- dat_long |> filter(wave == 2018)
+dt_baseline <- dat_long |> filter(wave == 2018)
 
 # add sample weights
-df_impute_base$t0_sample_weights = dt_18$sample_weights
+df_impute_base$t0_sample_weights = dt_baseline$sample_weights
 
 # save
 here_save(df_impute_base, "df_impute_base")
@@ -878,49 +955,49 @@ df_impute_base <- here_read("df_impute_base")
 # check data types
 str(df_impute_base)
 
-df_wide_censored <- df_impute_base |>
-  relocate("t0_censored", .before = starts_with("t1_")) |>
-  relocate("t1_censored", .before = starts_with("t2_")) |>
+df_wide_not_lost <- df_impute_base |>
+  relocate("t0_not_lost", .before = starts_with("t1_")) |>
+  relocate("t1_not_lost", .before = starts_with("t2_")) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
-  relocate("t0_censored", .before = starts_with("t1_"))  |>
-  relocate("t1_censored", .before = starts_with("t2_"))
+  relocate("t0_not_lost", .before = starts_with("t1_"))  |>
+  relocate("t1_not_lost", .before = starts_with("t2_"))
 
 
 # save
-here_save(df_wide_censored, "df_wide_censored")
+here_save(df_wide_not_lost, "df_wide_not_lost")
 
 
 # read if needed
-df_wide_censored <- here_read("df_wide_censored")
+df_wide_not_lost <- here_read("df_wide_not_lost")
 
 # check missing values
-naniar::vis_miss(df_wide_censored, warn_large_data = FALSE)
+naniar::vis_miss(df_wide_not_lost, warn_large_data = FALSE)
 
 # people lost at wave 2
-table(df_wide_censored$t0_censored)
+table(df_wide_not_lost$t0_not_lost)
 
-# Assuming df_wide_censored is your dataframe
+# Assuming df_wide_not_lost is your dataframe
 
 # Calculate the conditions before the mutate steps
-t0_na_condition <- rowSums(is.na(select(df_wide_censored, starts_with("t1_")))) > 0
+t0_na_condition <- rowSums(is.na(select(df_wide_not_lost, starts_with("t1_")))) > 0
 
 # used if you did not censor at 2019
-#t1_na_condition <- rowSums(is.na(select(df_wide_censored, starts_with("t2_")))) > 0
+#t1_na_condition <- rowSums(is.na(select(df_wide_not_lost, starts_with("t2_")))) > 0
 
-df_clean <- df_wide_censored |>
-  mutate(t0_censored = ifelse(t0_na_condition, 0, t0_censored)) |>
-  # mutate(t1_censored = ifelse(t1_na_condition, 0, t1_censored)) |>. # use if censored at t1
-  # mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
-  #        across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) |>
-  # mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .)))|>
+df_clean <- df_wide_not_lost |>
+  mutate(t0_not_lost = ifelse(t0_na_condition, 0, t0_not_lost)) |>
+  # mutate(t1_not_lost = ifelse(t1_na_condition, 0, t1_not_lost)) |>. # use if not_lost at t1
+  # mutate(across(starts_with("t1_"), ~ ifelse(t0_not_lost == 0, NA_real_, .)),
+  #        across(starts_with("t2_"), ~ ifelse(t0_not_lost == 0, NA_real_, .))) |>
+  # mutate(across(starts_with("t2_"), ~ ifelse(t1_not_lost == 0, NA_real_, .)))|>
   # select variables
   dplyr::mutate(
     across(
       .cols = where(is.numeric) &
-        !t0_censored &
+        !t0_not_lost &
         !t0_sample_weights &
         !t0_born_nz,
-      #   !t1_perfectionism &  we will standardise perfectionism and use it later!t1_censored,
+      #   !t1_perfectionism &  we will standardise perfectionism and use it later!t1_not_lost,
       .fns = ~ scale(.),
       .names = "{.col}_z"
     )
@@ -931,16 +1008,16 @@ df_clean <- df_wide_censored |>
     where(is.factor),
     t0_sample_weights,
     t0_born_nz,
-    t0_censored,
+    t0_not_lost,
     t1_perfectionism,
-    t1_censored,
+    t1_not_lost,
     ends_with("_z")
   ) |>
-  mutate(t0_lost = 1 - t0_censored) |>
-  mutate(t1_lost = 1 - t1_censored) |>
+  mutate(t0_lost = 1 - t0_not_lost) |>
+  mutate(t1_lost = 1 - t1_not_lost) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
-  relocate("t0_censored", .before = starts_with("t1_"))  |>
-  relocate("t1_censored", .before = starts_with("t2_"))
+  relocate("t0_not_lost", .before = starts_with("t1_"))  |>
+  relocate("t1_not_lost", .before = starts_with("t2_"))
 
 # check what we have
 colnames(df_clean) # note this  "t1_perfectionism"               "t1_perfectionism_z"
@@ -953,10 +1030,10 @@ table(df_clean$t1_lost)
 table(df_clean$t0_lost)
 
 # checks
-table(df_clean$t0_censored)
+table(df_clean$t0_not_lost)
 
 # checks
-test <- df_wide_censored |> filter(t0_censored == 1)
+test <- df_wide_not_lost |> filter(t0_not_lost == 1)
 nrow(test)
 
 #
@@ -974,7 +1051,7 @@ nrow(df_clean)
 
 # weights for treatment ----------------------------------------------------
 baseline_vars_models = df_clean |>  # post process of impute and combine
-  dplyr::select(starts_with("t0"), -t0_censored, -t0_lost, -t0_sample_weights) |> colnames() # note
+  dplyr::select(starts_with("t0"), -t0_not_lost, -t0_lost, -t0_sample_weights) |> colnames() # note
 
 # check this is correct.
 baseline_vars_models <- c(baseline_vars_models)
@@ -1111,17 +1188,17 @@ df_clean_hot$weights <- ifelse(df_clean_hot$t0_lost == 1,
 hist(df_clean_hot$weights)
 
 # obtain stablise weights
-marginal_censored <- mean(df_clean_hot$t0_lost)
+marginal_not_lost <- mean(df_clean_hot$t0_lost)
 
 # check (fyi)
-marginal_censored
+marginal_not_lost
 
 
 # stabalised weights
 df_clean_hot$weights_stabilised <- ifelse(
   df_clean_hot$t0_lost == 1,
-  marginal_censored / df_clean_hot$pscore,
-  (1 - marginal_censored) / (1 - df_clean_hot$pscore)
+  marginal_not_lost / df_clean_hot$pscore,
+  (1 - marginal_not_lost) / (1 - df_clean_hot$pscore)
 )
 
 # checks
@@ -1156,18 +1233,18 @@ max(df_clean_t1$t0_combo_weights)
 min(df_clean_t1$t0_combo_weights)
 
 # number of weighted sample at t1, again check
-n_censored_sample <- nrow(df_clean_t1)
-n_censored_sample <- prettyNum(n_censored_sample, big.mark = ",")
+n_not_lost_sample <- nrow(df_clean_t1)
+n_not_lost_sample <- prettyNum(n_not_lost_sample, big.mark = ",")
 
 # save output for manuscript
-here_save(n_censored_sample, "n_censored_sample")
+here_save(n_not_lost_sample, "n_not_lost_sample")
 
 # check
-n_censored_sample
+n_not_lost_sample
 
 # no one missing in exposure
 # check
-table(is.na(df_clean_t1$n_censored_sample)) # none
+table(is.na(df_clean_t1$n_not_lost_sample)) # none
 
 # gets us the correct df for weights
 
@@ -1193,17 +1270,17 @@ t1_na_condition <-
 
 df_clean_t2 <- df_clean_t1 |>
   # select(-t0_alert_level_combined_lead) |>
-  mutate(t0_censored = ifelse(t0_na_condition, 0, t0_censored)) |>
-  mutate(t1_censored = ifelse(t1_na_condition, 0, t1_censored)) |>
-  mutate(across(starts_with("t1_"), ~ ifelse(t0_censored == 0, NA_real_, .)),
-         across(starts_with("t2_"), ~ ifelse(t0_censored == 0, NA_real_, .))) |>
-  mutate(across(starts_with("t2_"), ~ ifelse(t1_censored == 0, NA_real_, .))) |>
-  # mutate(t0_lost = 1 - t0_censored) |>
-  mutate(t1_lost = 1 - t1_censored) |>
+  mutate(t0_not_lost = ifelse(t0_na_condition, 0, t0_not_lost)) |>
+  mutate(t1_not_lost = ifelse(t1_na_condition, 0, t1_not_lost)) |>
+  mutate(across(starts_with("t1_"), ~ ifelse(t0_not_lost == 0, NA_real_, .)),
+         across(starts_with("t2_"), ~ ifelse(t0_not_lost == 0, NA_real_, .))) |>
+  mutate(across(starts_with("t2_"), ~ ifelse(t1_not_lost == 0, NA_real_, .))) |>
+  # mutate(t0_lost = 1 - t0_not_lost) |>
+  mutate(t1_lost = 1 - t1_not_lost) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
-  relocate("t0_censored", .before = starts_with("t1_"))  |>
-  relocate("t1_censored", .before = starts_with("t2_")) |>
-  select(-t1_lost, -t0_censored)
+  relocate("t0_not_lost", .before = starts_with("t1_"))  |>
+  relocate("t1_not_lost", .before = starts_with("t2_")) |>
+  select(-t1_lost, -t0_not_lost)
 
 ## END REDUNDANT
 # test
@@ -1400,8 +1477,8 @@ df_clean_hot_t2 <- df_clean_t2 |>
   select(-c(t0_eth_cat)) |>
   bind_cols(encoded_df) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
-  #  relocate("t0_censored", .before = starts_with("t1_"))  |>
-  relocate("t1_censored", .before = starts_with("t2_"))
+  #  relocate("t0_not_lost", .before = starts_with("t1_"))  |>
+  relocate("t1_not_lost", .before = starts_with("t2_"))
 
 # check names
 colnames(df_clean_hot_t2)
@@ -1457,7 +1534,7 @@ n_cores <- parallel::detectCores() - 2
 #### SET VARIABLE NAMES
 #  model
 A <- c("t1_perfectionism")
-C <- c("t1_censored")
+C <- c("t1_not_lost")
 W <- set_final_names
 
 
@@ -1689,15 +1766,15 @@ here_save(t2_kessler_latent_depression_z_null,
 # df_final <- here_read("df_final") # if needed
 
 
-dt_18 <- dat_long |>
+dt_baseline <- dat_long |>
   filter(wave == 2018)
 
 ## in baseline sample
 df_18 |> dplyr::filter(dplyr::filter(born_nz == 0)) |> droplevels()
 
 # select participant n at basel
-n_baseline_participants_born_nz_no <- dt_18 |> dplyr::filter(born_nz == 0) |> droplevels()
-n_baseline_participants_born_nz_yes <- dt_18 |> dplyr::filter(born_nz == 1) |> droplevels()
+n_baseline_participants_born_nz_no <- dt_baseline |> dplyr::filter(born_nz == 0) |> droplevels()
+n_baseline_participants_born_nz_yes <- dt_baseline |> dplyr::filter(born_nz == 1) |> droplevels()
 
 n_baseline_participants_born_overseas <- nrow(n_baseline_participants_born_nz_no)
 n_baseline_participants_born_nz <- nrow (n_baseline_participants_born_nz_yes)
@@ -2346,11 +2423,11 @@ str(df_grf). # we won't use "id"
 # sample weights
 t0_combo_weights <- df_grf$t0_combo_weights
 
-table(df_grf$t1_censored)
+table(df_grf$t1_not_lost)
 
-# get censoring indicator, note that "censored" has the
+# get censoring indicator, note that "not_lost" has the
 # **opposite meaning in lmtp models!  we need to make D = "not_lost"
-t1_lost = 1 - df_grf$t1_censored
+t1_lost = 1 - df_grf$t1_not_lost
 
 
 #check
@@ -2360,7 +2437,7 @@ table(t1_lost)
 df_grf$t1_lost <- t1_lost
 
 # label this D
-D <- as.factor (1 - df_grf$t1_censored)
+D <- as.factor (1 - df_grf$t1_not_lost)
 
 # get key data features
 nrow(df_grf)
@@ -2405,17 +2482,17 @@ hist(df_grf$cen_weights, breaks = 50)
 hist(df_grf$cen_weights)
 
 # obtain stablise weights
-marginal_censored <- mean(df_grf$t1_lost)
+marginal_not_lost <- mean(df_grf$t1_lost)
 
-marginal_censored
+marginal_not_lost
 
 df_grf$t1_lost
 
 # stabalised weights
 df_grf$weights_stabilised <- ifelse(
   df_grf$t1_lost == 1,
-  marginal_censored / df_grf$pscore,
-  (1 - marginal_censored) / (1 - df_grf$pscore)
+  marginal_not_lost / df_grf$pscore,
+  (1 - marginal_not_lost) / (1 - df_grf$pscore)
 )
 
 
@@ -2430,7 +2507,7 @@ min(df_grf$weights_stabilised)
 # check
 
 # set up data
-df_grf$t1_not_lost = 1 - df_grf$t1_censored
+df_grf$t1_not_lost = 1 - df_grf$t1_not_lost
 
 
 # set up superlearner
@@ -2505,8 +2582,8 @@ hist(df_grf$super_weights, breaks = 50)
 # stabalise
 df_grf$weights_stabilised_super <- ifelse(
   df_grf$t1_lost == 1,
-  marginal_censored / df_grf$super_pscore,
-  (1 - marginal_censored) / (1 - df_grf$super_pscore)
+  marginal_not_lost / df_grf$super_pscore,
+  (1 - marginal_not_lost) / (1 - df_grf$super_pscore)
 )
 
 
@@ -2536,10 +2613,10 @@ colnames(df_grf)
 here_save(df_grf, "df_grf")
 
 df_grf_t2 <- df_grf |>
-  filter(t1_censored == 1) |>
+  filter(t1_not_lost == 1) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
   relocate(starts_with("t1_"), .before = starts_with("t2_")) |>
-  relocate("t1_censored", .before = starts_with("t2_"))
+  relocate("t1_not_lost", .before = starts_with("t2_"))
 
 colnames(df_grf_t2)
 
