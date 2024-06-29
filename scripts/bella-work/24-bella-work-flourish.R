@@ -188,9 +188,15 @@ ids_baseline <- dat |>
 # intersect IDs from 2018 and 2019 to ensure participation in both years
 # ids_2018_2019 <- intersect(ids_2018, ids_2019)
 
+
+df_all_in  <- dat |>
+  filter(year_measured == 1)
+table1::table1(~ employed |wave, data = df_all_in)
 ids_baseline
 
-
+n<- dat_long |> 
+  filter(wave == 2010 & employed == 1)
+nrow(n)
 
 dat_long <- dat |>
   # dplyr::filter(id %in% ids_2018_2019 &
@@ -398,7 +404,7 @@ dat_long <- dat |>
     # My life has a clear sense of purpose.
     "meaning_sense",
     # I have a good sense of what makes my life meaningful.
-    "permeability_individual",
+  # "permeability_individual", lost variable
     "neighbourhood_community",
     #I feel a sense of community with others in my local neighbourhood.
     "support",
