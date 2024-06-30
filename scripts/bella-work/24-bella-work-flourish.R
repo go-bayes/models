@@ -7,10 +7,11 @@ set.seed(123)
 push_mods <-
   here::here('/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/24-bella-work')
 
+install.packages("formatR")
 # load packages
 # get devtools
 if (!require(devtools, quietly = TRUE)) {
-  install.packages("devtools")
+      install.packages("devtools")
   library(devtools)
 }
 
@@ -20,7 +21,7 @@ devtools::install_github("go-bayes/margot")
 
 # Check if pacman is installed; if not, install it
 if (!require(pacman, quietly = TRUE)) {
-  install.packages("pacman")
+   install.packages("pacman")
   library(pacman)
 }
 
@@ -100,13 +101,15 @@ skimr::skim(dat) |>
   arrange(n_missing)
 
 
+
 # descriptive checks ---------------------------------------------
 # check n by wave
 df <- dat |>
   filter(year_measured == 1) |>
-  group_by(wave) |>
+  group_by(wave) |> 
   summarize(number = n_distinct(id))
 print(df)
+
 
 
 # create a pretty table using gt
@@ -188,15 +191,14 @@ ids_baseline <- dat |>
 # intersect IDs from 2018 and 2019 to ensure participation in both years
 # ids_2018_2019 <- intersect(ids_2018, ids_2019)
 
+table1::table1( ~ modesty| wave, data = dat)
+
 
 df_all_in  <- dat |>
   filter(year_measured == 1)
 table1::table1(~ employed |wave, data = df_all_in)
 ids_baseline
 
-n<- dat_long |> 
-  filter(wave == 2010 & employed == 1)
-nrow(n)
 
 dat_long <- dat |>
   # dplyr::filter(id %in% ids_2018_2019 &
@@ -204,7 +206,7 @@ dat_long <- dat |>
   dplyr::filter(id %in% ids_baseline &
                   wave %in% c(2020, 2021, 2022)) |>
   arrange(id, wave) |>
-  select(
+  dplyr::select(
     "id",
     "wave",
     "male",
@@ -213,26 +215,8 @@ dat_long <- dat |>
     "sample_frame_opt_in",
     "hlth_disability",
     "religion_identification_level",
-    #How important is your religion to how you see yourself?"
-    # "religion_prayer",
-    # How many times did you pray in the last week?
-  #  "religion_scripture",
-    # How many times did you read religious scripture in the last week?
- #   "religion_church", not there
-    # How many times did you attend a church or place of worship in the last month?
-    # "religion_believe_spirit",
-    # #Do you believe in some form of spirit or lifeforce?
     "religion_believe_spirit",
-    # #inverse believe in god
-    "religion_believe_god",
-    # #Do you believe in a God
-    # "religion_believe_god_not",
-    # #inverse believe in god
-    # "religion_spiritual_identification",
-    # "religion_perceive_religious_discrim",
-    #"bigger_doms", #What religion or spiritual group?#  Not_Rel, Anglican , Buddist, Catholic , Christian_nfd, Christian_Others, Hindu, Jewish           Muslim, PresbyCongReform, TheOthers
-    # Ordinal-Rank 0-10 NZREG codes (with overseas school quals coded as Level 3, and all other ancillary categories coded as missing)  Combined highschool levels See:https://www.nzqa.govt.nz/assets/Studying-in-NZ/New-Zealand-Qualification-Framework/requirements-nzqf.pd
-    "age",
+    "religion_believe_god",   
     "born_nz",
     "male",
     "eth_cat",
@@ -246,57 +230,19 @@ dat_long <- dat |>
     "partner",
     "parent",
     "political_conservative",
-  #  "has_siblings",
-    #"children_num",
-    # How many children have you given birth to, fathered, or adopted?
     "hours_children",
     "hours_work",
     "hours_housework",
-  #  "hours_community",
     "charity_donate",
-    #How much money have you donated to charity in the last year?
     "hours_charity",
-    # #Hours spent … socialising with friends
-    # #Hours spent … socialising with community groups
-    # #Hours spent … socialising with family
     "hours_exercise",
     "agreeableness",
-    # Mini-IPIP6 Agreeableness (also modelled as empathy facet)
-    # Sympathize with others' feelings.
-    # Am not interested in other people's problems.
-    # Feel others' emotions.
-    # Am not really interested in others.
     "conscientiousness",
-    # see mini ipip6
-    # Get chores done right away.
-    # Like order.
-    # Make a mess of things.
-    # Often forget to put things back in their proper place.
     "extraversion",
-    # Mini-IPIP6 Extraversion
-    # Am the life of the party.
-    # Don't talk a lot.
-    # Keep in the background.
-    # Talk to a lot of different people at parties.
     "honesty_humility",
-    # see mini ipip6
-    # Would like to be seen driving around in a very expensive car.
-    # Would get a lot of pleasure from owning expensive luxury goods.
-    # Feel entitled to more of everything.
-    # Deserve more things in life.
     "openness",
-    # see mini ipip6
-    # Have a vivid imagination.
-    # Have difficulty understanding abstract ideas.
-    # Do not have a good imagination.
-    # Am not interested in abstract ideas.
     "neuroticism",
-    # see mini ipip6
-    # Have frequent mood swings.
-    # Am relaxed most of the time.
-    # Get upset easily.
-    # Seldom feel blue.
-    "modesty",
+    # "modesty",
     # # see mini ipip6
     # # I want people to know that I am an important person of high status,
     # # I am an ordinary person who is no better than others.
@@ -311,16 +257,6 @@ dat_long <- dat |>
     "alcohol_intensity",
     # How many drinks containing alcohol do you have on a typical day when drinking?
     "hlth_bmi",
-    # " What is your height? (metres)\nWhat is your weight? (kg)\nKg
-    #"sfhealth",
-  #  "sfhealth_your_health",
-    # # "In general, would you say your health is...
-    # "sfhealth_get_sick_easier_reversed",
-    #\nI seem to get sick a little easier than other people.
-    # "sfhealth_expect_worse_health_reversed",
-    #\nI expect my health to get worse." ****
-    # "hlth_sleep_hours",
-    #During the past month, on average, how many hours of actual sleep did you get per night?
     "smoker",
     #Do you currently smoke?
     "hlth_fatigue",
@@ -359,32 +295,19 @@ dat_long <- dat |>
     # depression constructs,
     "kessler_latent_depression",
     "kessler_latent_anxiety",
-    "sexual_satisfaction",
-    #  How satisfied are you with your sex life?
+    "sexual_satisfaction"
     "bodysat",
     ## Am satisfied with the appearance, size and shape of my body.
     "vengeful_rumin",
     # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
     "perfectionism",
-    # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
-    # I am hardly ever satisfied with my performance.
     "power_no_control_composite",
     "self_esteem",
     "self_control_have_lots",
     #In general, I have a lot of self-control.
     "self_control_wish_more_reversed",
-    #I wish I had more self-discipline.(r)
     "emotion_regulation_out_control",
-    # When I feel negative emotions, my emotions feel out of control. w10 - w13
-   # "emotion_regulation_hide_neg_emotions",
-    # When I feel negative emotions, I suppress or hide my emotions. w10 - w13
-   # "emotion_regulation_change_thinking_to_calm",
-    # When I feel negative emotions, I change the way I think to help me stay calm. w10 - w13
-    # "emp_work_life_balance",# I have a good balance between work and other important things in my life. # not measured at baseline
-    # "respect_self",  #If they knew me, most NZers would respect what I have accomplished in life. Missing at T12
     "gratitude",
-    ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people.
-    #"pwi",
     "pwb_your_health",
     # #Your health.
     "pwb_your_relationships",
@@ -394,27 +317,11 @@ dat_long <- dat |>
     "pwb_standard_living",
     #Your standard of living.
     "lifesat",
-    # "lifesat_satlife",
-    # # I am satisfied with my life.
-    # "lifesat_ideal",
-    # # In most ways my life is close to ideal.
-    # "lifemeaning",
-    # # average meaning_purpose, meaning_sense
     "meaning_purpose",
-    # My life has a clear sense of purpose.
     "meaning_sense",
-    # I have a good sense of what makes my life meaningful.
-  # "permeability_individual", lost variable
     "neighbourhood_community",
-    #I feel a sense of community with others in my local neighbourhood.
     "support",
-    # "support_help",
-    # # 'There are people I can depend on to help me if I really need it.
-    # "support_turnto",
-    # # There is no one I can turn to for guidance in times of stress.
-    # "support_noguidance_reverseed",
-    # #There is no one I can turn to for guidance in times of stress.
-    "belong",
+    "belong"
   ) |>
   rename(short_form_health= sfhealth) |> 
   mutate(male = as.numeric(male)) |>
