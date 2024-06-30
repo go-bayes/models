@@ -172,9 +172,14 @@ wave_summary |>
     heading.subtitle.font.size = 12
   )
 
+# define data ------------------------------------------------------------
+baseline_wave <- "2020"
+exposure_wave <- "2021"
+outcome_wave <- "2022"
+
 # obtain ids for individuals who participated in 2018 and have no missing baseline exposure
 ids_baseline <- dat |>
-  dplyr::filter(year_measured == 1, wave == 2020) |>
+  dplyr::filter(year_measured == 1, wave == baseline_wave) |>
   dplyr::filter(!is.na(!!sym(name_exposure))) |> # criteria, no missing in baseline exposure
   pull(id)
 
@@ -189,25 +194,34 @@ ids_baseline <- dat |>
 
 # intersect IDs from 2018 and 2019 to ensure participation in both years
 # ids_2018_2019 <- intersect(ids_2018, ids_2019)
+dat$w_gend_age_euro
+table1::table1( ~ w_sample_weight| wave, data = dat)
 
-table1::table1( ~ modesty| wave, data = dat)
 
 
-df_all_in  <- dat |>
+
+# checks -----------------------------------------------------------------
+df_all_in <- dat |>
   filter(year_measured == 1)
+
+# table
 table1::table1(~ employed |wave, data = df_all_in)
-ids_baseline
 
 
-dat_long <- dat |>
+
+
+# prepare data -----------------------------------------------------------
+
+dat_long_0 <- dat |>
   # dplyr::filter(id %in% ids_2018_2019 &
   #                 wave %in% c(2018, 2019, 2020)) |>
   dplyr::filter(id %in% ids_baseline &
-                  wave %in% c(2020, 2021, 2022)) |>
+                  wave %in% c(baseline_wave, exposure_wave, outcome_wave)) |>
   arrange(id, wave) |>
   dplyr::select(
     "id",
     "wave",
+    "age",
     "male",
     "w_gend_age_euro",
     "year_measured",
@@ -242,11 +256,6 @@ dat_long <- dat |>
     "openness",
     "neuroticism",
     # "modesty",
-    # # see mini ipip6
-    # # I want people to know that I am an important person of high status,
-    # # I am an ordinary person who is no better than others.
-    # # I wouldn’t want people to treat me as though I were superior to them.
-    # # I think that I am entitled to more respect than the average person is
     "rural_gch_2018_l",
     "charity_donate",
     #How much money have you donated to charity in the last year?
@@ -277,35 +286,25 @@ dat_long <- dat |>
     "hours_exercise",
     # Hours spent … exercising/physical activity
     "sfhealth",
-   # "sfhealth_your_health",
-    # "In general, would you say your health is...
-   # "sfhealth_get_sick_easier_reversed",
-    #\nI seem to get sick a little easier than other people.
-  #  "sfhealth_expect_worse_health_reversed",
-    #\nI expect my health to get worse." ****
     "hlth_sleep_hours",
-    #During the past month, on average, how many hours of actual sleep did you get per night?
     "smoker",
-    #Do you currently smoke?
     "hlth_fatigue",
-    #During the last 30 days, how often did.... you feel exhausted?
     "rumination",
     "kessler6_sum",
-    # depression constructs,
     "kessler_latent_depression",
     "kessler_latent_anxiety",
-    "sexual_satisfaction"
+    "sexual_satisfaction",
     "bodysat",
     ## Am satisfied with the appearance, size and shape of my body.
     "vengeful_rumin",
     # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
     "perfectionism",
-    "power_no_control_composite",
+    #"power_no_control_composite",
     "self_esteem",
     "self_control_have_lots",
     #In general, I have a lot of self-control.
     "self_control_wish_more_reversed",
-    "emotion_regulation_out_control",
+   # "emotion_regulation_out_control",
     "gratitude",
     "pwb_your_health",
     # #Your health.
@@ -321,11 +320,14 @@ dat_long <- dat |>
     "neighbourhood_community",
     "support",
     "belong"
-  ) |>
-  rename(short_form_health= sfhealth) |> 
+  )
+
+
+dat_long <- dat_long_0|>
+  rename(short_form_health = sfhealth) |> # better name
   mutate(male = as.numeric(male)) |>
   mutate(
-#    religion_church_binary = ifelse(religion_church > 0, 1, 0),
+#    religion_church_binary = ifelse(religion_church > 0, 1, 0), # not in these data :(
     not_lost = ifelse(lead(year_measured) == 1, 1, 0),
     not_lost = ifelse(is.na(not_lost) &
                         year_measured == 1, 1, not_lost),
@@ -365,11 +367,6 @@ dat_long <- dat |>
     hours_exercise_log = log(hours_exercise + 1),
     hours_children_log = log(hours_children + 1),
     charity_donate_log = log(charity_donate + 1)
-    # total_siblings_log = log(total_siblings + 1),
-    # hours_community_log = log(hours_community + 1),
-    # hours_friends_log  = log(hours_friends + 1),
-    # hours_family_log = log(hours_family + 1)#,
-    # children_num_log = log(children_num + 1)
   ) |>
   dplyr::select(
     -c(
@@ -400,7 +397,7 @@ dat_long <- dat |>
   droplevels() |>
   arrange(id, wave) |>
   mutate(
-   # urban = as.numeric(as.character(urban)),
+    #rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
     parent = as.numeric(as.character(parent)),
     partner = as.numeric(as.character(partner)),
     born_nz = as.numeric(as.character(born_nz)),
@@ -420,21 +417,22 @@ n_participants <- margot::pretty_number(n_participants)
 # check
 n_participants
 
-# save number for manuscrip
+# save number for manuscript
 margot::here_save(n_participants, "n_participants")
 
 # inspect data
 skimr::skim(dat_long)
 
-# checkk names
+# check names
 sort(colnames(dat_long))
-# set baseline variables --------------------------------------------------
 
+# set baseline variables --------------------------------------------------
 # for confounding control
 
 baseline_vars = c(
   "male",
   "age",
+  "sample_frame_opt_in",
   "education_level_coarsen",
   # factors
   "eth_cat",
@@ -443,6 +441,7 @@ baseline_vars = c(
   "sample_origin",
   "nz_dep2018",
   "nzsei_13_l",
+  "rural_gch_2018_l",
   "born_nz",
   "hlth_disability",
   "short_form_health",
@@ -471,7 +470,7 @@ baseline_vars = c(
   "honesty_humility",
   "openness",
   "neuroticism",
- # "modesty",
+ # "modesty", # phasing out 
   "sample_weights"
   #"alert_level_combined_lead"
 )
@@ -499,12 +498,12 @@ outcome_vars = c(
   "kessler_latent_anxiety",
   "bodysat",
   "perfectionism",
-  "power_no_control_composite",
+  #"power_no_control_composite",
   "self_esteem",
   "sexual_satisfaction",
   "self_control_have_lots",
   "self_control_wish_more_reversed",
-  "emotion_regulation_out_control",
+ # "emotion_regulation_out_control",
   "vengeful_rumin",
   "gratitude",
   "short_form_health",
@@ -514,7 +513,7 @@ outcome_vars = c(
   "lifesat",
   "meaning_purpose",# My life has a clear sense of purpose.
   "meaning_sense", # I have a good sense of what makes my life meaningful.
-  "permeability_individual",
+ # "permeability_individual",
   "neighbourhood_community",
   "belong",
   "support"
@@ -547,13 +546,13 @@ outcome_vars = c(
 
 
 # make your tables --------------------------------------------------------
-dt_baseline <- dat_long #|>
-#  filter(wave == 2020)
+dt_baseline <- dat_long |>
+  filter(wave == baseline_wave)
 
 # variables for the table
 base_vars <- setdiff(baseline_vars, c("not_lost", "sample_weights", outcome_vars))
 
-
+colnames(dt_baseline)
 # get baseline cols
 selected_base_cols <-
   dt_baseline |> select(all_of(base_vars))
@@ -589,18 +588,20 @@ margot::here_save(table_baseline, "table_baseline")
 
 # exposure table ----------------------------------------------------------
 # get first and second wave
-dt_baseline_19 <- dat_long |>
-  dplyr::filter(wave == 2018 | wave == 2019) |>
-  # we need to drop unused levels of the wave
+dt_baseline_exposure <- dat_long |>
+  dplyr::filter(wave == baseline_wave | wave == outcome_wave) |>
   droplevels()
 
+
 # get vars.
+name_exposure # check 
+
+# select exposure 
 selected_exposure_cols <-
-  dt_baseline_19 |> select(c("perfectionism", "wave"))
+  dt_baseline_exposure |> select(c(name_exposure, "wave"))
 
 # check
 #str(selected_exposure_cols)
-
 table_exposures <- selected_exposure_cols |>
   janitor::clean_names(case = "title") |>
   labelled::to_factor() |>
@@ -619,20 +620,20 @@ here_save(table_exposures, "table_exposures")
 
 # check
 table_exposures
-
+hist( selected_exposure_cols$hours_work) 
 
 # outcome table -----------------------------------------------------------
-dt_baseline_20 <- dat_long |>
-  dplyr::filter(wave == 2018 | wave == 2020) |>
+dt_baseline_outcome <- dat_long |>
+  dplyr::filter(wave == 2021 | wave == 2022) |>
   droplevels()
 
-names_outcomes_tab <- setdiff(outcome_vars, dt_baseline_20)
+names_outcomes_tab <- setdiff(outcome_vars, dt_baseline_outcome)
 names_outcomes_sorted <- sort(names_outcomes_tab)
 names_outcomes_final <- names_outcomes_sorted # consistent workflow
 
 # better names if desirable
 selected_outcome_cols <-
-  dt_baseline_20 |> select(all_of(names_outcomes_final), wave)
+  dt_baseline_outcome |> select(all_of(names_outcomes_final), wave)
 # |> # example if you want to rename your variables for the table
 #   rename(
 #     Social_belonging = belong,
@@ -678,11 +679,13 @@ table_outcomes <- margot::here_read("table_outcomes")
 table_outcomes
 
 # histogram of the exposure -----------------------------------------------
-# select 2019 wave
-dt_19 <- dat_long |> dplyr::filter(wave == 2019)
+# select exposure wave
+
+
+dt_exposure_wave  <- dat_long |> dplyr::filter(wave == exposure_wave)
 
 # mean of exposure
-mean_exposure <- mean(dt_19$perfectionism, na.rm = TRUE)
+mean_exposure <- mean(dt_exposure_wave[[name_exposure]], na.rm = TRUE)
 
 # view
 mean_exposure
@@ -690,50 +693,47 @@ mean_exposure
 # save
 here_save(mean_exposure, "mean_exposure")
 
-# check
-mean_exposure
-
 # sd of exposure
-sd_exposure <- sd(dt_19$perfectionism, na.rm = TRUE)
+sd_exposure <- sd(dt_exposure_wave[[name_exposure]], na.rm = TRUE)
 
 # save
 here_save(sd_exposure, "sd_exposure")
 
 # check
-# sd_exposure
-
+sd_exposure
 
 # median
-median_exposure <- median(dt_19$perfectionism, na.rm = TRUE)
+median_exposure <- median(dt_exposure_wave[[name_exposure]], na.rm = TRUE)
 
 median_exposure
 
 # check if you like
 # median_exposure
 # mean_exposure
-graph_density_shift_function <- margot::coloured_histogram(
-  dt_19,
-  col_name = "perfectionism",
-  binwidth = .1,
-  unit_of_change = 1,
-  scale_min = 1,
-  scale_max = 7,
-  highlight_range = "hightest" # "lowest" if you want the lowest, "both" if both
-)
-graph_density_shift_function
-margot::here_save(graph_density_shift_function,
-                  "graph_density_shift_function")
+
+# graph_density_shift_function <- margot::coloured_histogram(
+#   dt_exposure,
+#   col_name = name_exposure,
+#   binwidth = .1,
+#   unit_of_change = 1,
+#   scale_min = 0,
+#   scale_max = 100,
+#   highlight_range = "hightest" # "lowest" if you want the lowest, "both" if both
+# )
+# graph_density_shift_function
+# margot::here_save(graph_density_shift_function,
+#                   "graph_density_shift_function")
 
 # change in exposure ------------------------------------------------------
-dt_baseline_19_positivity <- dat_long |>
-  dplyr::filter(wave == 2018 |
-                  wave == 2019) |>
-  dplyr::mutate(perfectionism_round = round(perfectionism, digits = 0)) |>
-  dplyr::select(perfectionism_round, id, wave) |>
+dt_positivity <- dat_long |>
+  dplyr::filter(wave == baseline_wave |
+                  wave == exposure_wave) |>
+  mutate(working = ifelse(hours_work > 0, 1, 0 )) |> 
+  dplyr::select(working, id, wave) |>
   droplevels()
 
-out <- margot::create_transition_matrix(data = dt_baseline_19_positivity,
-                                        state_var = "perfectionism_round",
+out <- margot::create_transition_matrix(data = dt_positivity,
+                                        state_var = "working",
                                         id_var = "id")
 
 
@@ -741,107 +741,111 @@ out <- margot::create_transition_matrix(data = dt_baseline_19_positivity,
 # transition table
 transition_table  <- margot::transition_table(out)
 
+
 # for import later
 margot::here_save(transition_table, "transition_table")
-
 
 # view
 print(transition_table$table)
 print(transition_table$explanation)
 
-
-
 # example of a cross sectional analysis -----------------------------------
 
-dt_baseline_regress <- dat_long |>
-  filter(wave == 2018) |>
-  mutate(
-    #perfectionism_z = scale(perfectionism),
-    kessler_latent_anxiety_z = scale(kessler_latent_anxiety),
-    kessler_latent_depression_z = scale(kessler_latent_depression)
-  )
+# dt_baseline_regress <- dat_long |>
+#   filter(wave == 2018) |>
+#   mutate(
+#     #perfectionism_z = scale(perfectionism),
+#     kessler_latent_anxiety_z = scale(kessler_latent_anxiety),
+#     kessler_latent_depression_z = scale(kessler_latent_depression)
+#   )
 
-# check
-hist(dt_baseline_regress$kessler_latent_depression_z)
-# check
-hist(dt_baseline_regress$kessler_latent_anxiety_z)
-
-
-# code from above
-base_var <-
-  setdiff(baseline_vars, c("not_lost", "sample_weights", outcome_vars))
-
-# fit model
-fit_kessler_latent_anxiety <-
-  margot::regress_with_covariates(
-    dt_baseline_regress,
-    outcome = "kessler_latent_anxiety_z",
-    exposure = "perfectionism",
-    baseline_vars = base_var
-  )
-
-# view
-parameters::model_parameters(fit_kessler_latent_anxiety, ci_method = "wald")[2, ]
-
-# save results
-here_save(fit_kessler_latent_anxiety, "fit_kessler_latent_anxiety")
-
-# view
-fit_kessler_latent_depression <-
-  regress_with_covariates(
-    dt_baseline_regress,
-    outcome = "kessler_latent_depression_z",
-    exposure = "perfectionism",
-    baseline_vars = base_var
-  )
-# view model
-parameters::model_parameters(fit_kessler_latent_depression, ci_method =
-                               "wald")[2, ]
-
-# save results
-here_save(fit_kessler_latent_depression,
-          "fit_kessler_latent_depression")
+# # check
+# hist(dt_baseline_regress$kessler_latent_depression_z)
+# # check
+# hist(dt_baseline_regress$kessler_latent_anxiety_z)
 
 
-# calculate betas anxiety
-lm_fit_kessler_latent_anxiety <- tbl_regression(fit_kessler_latent_anxiety)
-here_save(lm_fit_kessler_latent_anxiety,
-          "lm_fit_kessler_latent_anxiety")
+# # code from above
+# base_var <-
+#   setdiff(baseline_vars, c("not_lost", "sample_weights", outcome_vars))
 
-# calculate betas depression
-lm_fit_kessler_latent_depression <- tbl_regression(fit_kessler_latent_depression)
-here_save(lm_fit_kessler_latent_depression,
-          "lm_fit_kessler_latent_depression")
+# # fit model
+# fit_kessler_latent_anxiety <-
+#   margot::regress_with_covariates(
+#     dt_baseline_regress,
+#     outcome = "kessler_latent_anxiety_z",
+#     exposure = "perfectionism",
+#     baseline_vars = base_var
+#   )
 
-#
-#
-b_lm_fit_kessler_latent_anxiety <- inline_text(lm_fit_kessler_latent_anxiety,
-                                               variable = perfectionism,
-                                               pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# # view
+# parameters::model_parameters(fit_kessler_latent_anxiety, ci_method = "wald")[2, ]
 
-# view
-here_save(b_lm_fit_kessler_latent_anxiety,
-          "b_lm_fit_kessler_latent_anxiety")
+# # save results
+# here_save(fit_kessler_latent_anxiety, "fit_kessler_latent_anxiety")
+
+# # view
+# fit_kessler_latent_depression <-
+#   regress_with_covariates(
+#     dt_baseline_regress,
+#     outcome = "kessler_latent_depression_z",
+#     exposure = "perfectionism",
+#     baseline_vars = base_var
+#   )
+# # view model
+# parameters::model_parameters(fit_kessler_latent_depression, ci_method =
+#                                "wald")[2, ]
+
+# # save results
+# here_save(fit_kessler_latent_depression,
+#           "fit_kessler_latent_depression")
+
+
+# # calculate betas anxiety
+# lm_fit_kessler_latent_anxiety <- tbl_regression(fit_kessler_latent_anxiety)
+# here_save(lm_fit_kessler_latent_anxiety,
+#           "lm_fit_kessler_latent_anxiety")
+
+# # calculate betas depression
+# lm_fit_kessler_latent_depression <- tbl_regression(fit_kessler_latent_depression)
+# here_save(lm_fit_kessler_latent_depression,
+#           "lm_fit_kessler_latent_depression")
 
 # #
-b_lm_fit_kessler_latent_depression <-
-  inline_text(lm_fit_kessler_latent_depression,
-              variable = perfectionism,
-              pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+# #
+# b_lm_fit_kessler_latent_anxiety <- inline_text(lm_fit_kessler_latent_anxiety,
+#                                                variable = perfectionism,
+#                                                pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
 
-here_save(b_lm_fit_kessler_latent_depression,
-          "b_lm_fit_kessler_latent_depression")
+# # view
+# here_save(b_lm_fit_kessler_latent_anxiety,
+#           "b_lm_fit_kessler_latent_anxiety")
+
+# # #
+# b_lm_fit_kessler_latent_depression <-
+#   inline_text(lm_fit_kessler_latent_depression,
+#               variable = perfectionism,
+#               pattern = "b = {estimate}; (95% CI {conf.low}, {conf.high})")
+
+# here_save(b_lm_fit_kessler_latent_depression,
+#           "b_lm_fit_kessler_latent_depression")
 
 
 # impute missing values at baseline ---------------------------------------
-
-exposure_vars <- c("perfectionism", "not_lost")
+exposure_vars <- c(exposure_var, "not_lost")
 baseline_vars <- setdiff(baseline_vars, "sample_weights")
 
 # check
 baseline_vars
 
-# here we imput the baseline
+
+# prepare for imputation --------------------------------
+dat_long <- margot::remove_numeric_attributes(dat_long)
+
+# check
+str(dat_long)
+
+# here we impute the baseline
 df_impute_base <- margot::margot_wide_impute_baseline(
   dat_long,
   baseline_vars = baseline_vars,
@@ -849,20 +853,24 @@ df_impute_base <- margot::margot_wide_impute_baseline(
   outcome_vars = outcome_vars
 )
 
-# save
 
 # get sample weights back to data
-dt_baseline <- dat_long |> filter(wave == 2018)
+dt_baseline <- dat_long |> filter(wave == baseline_wave)
 
 # add sample weights
 df_impute_base$t0_sample_weights = dt_baseline$sample_weights
 
+table( is.na(df_impute_base$t0_sample_weights) ) 
+
+
+df_impute_base$t0_rural_gch_2018_l
+
 # save
-here_save(df_impute_base, "df_impute_base")
+margot::here_save(df_impute_base, "df_impute_base")
 
 
 # data wrangling for censoring weights ------------------------------------
-df_impute_base <- here_read("df_impute_base")
+df_impute_base <- margot::here_read("df_impute_base")
 
 # check data types
 str(df_impute_base)
@@ -893,11 +901,12 @@ table(df_wide_not_lost$t0_not_lost)
 # Calculate the conditions before the mutate steps
 t0_na_condition <- rowSums(is.na(select(df_wide_not_lost, starts_with("t1_")))) > 0
 
-# used if you did not censor at 2019
+# used if you did not censor at exposure wave
 #t1_na_condition <- rowSums(is.na(select(df_wide_not_lost, starts_with("t2_")))) > 0
 
 df_clean <- df_wide_not_lost |>
-  mutate(t0_not_lost = ifelse(t0_na_condition, 0, t0_not_lost)) |>
+  dplyr::mutate(t0_not_lost = ifelse(t0_na_condition, 0, t0_not_lost)) |>
+  dplyr::mutate(t0_lost = 1 - t0_not_lost) |> 
   # mutate(t1_not_lost = ifelse(t1_na_condition, 0, t1_not_lost)) |>. # use if not_lost at t1
   # mutate(across(starts_with("t1_"), ~ ifelse(t0_not_lost == 0, NA_real_, .)),
   #        across(starts_with("t2_"), ~ ifelse(t0_not_lost == 0, NA_real_, .))) |>
@@ -907,9 +916,13 @@ df_clean <- df_wide_not_lost |>
     across(
       .cols = where(is.numeric) &
         !t0_not_lost &
+        !t0_lost &
         !t0_sample_weights &
-        !t0_born_nz,
-      #   !t1_perfectionism &  we will standardise perfectionism and use it later!t1_not_lost,
+        !t0_hours_work & ### EXPOSURE
+        !t0_sample_origin  &
+        !t0_rural_gch_2018_l  &
+        !t1_hours_work & ### EXPOSURE
+        !t1_not_lost,
       .fns = ~ scale(.),
       .names = "{.col}_z"
     )
@@ -918,15 +931,17 @@ df_clean <- df_wide_not_lost |>
   #        -t0_hours_charity) |>
   select(
     where(is.factor),
-    t0_sample_weights,
-    t0_born_nz,
     t0_not_lost,
-    t1_perfectionism,
+    t0_lost,
+    t0_sample_weights,
+    t0_sample_origin ,
+    t0_rural_gch_2018_l  ,
+    t0_hours_work,
+    t0_not_lost,
+    t1_hours_work, ### EXPOSURE
     t1_not_lost,
     ends_with("_z")
   ) |>
-  mutate(t0_lost = 1 - t0_not_lost) |>
-  mutate(t1_lost = 1 - t1_not_lost) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
   relocate("t0_not_lost", .before = starts_with("t1_"))  |>
   relocate("t1_not_lost", .before = starts_with("t2_"))
@@ -934,19 +949,22 @@ df_clean <- df_wide_not_lost |>
 # check what we have
 colnames(df_clean) # note this  "t1_perfectionism"               "t1_perfectionism_z"
 
+# get rid of attributes
+df_clean <- margot::remove_numeric_attributes(df_clean)
+
 # check again
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 
 # checks
-table(df_clean$t1_lost)
-table(df_clean$t0_lost)
+table(df_clean$t0_not_lost)
+table(df_clean$t1_not_lost)
 
 # checks
 table(df_clean$t0_not_lost)
 
 # checks
 test <- df_wide_not_lost |> filter(t0_not_lost == 1)
-nrow(test)
+nrow(test) # 28024
 
 #
 # df_impute_base$t1_perfectionism_z = scale(df_impute_base$t1_perfectionism)
@@ -961,9 +979,14 @@ str(df_clean)
 nrow(df_clean)
 
 
+
+
 # weights for treatment ----------------------------------------------------
 baseline_vars_models = df_clean |>  # post process of impute and combine
-  dplyr::select(starts_with("t0"), -t0_not_lost, -t0_lost, -t0_sample_weights) |> colnames() # note
+  dplyr::select(starts_with("t0_"), -t0_not_lost, -t0_sample_weights) |> colnames() # note
+
+baseline_vars_models
+
 
 # check this is correct.
 baseline_vars_models <- c(baseline_vars_models)
@@ -980,7 +1003,7 @@ str(df_clean_pre)
 
 # perform one-hot encoding using model.matrix
 # we need factors to be 0 or 1
-encoded_vars <- model.matrix( ~ t0_eth_cat  - 1, data = df_clean_pre)
+encoded_vars <- model.matrix(~ t0_education_level_coarsen + t0_eth_cat + t0_sample_origin + t0_rural_gch_2018_l  - 1, data = df_clean_pre)
 head(encoded_vars)
 
 
@@ -998,7 +1021,7 @@ head(encoded_df)
 
 # ensure to remove original categorical variables to avoid duplication
 df_clean_hot <- df_clean |>
-  select(-c(t0_eth_cat)) |>
+  select(-c(t0_eth_cat, t0_education_level_coarsen, t0_sample_origin,t0_rural_gch_2018_l)) |>
   bind_cols(encoded_df)
 
 # extract and print the new column names for encoded variables
@@ -1007,7 +1030,13 @@ print(new_encoded_colnames)
 
 
 # get baseline variable set without factors
-baseline_vars_set <- setdiff(names(df_clean_pre), c("t0_lost", "id", "t0_eth_cat"))
+baseline_vars_set <- setdiff(names(df_clean_pre), 
+c("t0_lost", 
+"id", 
+"t0_eth_cat",
+"t0_education_level_coarsen", 
+"t0_sample_origin",
+"t0_rural_gch_2018_l"))
 
 # check
 baseline_vars_set
@@ -1044,7 +1073,6 @@ registerDoParallel(cl)
 # you can probably just use "SL.glmnet"
 match_lib = c("SL.glmnet", "SL.xgboost", "SL.ranger")
 
-
 # run super learner
 sl <- SuperLearner(
   Y = df_clean_hot$t0_lost,
@@ -1062,7 +1090,7 @@ stopCluster(cl)
 # save your super learner model
 here_save(sl, "sl")
 
-
+# read 
 sl <- here_read("sl")
 
 # check outputs
@@ -1096,34 +1124,34 @@ df_clean_hot$weights <- ifelse(df_clean_hot$t0_lost == 1,
                                1 / df_clean_hot$pscore,
                                1 / (1 - df_clean_hot$pscore))
 
-# check
-hist(df_clean_hot$weights)
+# check 
+hist(df_clean_hot$weights)# nothing extreme
 
 # obtain stablise weights
-marginal_not_lost <- mean(df_clean_hot$t0_lost)
+# marginal_not_lost <- mean(df_clean_hot$t0_lost)
 
-# check (fyi)
-marginal_not_lost
+# # check (fyi)
+# marginal_not_lost
 
 
-# stabalised weights
-df_clean_hot$weights_stabilised <- ifelse(
-  df_clean_hot$t0_lost == 1,
-  marginal_not_lost / df_clean_hot$pscore,
-  (1 - marginal_not_lost) / (1 - df_clean_hot$pscore)
-)
+# # stabalised weights
+# df_clean_hot$weights_stabilised <- ifelse(
+#   df_clean_hot$t0_lost == 1,
+#   marginal_not_lost / df_clean_hot$pscore,
+#   (1 - marginal_not_lost) / (1 - df_clean_hot$pscore)
+# )
 
 # checks
-hist(df_clean_hot$weights_stabilised)
-max(df_clean_hot$weights_stabilised)
-min(df_clean_hot$weights_stabilised)
+# hist(df_clean_hot$weights_stabilised)
+# max(df_clean_hot$weights_stabilised)
+# min(df_clean_hot$weights_stabilised)
 
 # save output of hot code dataset
 here_save(df_clean_hot, "df_clean_hot")
 
 # get weights into the model
 # new weights by combining censor and sample weights, using stabalised weights
-df_clean$t0_combo_weights = df_clean_hot$weights_stabilised * df_clean$t0_sample_weights
+df_clean$t0_combo_weights = df_clean_hot$weights * df_clean$t0_sample_weights
 
 # checks
 min(df_clean$t0_combo_weights)
@@ -1134,7 +1162,12 @@ hist(df_clean$t0_combo_weights)
 
 # next remove those who were lost between t0 and t1
 df_clean_t1 <- df_clean |> filter(t0_lost == 0) |>
-  select(-t1_perfectionism_z, -t1_lost, -t0_lost, -t0_sample_weights) |>
+  select(
+    #-t1_hours_work, #### EXPOSURE 
+   # -t1_lost, 
+    -t0_lost, 
+    -t0_not_lost,
+    -t0_sample_weights) |>
   relocate("t0_combo_weights", .before = starts_with("t1_"))
 
 # check
@@ -1156,7 +1189,7 @@ n_not_lost_sample
 
 # no one missing in exposure
 # check
-table(is.na(df_clean_t1$n_not_lost_sample)) # none
+table(is.na(df_clean_t1$t1_hours_work)) # none
 
 # gets us the correct df for weights
 
@@ -1169,52 +1202,13 @@ nrow(df_clean_t1)
 # next get data for t1
 hist(df_clean_t1$t0_combo_weights)
 
-# get correct censoring -----------------------------------------
-# THIS CODE IS redundant but NO HARM DONE
-t0_na_condition <-
-  rowSums(is.na(select(df_clean_t1, starts_with("t1_")))) > 0
-
-t1_na_condition <-
-  rowSums(is.na(select(df_clean_t1, starts_with("t2_")))) > 0
-# baseline_vars
-# df_impute_base$t0_sample_weights
-
-
-df_clean_t2 <- df_clean_t1 |>
-  # select(-t0_alert_level_combined_lead) |>
-  mutate(t0_not_lost = ifelse(t0_na_condition, 0, t0_not_lost)) |>
-  mutate(t1_not_lost = ifelse(t1_na_condition, 0, t1_not_lost)) |>
-  mutate(across(starts_with("t1_"), ~ ifelse(t0_not_lost == 0, NA_real_, .)),
-         across(starts_with("t2_"), ~ ifelse(t0_not_lost == 0, NA_real_, .))) |>
-  mutate(across(starts_with("t2_"), ~ ifelse(t1_not_lost == 0, NA_real_, .))) |>
-  # mutate(t0_lost = 1 - t0_not_lost) |>
-  mutate(t1_lost = 1 - t1_not_lost) |>
-  relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
-  relocate("t0_not_lost", .before = starts_with("t1_"))  |>
-  relocate("t1_not_lost", .before = starts_with("t2_")) |>
-  select(-t1_lost, -t0_not_lost)
-
-## END REDUNDANT
-# test
-nrow(df_clean_t2)
-colnames(df_clean_t2)
-# checks
-hist(df_clean_t2$t0_combo_weights)
-
-# outcomes
-naniar::vis_miss(df_clean_t2, warn_large_data = F)
-
-# save
-here_save(df_clean_t2, "df_clean_t2")
-
-
-
+margot::here_save(df_clean_t1, "df_clean_t1")
 # check propensity scores -------------------------------------------------
 # imbalance plot ----------------------------------------------------------
-df_clean_t2 <- here_read("df_clean_t2")
+df_clean_t1 <- here_read("df_clean_t1")
 
 # view
-hist(df_clean_t2$t0_combo_weights)
+hist(df_clean_t1$t0_combo_weights)
 
 # if you are comparing 2 x subgroups out of n > 2 groups,  do this
 # df_subgroup <-df_clean_t2 |> filter(t0_eth_cat == "maori" | t0_eth_cat == "euro") |> droplevels()
@@ -1222,127 +1216,20 @@ hist(df_clean_t2$t0_combo_weights)
 # # save
 # here_save(df_subgroup, "df_subgroup")
 
-# copy data and make the group to be compared a factor
-df_sub <- df_clean_t2
-
-# make factor
-df_sub$t0_born_nz <- as.factor(df_clean_t2$t0_born_nz)
-
-# make propensity score model. Need correct covariates
-baseline_vars_models = df_clean_t2 |>
-  dplyr::select(starts_with("t0"), -t0_combo_weights) |> colnames()
-
-# check
-baseline_vars_models
-
-# needed for subgroup ps
-baseline_vars_models_sans_group <- setdiff(baseline_vars_models, "t0_born_nz")
-
-
-# equation string
-string <- formula_str <- as.formula(paste(
-  "t1_perfectionism",
-  "~",
-  paste(baseline_vars_models, collapse = "+")
-))
-
-# equation string for subgroup analysis
-string_sans <- formula_str <- as.formula(paste(
-  "t1_perfectionism",
-  "~",
-  paste(baseline_vars_models_sans_group, collapse = "+")
-))
-
-
-# iptw marginal analysis
-iptw_marginal  <- WeightIt::weightit(
-  string,
-  method = "ebal",
-  estimand = "ATE",
-  weights = "t0_combo_weights",
-  #focal = "set",
-  data = df_clean_t2
-)
-summary_iptw_marginal <- summary(iptw_marginal)
-here_save(summary_iptw_marginal, "summary_iptw_marginal")
-
-
-# note any extreme weights
-plot(summary(iptw_marginal))
-
-# save model
-here_save(iptw_marginal, "iptw_marginal")
-
-
-# iptw conditional analysis  won't work
-# no diff in the groups
-# iptw_conditional <- weightit(
-#   string_sans,
-#   method = "ebal",
-#   estimand = "ATE",
-#   by = "t0_born_nz",
-#   weights = "t0_combo_weights",
-#   #focal = "set", # if att
-#   data = df_sub
-# )
-#
-# # view
-# summary(iptw_conditional)
-
-# save model
-# here_save(iptw_conditional, "iptw_conditional")
-# summary_iptw_conditional <- summary(iptw_conditional)
-# here_save(summary_iptw_conditional, "summary_iptw_conditional")
-
-
-
-colnames(df_nz)
-
-# visualise imbalance
-love_plot_marginal <-
-  love.plot(
-    iptw_marginal,
-    binary = "std",
-    thresholds = c(m = .1),
-    wrap = 50,
-    position = "bottom",
-    size = 3
-  )
-
-# view
-love_plot_marginal
-
-# save for manuscript
-here_save(love_plot_marginal, "love_plot_marginal")
-#
-#love_plot_conditional
-# love_plot_conditional <-
-#   love.plot(
-#     iptw_conditional,
-#     cluster = "t0_born_nz",
-#     binary = "std",
-#     thresholds = c(m = .1),
-#     wrap = 50,
-#     position = "bottom",
-#     size = 2
-#   )
-# love_plot_conditional
-
-
 
 # START ANALYSIS HERE --------------------------------------------------------------
 # read data --  start here if previous work already done
-df_clean_t2 <- here_read("df_clean_t2")
+df_clean_t1 <- here_read("df_clean_t1")
 
 # check
-colnames(df_clean_t2)
+colnames(df_clean_t1)
 
 # check
-str(df_clean_t2)
+str(df_clean_t1)
 
 # names of vars for modelling
 names_base <-
-  df_clean_t2 |> select(starts_with("t0"), -t0_combo_weights) |> colnames()
+  df_clean_t1 |> select(starts_with("t0"), -t0_combo_weights) |> colnames()
 
 # check
 names_base
@@ -1355,19 +1242,24 @@ names_outcomes <-
 names_outcomes
 
 # obsessively check
-names(df_clean_t2)
+names(df_clean_t1)
 
 # check against this
 names_base
 
 # df_final_base  <- df_clean_t2[names_base]
-str(df_clean_t2)
+str(df_clean_t1)
 
 
 # lets one hot encode any categorical vars, here only t0_eth_cat
 
 # this code is the same as above
-encoded_vars <- model.matrix( ~ t0_eth_cat  - 1, data = df_clean_t2)
+encoded_vars <- model.matrix(~ t0_education_level_coarsen + t0_eth_cat + t0_sample_origin + t0_rural_gch_2018_l - 1,
+  data = df_clean_t1
+)
+
+
+head(encoded_vars)
 
 
 # convert matrix to data frame
@@ -1385,15 +1277,15 @@ head(encoded_df)
 # ensure to remove original categorical variables to avoid duplication
 
 # note new data `df_clean_t2`
-df_clean_hot_t2 <- df_clean_t2 |>
-  select(-c(t0_eth_cat)) |>
+df_clean_hot_t1 <- df_clean_t1 |>
+  select(-c( t0_education_level_coarsen, t0_eth_cat, t0_sample_origin, t0_rural_gch_2018_l)) |>
   bind_cols(encoded_df) |>
   relocate(starts_with("t0_"), .before = starts_with("t1_")) |>
   #  relocate("t0_not_lost", .before = starts_with("t1_"))  |>
   relocate("t1_not_lost", .before = starts_with("t2_"))
 
 # check names
-colnames(df_clean_hot_t2)
+colnames(df_clean_hot_t1)
 
 # # extract and print the new column names for encoded variables
 # new_encoded_colnames_t2 <- colnames(encoded_df)
@@ -1410,16 +1302,17 @@ set_final_names
 
 # set names for analysis
 set_final_names <-
-  df_clean_hot_t2 |> select(starts_with("t0"), -t0_combo_weights) |> colnames()
+  df_clean_hot_t1 |> select(starts_with("t0"), -t0_combo_weights) |> colnames()
 
 
 # add the new encoded column names
 
 # check
-full_predictor_vars_t2
+set_final_names
 
 # check
-colnames(df_clean_hot_t2)
+colnames(df_clean_hot_t1)
+
 
 
 # model estimation --------------------------------------------------------
@@ -1472,17 +1365,18 @@ max_data <- max(df_final$t1_perfectionism)
 
 
 gain_A <- function(data, trt) {
-  ifelse(data[[trt]] < max_data, data[[trt]], max_data)
+  ifelse(data[[trt]]  +  data[[trt]] * .2 < 80, data[[trt]] + data[[trt]] * .2, 
+  data[[trt]]) # increase all by 20 up to 80 hours per week
 }
 
-# shift function
-gain_A <- function(data, trt) {
-  ifelse(data[[trt]] < max_data - 1, data[[trt]] + 1, max_data)
-}
-
-# loss_A <- function(data, trt) {
-#   ifelse(data[[trt]] > min_scale + 1, data[[trt]] - 1, min_scale)
+# # shift function
+# gain_A <- function(data, trt) {
+#   ifelse(data[[trt]] < max_data - 1, data[[trt]] + 1, max_data)
 # }
+
+loss_A <- function(data, trt) {
+  ifelse(data[[trt]] * .2, data[[trt]]) # increase all by .2
+}
 
 
 
