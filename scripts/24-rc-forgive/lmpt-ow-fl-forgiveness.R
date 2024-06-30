@@ -124,7 +124,9 @@ f <- function(data, trt) {
 
 #  increase everyone by one point, contrasted with what they would be anyway.
 f_1 <- function(data, trt) {
-  ifelse(data[[trt]] <= max_score - one_point_in_sd_units, data[[trt]] + one_point_in_sd_units,  max_score)
+  ifelse(data[[trt]] <= max_score - one_point_in_sd_units,
+         data[[trt]] + one_point_in_sd_units,
+         max_score)
 }
 
 

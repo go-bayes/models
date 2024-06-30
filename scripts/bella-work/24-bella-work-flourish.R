@@ -7,7 +7,6 @@ set.seed(123)
 push_mods <-
   here::here('/Users/joseph/Library/CloudStorage/Dropbox-v-project/data/24-bella-work')
 
-install.packages("formatR")
 # load packages
 # get devtools
 if (!require(devtools, quietly = TRUE)) {
@@ -97,8 +96,8 @@ colnames(dat)
 
 str(dat)
 # check missing values so that you can figure out which to select.
-skimr::skim(dat) |>
-  arrange(n_missing)
+# skimr::skim(dat) |>
+#   arrange(n_missing)
 
 
 
