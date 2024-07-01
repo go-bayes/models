@@ -385,7 +385,7 @@ dat_long <- dat_long_0|>
   droplevels() |>
   dplyr::rename(sample_origin =  sample_origin_names_combined) |>
   dplyr::mutate(
-    rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
+  #  rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
   #  has_siblings = as.numeric(as.character(has_siblings)),
     parent = as.numeric(as.character(parent)),
     partner = as.numeric(as.character(partner)),
@@ -408,6 +408,9 @@ dat_long <- dat_long_0|>
   data.frame()|>
   droplevels()
 
+
+head(dat_long)
+str(dat_long$rural_gch_2018_l)
 
 n_participants <- skimr::n_unique(dat_long$id)
 
@@ -671,6 +674,9 @@ table_outcomes <- selected_outcome_cols |>
   modify_header(label = "**Outcome Variables by Wave**") |>  # Update the column header
   bold_labels()
 
+str(dat_long$rural_gch_2018_l) 
+head(dat_long)
+
 # save
 margot::here_save(table_outcomes, "table_outcomes")
 
@@ -854,6 +860,7 @@ df_impute_base <- margot::margot_wide_impute_baseline(
 )
 
 
+
 # get sample weights back to data
 dt_baseline <- dat_long |> filter(wave == baseline_wave)
 
@@ -862,8 +869,9 @@ df_impute_base$t0_sample_weights = dt_baseline$sample_weights
 
 table( is.na(df_impute_base$t0_sample_weights) ) 
 
+?as.factor()
 
-df_impute_base$t0_rural_gch_2018_l
+df_impute_base$t0_rural_gch_2018_l <- as.factor( df_impute_base$t0_rural_gch_2018_l)
 
 # save
 margot::here_save(df_impute_base, "df_impute_base")
@@ -952,6 +960,7 @@ colnames(df_clean) # note this  "t1_perfectionism"               "t1_perfectioni
 # get rid of attributes
 df_clean <- margot::remove_numeric_attributes(df_clean)
 
+str(df_clean)
 # check again
 naniar::vis_miss(df_clean, warn_large_data = FALSE)
 
@@ -969,8 +978,6 @@ nrow(test) # 28024
 #
 # df_impute_base$t1_perfectionism_z = scale(df_impute_base$t1_perfectionism)
 
-# get rid of attributes
-df_clean <- margot::remove_numeric_attributes(df_clean)
 
 # checks
 str(df_clean)
@@ -986,10 +993,6 @@ baseline_vars_models = df_clean |>  # post process of impute and combine
   dplyr::select(starts_with("t0_"), -t0_not_lost, -t0_sample_weights) |> colnames() # note
 
 baseline_vars_models
-
-
-# check this is correct.
-baseline_vars_models <- c(baseline_vars_models)
 
 # create fresh dataset
 df_clean_pre <- df_clean[baseline_vars_models]
@@ -1236,7 +1239,7 @@ names_base
 
 # get outcome names for checks
 names_outcomes <-
-  df_clean_t2 |> select(starts_with("t2")) |> colnames()
+  df_clean_t1 |> select(starts_with("t2")) |> colnames()
 
 # check
 names_outcomes
@@ -1297,18 +1300,16 @@ colnames(df_clean_hot_t1)
 # baseline_vars_set_t2 <- setdiff(names(df_clean_hot_t2), c("id","t0_eth_cat"))
 # set_final_names <- c(baseline_vars_set_t2, new_encoded_colnames_t2)
 
-# check
-set_final_names
+
 
 # set names for analysis
 set_final_names <-
   df_clean_hot_t1 |> select(starts_with("t0"), -t0_combo_weights) |> colnames()
 
-
-# add the new encoded column names
-
 # check
 set_final_names
+
+# add the new encoded column names
 
 # check
 colnames(df_clean_hot_t1)
@@ -1338,14 +1339,14 @@ n_cores <- parallel::detectCores() - 2
 
 #### SET VARIABLE NAMES
 #  model
-A <- c("t1_perfectionism")
+A <- c("t1_hours_work")
 C <- c("t1_not_lost")
 W <- set_final_names
 
 
 # get max value of data
 # make data_final
-df_final <- df_clean_hot_t2
+df_final <- df_clean_hot_t1
 
 
 # for later use
@@ -1361,11 +1362,11 @@ naniar::vis_miss(df_final, warn_large_data = F)
 
 #  write function(s) for shift(s) ------------------------------------------------------
 # get enpoints
-max_data <- max(df_final$t1_perfectionism)
-
+max_data <- max(df_final$t1_hours_work, na.rm =TRUE)
+max_data
 
 gain_A <- function(data, trt) {
-  ifelse(data[[trt]]  +  data[[trt]] * .2 < 80, data[[trt]] + data[[trt]] * .2, 
+  ifelse( (data[[trt]]  +  data[[trt]] * .2) < 80, data[[trt]] + data[[trt]] * .2, 
   data[[trt]]) # increase all by 20 up to 80 hours per week
 }
 
@@ -1375,7 +1376,9 @@ gain_A <- function(data, trt) {
 # }
 
 loss_A <- function(data, trt) {
-  ifelse(data[[trt]] * .2, data[[trt]]) # increase all by .2
+  ifelse(
+    (data[[trt]]  -  data[[trt]] * .2) <= 0, data[[trt]] -  data[[trt]] * .2, 
+    0)
 }
 
 
@@ -1385,10 +1388,10 @@ fixed_shift_to_7 <- function(data, trt) {
   ifelse(data[[trt]] != 7, 7, data[[trt]])
 }
 
-# changing your function to be fixed at 0 if you like...
-fixed_shift_to_0 <- function(data, trt) {
-  ifelse(data[[trt]] != 0, 0, data[[trt]])
-}
+# # changing your function to be fixed at 0 if you like...
+# fixed_shift_to_0 <- function(data, trt) {
+#   ifelse(data[[trt]] != 0, 0, data[[trt]])
+# }
 
 
 # set libraries
@@ -1400,13 +1403,22 @@ listWrappers()
 
 # test data
 df_clean_slice <- df_final |>
-  slice_head(n = 1000) |>
+  slice_head(n = 3000) |>
   as.data.frame()
 
-
-
+hist( df_clean_slice$t2_kessler_latent_anxiety_z) 
+W
 # Models!
-t2_kessler_latent_anxiety_z_null_test <- lmtp_tmle(
+names_base
+W_1 <- select_and_rename_cols(
+  names_base,
+  baseline_vars,
+  outcome,
+  from_prefix = "t2",
+  to_prefix = "t0"
+)
+
+t2_kessler_latent_anxiety_z_null_test <- lmtp_sdr(
   outcome = "t2_kessler_latent_anxiety_z",
   baseline = W,
   shift = NULL,
@@ -1417,9 +1429,10 @@ t2_kessler_latent_anxiety_z_null_test <- lmtp_tmle(
   folds = 10,
   outcome_type = "continuous",
   weights = df_clean_slice$t0_combo_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
+  learners_trt ="SL.glmnet", #sl_lib,
+  learners_outcome = "SL.glmnet" #sl_lib
 )
+
 
 # evaluate predictive performance of the models
 # however prediction isn't always best
@@ -1576,7 +1589,7 @@ dt_baseline <- dat_long |>
   filter(wave == 2018)
 
 ## in baseline sample
-df_18 |> dplyr::filter(dplyr::filter(born_nz == 0)) |> droplevels()
+dt_baseline |> dplyr::filter(dplyr::filter(born_nz == 0)) |> droplevels()
 
 # select participant n at basel
 n_baseline_participants_born_nz_no <- dt_baseline |> dplyr::filter(born_nz == 0) |> droplevels()
