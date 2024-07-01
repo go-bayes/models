@@ -54,7 +54,11 @@ pacman::p_load(
   tidyverse,
   ggplot2,
   parameters,
-  kableExtra
+  kableExtra, 
+  xgboost,
+  glmnet,
+  ranger,
+  future
 )
 
 # correct sample #  w_gend_age_euro
@@ -179,18 +183,18 @@ outcome_wave <- "2022"
 
 # obtain ids for individuals who participated in 2018 and have no missing baseline exposure
 ids_baseline <- dat |>
-  dplyr::filter(year_measured == 1, wave == baseline_wave) |>
+  dplyr::filter(year_measured == 1,  wave == baseline_wave,  employed == 1, age <=60) |>
   dplyr::filter(!is.na(!!sym(name_exposure))) |> # criteria, no missing in baseline exposure
   pull(id)
 
-
+length(ids_baseline)
 # if you decide to include the exposure in the treatment wave,
 # if you decide to include the exposure in the treatment wave,
 # obtain ids for individuals who participated in 2019
 # ids_2019 <- df_nz |>
-#   dplyr::filter(year_measured == 1, wave == 2019) |>
-#   dplyr::filter(!is.na(!!sym(name_exposure))) |> # criteria, no missing
-#   pull(id)
+# dplyr::filter(year_measured == 1, wave == 2019) |>
+# dplyr::filter(!is.na(!!sym(name_exposure))) |> # criteria, no missing
+# pull(id)
 
 # intersect IDs from 2018 and 2019 to ensure participation in both years
 # ids_2018_2019 <- intersect(ids_2018, ids_2019)
@@ -231,7 +235,10 @@ dat_long_0 <- dat |>
     "born_nz",
     "male",
     "eth_cat",
-    "employed",
+   # "employed",
+   # "emp_current_job_years", # too much missingness
+    "emp_job_secure",
+    "hours_commute",
     "education_level_coarsen",
     "household_inc",
     "nz_dep2018",
@@ -241,6 +248,7 @@ dat_long_0 <- dat |>
     "political_conservative",
     "hours_children",
     "hours_work",
+  #  "hours_community",  NA
     "hours_housework",
     "hours_charity",
     "hours_exercise",
@@ -346,7 +354,9 @@ dat_long <- dat_long_0|>
     hours_charity_log = log(hours_charity + 1),
     hours_exercise_log = log(hours_exercise + 1),
     hours_children_log = log(hours_children + 1),
-    charity_donate_log = log(charity_donate + 1)
+    charity_donate_log = log(charity_donate + 1),
+    hours_commute_log = log(hours_commute + 1)#,
+   # hours_community_log = log(hours_community + 1) NA
   ) |>
   dplyr::select(
     -c(
@@ -356,12 +366,12 @@ dat_long <- dat_long_0|>
       hours_housework,
       household_inc,
       hours_exercise,
-     # hours_community,
+      hours_commute,
+      hours_community,
       hours_children,
       hours_charity,
       charity_donate
-    )
-  ) |>
+    )) |>
   droplevels() |>
   dplyr::rename(sample_origin =  sample_origin_names_combined) |>
   dplyr::mutate(
@@ -371,19 +381,10 @@ dat_long <- dat_long_0|>
     partner = as.numeric(as.character(partner)),
     born_nz = as.numeric(as.character(born_nz)),
     not_lost = as.numeric(as.character(not_lost)),
-    employed = as.numeric(as.character(employed)),
+   # employed = as.numeric(as.character(employed)),
     hlth_disability = as.numeric(as.character(hlth_disability))
   ) |>
   droplevels() |>
-  arrange(id, wave) |>
-  mutate(
-    #rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
-    parent = as.numeric(as.character(parent)),
-    partner = as.numeric(as.character(partner)),
-    born_nz = as.numeric(as.character(born_nz)),
-    not_lost = as.numeric(as.character(not_lost)),
-    employed = as.numeric(as.character(employed))
-  ) |>
   arrange(id, wave) |>
   data.frame()|>
   droplevels()
@@ -417,6 +418,8 @@ baseline_vars = c(
   "sample_frame_opt_in",
   "education_level_coarsen",
   "eth_cat",
+#  "emp_current_job_years",
+  "emp_job_secure",
   #"bigger_doms", # religious denomination, sometimes useful, make sure to code as factor if used
   "sample_origin",
   "nz_dep2018",
@@ -435,22 +438,27 @@ baseline_vars = c(
   "political_conservative",
   "hours_children_log",
  # "hours_work_log",  # THIS IS THE EXPOSURE, USE LOG IF NOT EXPOSURE
-  "religion_believe_god",
-  "religion_believe_spirit",
+  # "religion_believe_god",
+  # "religion_believe_spirit",
   "religion_identification_level",
-  "hours_housework_log",
-  "hours_exercise_log",
   "agreeableness",
   "conscientiousness",
   "extraversion",
   "honesty_humility",
   "openness",
   "neuroticism",
+  "charity_donate_log",
+  "hours_charity_log",
+  "hours_housework_log",
+   "hours_exercise_log", 
+    "hours_commute_log",
+  # "hours_community_log", 
+   "hours_children_log", 
  # "modesty", # phasing out  -- overlaps with humiliy
   "sample_weights"
   #"alert_level_combined_lead" # only needed for 2019/2020
 )
-
+colnames(dat)
 
 # treatment
 exposure_var = c(name_exposure, "not_lost") # we will use the not_lost variable later
@@ -464,7 +472,7 @@ outcome_vars = c(
   "alcohol_frequency",
   "alcohol_intensity",
   "hlth_bmi",
-  "hours_exercise",
+  "hours_exercise_log",
   "short_form_health",
   "hlth_sleep_hours",
   "smoker",
@@ -494,10 +502,6 @@ outcome_vars = c(
   "belong",
   "support"
 )
-
-
-
-
 
 
 # 
@@ -1441,13 +1445,17 @@ hist( df_clean_slice$t2_sexual_satisfaction_z)
 W
 # Models!
 names_base
-# W_1 <- select_and_rename_cols(
-#   W,
-#   baseline_vars,
-#   outcome = 't0_sexual_satisfaction_z',
-#   from_prefix = "t2",
-#   to_prefix = "t0"
-# )
+
+baseline_vars
+
+W_1 <- margot::select_and_rename_cols(
+  W,
+  baseline_vars,
+  outcome = 't2_kessler_latent_anxiety_z',
+  from_prefix = "t2",
+  to_prefix = "t0"
+)
+W_1
 
 t2_kessler_latent_anxiety_z_null_test <- lmtp_tmle(
   outcome = "t2_kessler_latent_anxiety_z",
@@ -1463,7 +1471,7 @@ t2_kessler_latent_anxiety_z_null_test <- lmtp_tmle(
   learners_trt =sl_lib,
   learners_outcome = sl_lib
 )
-
+t2_kessler_latent_anxiety_z_null_test
 
 # evaluate predictive performance of the models
 # however prediction isn't always best
@@ -1532,11 +1540,19 @@ C
 A
 outcome_vars
 
+# 
+W_t2_smoker<- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_smoker")
+W_t2_smoker
 
+
+#
+#
 t2_smoker_binary <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_smoker,
   outcome = "t2_smoker",
   cens = C,
   shift = gain_A,
@@ -1546,22 +1562,16 @@ t2_smoker_binary <- lmtp_tmle(
   weights = df_final$t0_sample_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
 )
 
-
-
 t2_smoker_binary
+
 here_save(t2_smoker_binary, "t2_smoker_binary")
-# t2_smoker_binary <-here_read( "t2_smoker_binary")
-# t2_smoker_binary
-
-# print timing info
-
+#
 t2_smoker_binary_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_smoker,
   outcome = "t2_smoker",
   cens = C,
   shift = loss_A,
@@ -1571,22 +1581,21 @@ t2_smoker_binary_1 <- lmtp_tmle(
   weights = df_final$t0_sample_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-  
   )
 
-
-
-
+#
+#
+#
 t2_smoker_binary_1
 here_save(t2_smoker_binary_1, "t2_smoker_binary_1")
-
-C
-
+#
+#
+#
 #Do you currently smoke?
 t2_smoker_binary_null  <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_smoker,
   outcome = "t2_smoker",
   cens = C,
   shift = NULL,
@@ -1602,20 +1611,20 @@ t2_smoker_binary_null  <- lmtp_tmle(
 t2_smoker_binary_null
 here_save(t2_smoker_binary_null, "t2_smoker_binary_null")
 
-# 
-# 
-# names_base_t2_alcohol_frequency_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_alcohol_frequency_z")
-# names_base_t2_alcohol_frequency_z
-# 
+#
+
+
 
 #"How often do you have a drink containing alcohol?"
+W_t2_alcohol_frequency_z <- margot::select_and_rename_cols(names_base = W,
+  baseline_vars = baseline_vars,
+  outcome = "t2_alcohol_frequency_z")
+
+
 t2_alcohol_frequency_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_alcohol_frequency_z,
   outcome = "t2_alcohol_frequency_z",
   cens = C,
   shift = gain_A,
@@ -1639,7 +1648,7 @@ here_save(t2_alcohol_frequency_z, "t2_alcohol_frequency_z")
 t2_alcohol_frequency_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_alcohol_frequency_z,
   outcome = "t2_alcohol_frequency_z",
   cens = C,
   shift = loss_A,
@@ -1663,7 +1672,7 @@ here_save(t2_alcohol_frequency_z_1, "t2_alcohol_frequency_z_1")
 t2_alcohol_frequency_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_alcohol_frequency_z,
   outcome = "t2_alcohol_frequency_z",
   cens = C,
   shift = NULL,
@@ -1682,17 +1691,16 @@ here_save(t2_alcohol_frequency_z_null, "t2_alcohol_frequency_z_null")
 
 
 # 
-# names_base_t2_alcohol_intensity_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_alcohol_intensity_z")
-# names_base_t2_alcohol_intensity_z
+W_t2_alcohol_intensity_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_alcohol_intensity_z")
+W_t2_alcohol_intensity_z
 
 # How many drinks containing alcohol do you have on a typical day when drinking?
 t2_alcohol_intensity_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_alcohol_intensity_z,
   outcome = "t2_alcohol_intensity_z",
   cens = C,
   shift = gain_A,
@@ -1715,7 +1723,7 @@ here_save(t2_alcohol_intensity_z, "t2_alcohol_intensity_z")
 t2_alcohol_intensity_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_alcohol_intensity_z,
   outcome = "t2_alcohol_intensity_z",
   cens = C,
   shift = loss_A,
@@ -1737,7 +1745,7 @@ here_save(t2_alcohol_intensity_z_1, "t2_alcohol_intensity_z_1")
 t2_alcohol_intensity_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_alcohol_intensity_z,
   outcome = "t2_alcohol_intensity_z",
   cens = C,
   shift = NULL,
@@ -1756,48 +1764,20 @@ here_save(t2_alcohol_intensity_z_null, "t2_alcohol_intensity_z_null")
 
 
 
-# names_base_t2_sfhealth_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_sfhealth_z")
-# names_base_t2_sfhealth_z
+W_t2_short_form_health <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_short_form_health")
+W_t2_short_form_health
 
 # "In general, would you say your health is...
 # "I seem to get sick a little easier than other people."
 # "I expect my health to get worse." ****
-
-# t2_sfhealth_z <- lmtp_tmle(
-#   data = df_final,
-#   trt = A,
-#   baseline = names_base_t2_sfhealth_z,
-#   outcome = "t2_sfhealth_z",
-#   cens = C,
-#   shift = gain_A,
-#   mtp = TRUE,
-#   folds = 10,
-#   outcome_type = "continuous",
-#   weights = df_final$t0_sample_weights,
-#   learners_trt = sl_lib,
-#   learners_outcome = sl_lib
-# 
-# )
-#
-# t2_sfhealth_z
-# here_save(t2_sfhealth_z, "t2_sfhealth_z")
-#
-# #
-# names_base_t2_sfhealth_your_health_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_sfhealth_your_health_z")
-# names_base_t2_sfhealth_your_health_z
-# 
-
 # "In general, would you say your health is...
+
 t2_short_form_health_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_short_form_health,
   outcome = "t2_short_form_health_z",
   cens = C,
   shift = gain_A,
@@ -1810,16 +1790,16 @@ t2_short_form_health_z <- lmtp_tmle(
 
 )
 
-t2_sfhealth_your_health_z
-here_save(t2_sfhealth_your_health_z, "t2_sfhealth_your_health_z")
+t2_short_form_health_z
+here_save(t2_short_form_health_z, "t2_short_form_health_z")
 
 
 # "In general, would you say your health is...
-t2_sfhealth_your_health_z_1 <- lmtp_tmle(
+t2_short_form_health_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,  
-  outcome = "t2_sfhealth_your_health_z",
+  baseline = W_t2_short_form_health,  
+  outcome = "t2_short_form_health_z",
   cens = C,
   shift = loss_A,
   mtp = TRUE,
@@ -1835,15 +1815,11 @@ t2_sfhealth_your_health_z_1
 here_save(t2_sfhealth_your_health_z_1, "t2_sfhealth_your_health_z_1")
 
 
-
-
-
-# "In general, would you say your health is...
-t2_sfhealth_your_health_z_null <- lmtp_tmle(
+t2_short_form_health_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
-  outcome = "t2_sfhealth_your_health_z",
+  baseline = W_t2_short_form_health,
+  outcome = "t2_short_form_health_z",
   cens = C,
   shift = NULL,
   mtp = TRUE,
@@ -1855,24 +1831,23 @@ t2_sfhealth_your_health_z_null <- lmtp_tmle(
 
 )
 
-t2_sfhealth_your_health_z_null
+t2_short_form_health_z_null
 here_save(t2_sfhealth_your_health_z_null,
-          "t2_sfhealth_your_health_z_null")
+          "t2_short_form_health_z_null")
 
 
-# 
-# names_base_t2_hours_exercise_log_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_hours_exercise_log_z")
-# names_base_t2_hours_exercise_log_z
+
+W_t2_hours_exercise_log_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hours_exercise_log_z")
+W_t2_hours_exercise_log_z
 
 
 # Hours spent … exercising/physical activity
 t2_hours_exercise_log_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hours_exercise_log_z,
   outcome = "t2_hours_exercise_log_z",
   cens = C,
   shift = gain_A,
@@ -1892,7 +1867,7 @@ here_save(t2_hours_exercise_log_z, "t2_hours_exercise_log_z")
 t2_hours_exercise_log_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hours_exercise_log_z,
   outcome = "t2_hours_exercise_log_z",
   cens = C,
   shift = loss_A,
@@ -1915,7 +1890,7 @@ here_save(t2_hours_exercise_log_z_1, "t2_hours_exercise_log_z_1")
 t2_hours_exercise_log_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hours_exercise_log_z,
   outcome = "t2_hours_exercise_log_z",
   cens = C,
   shift = NULL,
@@ -1935,18 +1910,17 @@ here_save(t2_hours_exercise_log_z_null,
 
 
 # 
-# names_base_t2_hlth_sleep_hours_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_hlth_sleep_hours_z")
-# names_base_t2_hlth_sleep_hours_z
+W_t2_hlth_sleep_hours_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hlth_sleep_hours_z")
+W_t2_hlth_sleep_hours_z
 
 
 #During the past month, on average, how many hours of actual sleep did you get per night?
 t2_hlth_sleep_hours_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_sleep_hours_z,
   outcome = "t2_hlth_sleep_hours_z",
   cens = C,
   shift = gain_A,
@@ -1967,7 +1941,7 @@ here_save(t2_hlth_sleep_hours_z, "t2_hlth_sleep_hours_z")
 t2_hlth_sleep_hours_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_sleep_hours_z,
   outcome = "t2_hlth_sleep_hours_z",
   cens = C,
   shift = loss_A,
@@ -1989,7 +1963,7 @@ here_save(t2_hlth_sleep_hours_z_1, "t2_hlth_sleep_hours_z_1")
 t2_hlth_sleep_hours_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_sleep_hours_z,
   outcome = "t2_hlth_sleep_hours_z",
   cens = C,
   shift = NULL,
@@ -2007,18 +1981,17 @@ here_save(t2_hlth_sleep_hours_z_null, "t2_hlth_sleep_hours_z_null")
 
 
 # 
-# names_base_t2_hlth_bmi_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_hlth_bmi_z")
-# names_base_t2_hlth_bmi_z
+W_t2_hlth_bmi_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hlth_bmi_z")
+W_t2_hlth_bmi_z
 
 
 # " What is your height? (metres)\nWhat is your weight? (kg)\nKg
 t2_hlth_bmi_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_bmi_z,
   outcome = "t2_hlth_bmi_z",
   cens = C,
   shift = gain_A,
@@ -2041,7 +2014,7 @@ here_save(t2_hlth_bmi_z, "t2_hlth_bmi_z")
 t2_hlth_bmi_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_bmi_z,
   outcome = "t2_hlth_bmi_z",
   cens = C,
   shift = loss_A,
@@ -2064,7 +2037,7 @@ here_save(t2_hlth_bmi_z_1, "t2_hlth_bmi_z_1")
 t2_hlth_bmi_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_bmi_z,
   outcome = "t2_hlth_bmi_z",
   cens = C,
   shift = NULL,
@@ -2087,11 +2060,10 @@ here_save(t2_hlth_bmi_z_null, "t2_hlth_bmi_z_null")
 
 ## Am satisfied with the appearance, size and shape of my body.
 # 
-# names_base_t2_bodysat_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_bodysat_z")
-# names_base_t2_bodysat_z
+W_t2_bodysat_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_bodysat_z")
+W_t2_bodysat_z
 
 
 ## Am satisfied with the appearance, size and shape of my body.
@@ -2099,7 +2071,7 @@ here_save(t2_hlth_bmi_z_null, "t2_hlth_bmi_z_null")
 t2_bodysat_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_bodysat_z,
   outcome = "t2_bodysat_z",
   cens = C,
   shift = gain_A,
@@ -2123,7 +2095,7 @@ here_save(t2_bodysat_z, "t2_bodysat_z")
 t2_bodysat_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_bodysat_z,
   outcome = "t2_bodysat_z",
   cens = C,
   shift = loss_A,
@@ -2144,7 +2116,7 @@ here_save(t2_bodysat_z_1, "t2_bodysat_z_1")
 t2_bodysat_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_bodysat_z,
   outcome = "t2_bodysat_z",
   cens = C,
   shift = NULL,
@@ -2172,13 +2144,12 @@ here_save(t2_bodysat_z_null,
 
 # 
 # 
-# names_base_t2_kessler_latent_anxiety_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_kessler_latent_anxiety_z")
-# 
-# # check
-# names_base_t2_kessler_latent_anxiety_z
+W_t2_kessler_latent_anxiety_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_kessler_latent_anxiety_z")
+
+# check
+W_t2_kessler_latent_anxiety_z
 
 
 # During the last 30 days, how often did.... you feel that everything was an effort?
@@ -2190,7 +2161,7 @@ here_save(t2_bodysat_z_null,
 t2_kessler_latent_anxiety_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_kessler_latent_anxiety_z,
   outcome = "t2_kessler_latent_anxiety_z",
   cens = C,
   shift = gain_A,
@@ -2212,7 +2183,7 @@ here_save(t2_kessler_latent_anxiety_z, "t2_kessler_latent_anxiety_z")
 t2_kessler_latent_anxiety_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_kessler_latent_anxiety_z,
   outcome = "t2_kessler_latent_anxiety_z",
   cens = C,
   shift = loss_A,
@@ -2242,7 +2213,7 @@ here_save(t2_kessler_latent_anxiety_z_1, "t2_kessler_latent_anxiety_z_1")
 t2_kessler_latent_anxiety_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_kessler_latent_anxiety_z,
   outcome = "t2_kessler_latent_anxiety_z",
   cens = C,
   shift = NULL,
@@ -2267,10 +2238,9 @@ here_save(t2_kessler_latent_anxiety_z_null,
 # During the last 30 days, how often did.... you feel worthless?
 
 # 
-# names_base_t2_kessler_latent_depression_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_kessler_latent_depression_z")
+W_t2_kessler_latent_depression_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_kessler_latent_depression_z")
 # 
 # # check
 # names_base_t2_kessler_latent_depression_z
@@ -2283,7 +2253,7 @@ here_save(t2_kessler_latent_anxiety_z_null,
 t2_kessler_latent_depression_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_kessler_latent_depression_z,
   outcome = "t2_kessler_latent_depression_z",
   cens = C,
   shift = gain_A,
@@ -2307,7 +2277,7 @@ here_save(t2_kessler_latent_depression_z,
 t2_kessler_latent_depression_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_kessler_latent_depression_z,
   outcome = "t2_kessler_latent_depression_z",
   cens = C,
   shift = loss_A,
@@ -2333,7 +2303,7 @@ here_save(t2_kessler_latent_depression_z_1,
 t2_kessler_latent_depression_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_kessler_latent_depression_z,
   outcome = "t2_kessler_latent_depression_z",
   cens = C,
   shift = NULL,
@@ -2355,17 +2325,16 @@ here_save(t2_kessler_latent_depression_z_null,
 
 # During the last 30 days, how often did.... you feel exhausted?
 # 
-# names_base_t2_hlth_fatigue_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_hlth_fatigue_z")
-# names_base_t2_hlth_fatigue_z
+W_t2_hlth_fatigue_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_hlth_fatigue_z")
+W_t2_hlth_fatigue_z
 
 # During the last 30 days, how often did.... you feel exhausted?
 t2_hlth_fatigue_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_fatigue_z,
   outcome = "t2_hlth_fatigue_z",
   cens = C,
   shift = gain_A,
@@ -2385,7 +2354,7 @@ here_save(t2_hlth_fatigue_z, "t2_hlth_fatigue_z")
 t2_hlth_fatigue_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_fatigue_z,
   outcome = "t2_hlth_fatigue_z",
   cens = C,
   shift = loss_A,
@@ -2408,7 +2377,7 @@ here_save(t2_hlth_fatigue_z_1, "t2_hlth_fatigue_z_1")
 t2_hlth_fatigue_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_hlth_fatigue_z,
   outcome = "t2_hlth_fatigue_z",
   cens = C,
   shift = NULL,
@@ -2429,16 +2398,15 @@ here_save(t2_hlth_fatigue_z_null, "t2_hlth_fatigue_z_null")
 # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
 # 
 # 
-# names_base_t2_rumination_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_rumination_z")
+W_t2_rumination_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_rumination_z")
 # names_base_t2_rumination_z
 # During the last 30 days, how often did.... you have negative thoughts that repeated over and over?
 t2_rumination_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_rumination_z,
   outcome = "t2_rumination_z",
   cens = C,
   shift = gain_A,
@@ -2459,7 +2427,7 @@ here_save(t2_rumination_z, "t2_rumination_z")
 t2_rumination_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_rumination_z,
   outcome = "t2_rumination_z",
   cens = C,
   shift = loss_A,
@@ -2482,7 +2450,7 @@ here_save(t2_rumination_z_1, "t2_rumination_z_1")
 t2_rumination_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_rumination_z,
   outcome = "t2_rumination_z",
   cens = C,
   shift = NULL,
@@ -2505,17 +2473,16 @@ here_save(t2_rumination_z_null, "t2_rumination_z_null")
 
 # 
 # 
-# names_base_t2_sexual_satisfaction_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_sexual_satisfaction_z")
-# names_base_t2_sexual_satisfaction_z
+W_t2_sexual_satisfaction_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_sexual_satisfaction_z")
+W_t2_sexual_satisfaction_z
 
 #  How satisfied are you with your sex life?
 t2_sexual_satisfaction_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_sexual_satisfaction_z,
   outcome = "t2_sexual_satisfaction_z",
   cens = C,
   shift = gain_A,
@@ -2536,7 +2503,7 @@ here_save(t2_sexual_satisfaction_z, "t2_sexual_satisfaction_z")
 t2_sexual_satisfaction_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_sexual_satisfaction_z,
   outcome = "t2_sexual_satisfaction_z",
   cens = C,
   shift = loss_A,
@@ -2556,7 +2523,7 @@ here_save(t2_sexual_satisfaction_z_1, "t2_sexual_satisfaction_z_1")
 t2_sexual_satisfaction_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_sexual_satisfaction_z,
   outcome = "t2_sexual_satisfaction_z",
   cens = C,
   shift = NULL,
@@ -2576,11 +2543,11 @@ here_save(t2_sexual_satisfaction_z_null,
 
 # 
 # # 
-# names_base_t2_power_no_control_composite_z <-
-#   select_and_rename_cols(names_base = names_base,
+# W_t2_power_no_control_composite_z <-
+#   select_and_rename_cols(names_base = W,
 #                          baseline_vars = baseline_vars,
 #                          outcome = "t2_power_no_control_composite_z")
-# names_base_t2_power_no_control_composite_z
+# W_t2_power_no_control_composite_z
 # 
 # # I do not have enough power or control over\nimportant parts of my life.
 # # Other people have too much power or control over\nimportant parts of my life.
@@ -2652,11 +2619,10 @@ here_save(t2_sexual_satisfaction_z_null,
 # # 
 # 
 # outcome_vars
-# names_base_t2_self_esteem_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_self_esteem_z")
-# names_base_t2_self_esteem_z
+W_t2_self_esteem_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_self_esteem_z")
+W_t2_self_esteem_z
 
 
 #  On the whole am satisfied with myself.
@@ -2665,7 +2631,7 @@ here_save(t2_sexual_satisfaction_z_null,
 t2_self_esteem_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_esteem_z,
   outcome = "t2_self_esteem_z",
   cens = C,
   shift = gain_A,
@@ -2686,7 +2652,7 @@ here_save(t2_self_esteem_z, "t2_self_esteem_z")
 t2_self_esteem_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_esteem_z,
   outcome = "t2_self_esteem_z",
   cens = C,
   shift = loss_A,
@@ -2711,7 +2677,7 @@ here_save(t2_self_esteem_z_1, "t2_self_esteem_z_1")
 t2_self_esteem_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_esteem_z,
   outcome = "t2_self_esteem_z",
   cens = C,
   shift = NULL,
@@ -2729,17 +2695,16 @@ here_save(t2_self_esteem_z_null, "t2_self_esteem_z_null")
 
 
 # 
-# names_base_t2_self_control_have_lots_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_self_control_have_lots_z")
-# names_base_t2_self_control_have_lots_z
+W_t2_self_control_have_lots_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_self_control_have_lots_z")
+W_t2_self_control_have_lots_z
 
 # In general, I have a lot of self-control.
 t2_self_control_have_lots_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_control_have_lots_z,
   outcome = "t2_self_control_have_lots_z",
   cens = C,
   shift = gain_A,
@@ -2759,7 +2724,7 @@ here_save(t2_self_control_have_lots_z, "t2_self_control_have_lots_z")
 t2_self_control_have_lots_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_control_have_lots_z,
   outcome = "t2_self_control_have_lots_z",
   cens = C,
   shift = loss_A,
@@ -2782,7 +2747,7 @@ here_save(t2_self_control_have_lots_z_1, "t2_self_control_have_lots_z_1")
 t2_self_control_have_lots_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_control_have_lots_z,
   outcome = "t2_self_control_have_lots_z",
   cens = C,
   shift = NULL,
@@ -2802,18 +2767,17 @@ here_save(t2_self_control_have_lots_z_null,
 
 # 
 # 
-# names_base_t2_self_control_wish_more_reversed_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_self_control_wish_more_reversed_z")
-# names_base_t2_self_control_wish_more_reversed_z
+W_t2_self_control_wish_more_reversed_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_self_control_wish_more_reversed_z")
+W_t2_self_control_wish_more_reversed_z
 
 
 # I wish I had more self-discipline.(r)
 t2_self_control_wish_more_reversed_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_control_wish_more_reversed_z,
   outcome = "t2_self_control_wish_more_reversed_z",
   cens = C,
   shift = gain_A,
@@ -2836,7 +2800,7 @@ here_save(t2_self_control_wish_more_reversed_z,
 t2_self_control_wish_more_reversed_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_control_wish_more_reversed_z,
   outcome = "t2_self_control_wish_more_reversed_z",
   cens = C,
   shift = loss_A,
@@ -2859,7 +2823,7 @@ here_save(t2_self_control_wish_more_reversed_z_1,
 t2_self_control_wish_more_reversed_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_self_control_wish_more_reversed_z,
   outcome = "t2_self_control_wish_more_reversed_z",
   cens = C,
   shift = NULL,
@@ -2881,80 +2845,79 @@ here_save(
 
 
 
-# 
-# 
-# 
-# names_base_t2_permeability_individual_z <-
-#   select_and_rename_cols(names_base = names_base,
+# # 
+# # 
+# # 
+# W_t2_permeability_individual_z <- select_and_rename_cols(names_base = W,
 #                          baseline_vars = baseline_vars,
 #                          outcome = "t2_permeability_individual_z")
 # names_base_t2_permeability_individual_z
-
-# I believe I am capable, as an individual\nof improving my status in society.
-t2_permeability_individual_z <- lmtp_tmle(
-  data = df_final,
-  trt = A,
-  baseline = W,
-  outcome = "t2_permeability_individual_z",
-  cens = C,
-  shift = gain_A,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "continuous",
-  weights = df_final$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
-
-)
-
-t2_permeability_individual_z
-here_save(t2_permeability_individual_z,
-          "t2_permeability_individual_z")
-
-
-
-# I believe I am capable, as an individual\nof improving my status in society.
-t2_permeability_individual_z_1 <- lmtp_tmle(
-  data = df_final,
-  trt = A,
-  baseline = W,
-  outcome = "t2_permeability_individual_z",
-  cens = C,
-  shift = loss_A,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "continuous",
-  weights = df_final$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
-
-)
-
-t2_permeability_individual_z_1
-here_save(t2_permeability_individual_z_1,
-          "t2_permeability_individual_z_1")
-
-
-
-# I believe I am capable, as an individual\nof improving my status in society.
-t2_permeability_individual_z_null <- lmtp_tmle(
-  data = df_final,
-  trt = A,
-  baseline = W,
-  outcome = "t2_permeability_individual_z",
-  cens = C,
-  shift = NULL,
-  mtp = TRUE,
-  folds = 10,
-  outcome_type = "continuous",
-  weights = df_final$t0_sample_weights,
-  learners_trt = sl_lib,
-  learners_outcome = sl_lib
-
-)
-t2_permeability_individual_z_null
-here_save(t2_permeability_individual_z_null,
-          "t2_permeability_individual_z_null")
+# 
+# # I believe I am capable, as an individual\nof improving my status in society.
+# t2_permeability_individual_z <- lmtp_tmle(
+#   data = df_final,
+#   trt = A,
+#   baseline = W_t2_permeability_individual_z,
+#   outcome = "t2_permeability_individual_z",
+#   cens = C,
+#   shift = gain_A,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_final$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib
+# 
+# )
+# 
+# t2_permeability_individual_z
+# here_save(t2_permeability_individual_z,
+#           "t2_permeability_individual_z")
+# 
+# 
+# 
+# # I believe I am capable, as an individual\nof improving my status in society.
+# t2_permeability_individual_z_1 <- lmtp_tmle(
+#   data = df_final,
+#   trt = A,
+#   baseline = W_t2_permeability_individual_z,
+#   outcome = "t2_permeability_individual_z",
+#   cens = C,
+#   shift = loss_A,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_final$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib
+# 
+# )
+# 
+# t2_permeability_individual_z_1
+# here_save(t2_permeability_individual_z_1,
+#           "t2_permeability_individual_z_1")
+# 
+# 
+# 
+# # I believe I am capable, as an individual\nof improving my status in society.
+# t2_permeability_individual_z_null <- lmtp_tmle(
+#   data = df_final,
+#   trt = A,
+#   baseline = W_t2_permeability_individual_z,
+#   outcome = "t2_permeability_individual_z",
+#   cens = C,
+#   shift = NULL,
+#   mtp = TRUE,
+#   folds = 10,
+#   outcome_type = "continuous",
+#   weights = df_final$t0_sample_weights,
+#   learners_trt = sl_lib,
+#   learners_outcome = sl_lib
+# 
+# )
+# t2_permeability_individual_z_null
+# here_save(t2_permeability_individual_z_null,
+#           "t2_permeability_individual_z_null")
 
 # 
 # names_base_t2_emotion_regulation_out_control_z <-
@@ -3083,18 +3046,17 @@ here_save(t2_permeability_individual_z_null,
 
 # 
 # 
-# names_base_t2_perfectionism_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_perfectionism_z")
-# names_base_t2_perfectionism_z
+W_t2_perfectionism_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_perfectionism_z")
+W_t2_perfectionism_z
 
 # # Doing my best never seems to be enough./# My performance rarely measures up to my standards.
 # I am hardly ever satisfied with my performance.
 t2_perfectionism_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_perfectionism_z,
   outcome = "t2_perfectionism_z",
   cens = C,
   shift = gain_A,
@@ -3118,7 +3080,7 @@ here_save(t2_perfectionism_z, "t2_perfectionism_z")
 t2_perfectionism_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_perfectionism_z,
   outcome = "t2_perfectionism_z",
   cens = C,
   shift = loss_A,
@@ -3145,7 +3107,7 @@ here_save(t2_perfectionism_z_1, "t2_perfectionism_z_1")
 t2_perfectionism_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_perfectionism_z,
   outcome = "t2_perfectionism_z",
   cens = C,
   shift = NULL,
@@ -3166,11 +3128,10 @@ here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
 # reflective models --------------------------------------------------------------
 
 # 
-# names_base_t2_gratitude_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_gratitude_z")
-# names_base_t2_gratitude_z
+W_t2_gratitude_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_gratitude_z")
+W_t2_gratitude_z
 # 
 
 
@@ -3178,7 +3139,7 @@ here_save(t2_perfectionism_z_null, "t2_perfectionism_z_null")
 t2_gratitude_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_gratitude_z,
   outcome = "t2_gratitude_z",
   cens = C,
   shift = gain_A,
@@ -3199,7 +3160,7 @@ here_save(t2_gratitude_z, "t2_gratitude_z")
 t2_gratitude_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_gratitude_z,
   outcome = "t2_gratitude_z",
   cens = C,
   shift = loss_A,
@@ -3221,7 +3182,7 @@ here_save(t2_gratitude_z_1, "t2_gratitude_z_1")
 t2_gratitude_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_gratitude_z,
   outcome = "t2_gratitude_z",
   cens = C,
   shift = NULL,
@@ -3239,12 +3200,11 @@ here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
 
 
 # 
-# 
-# names_base_t2_vengeful_rumin_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_vengeful_rumin_z")
-# names_base_t2_vengeful_rumin_z
+
+W_t2_vengeful_rumin_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_vengeful_rumin_z")
+W_t2_vengeful_rumin_z
 # 
 # 
 # 
@@ -3253,7 +3213,7 @@ here_save(t2_gratitude_z_null, "t2_gratitude_z_null")
 t2_vengeful_rumin_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_vengeful_rumin_z,
   outcome = "t2_vengeful_rumin_z",
   cens = C,
   shift = gain_A,
@@ -3276,7 +3236,7 @@ here_save(t2_vengeful_rumin_z, "t2_vengeful_rumin_z")
 t2_vengeful_rumin_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_vengeful_rumin_z,
   outcome = "t2_vengeful_rumin_z",
   cens = C,
   shift = loss_A,
@@ -3296,7 +3256,7 @@ here_save(t2_vengeful_rumin_z_1, "t2_vengeful_rumin_z_1")
 t2_vengeful_rumin_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_vengeful_rumin_z,
   outcome = "t2_vengeful_rumin_z",
   cens = C,
   shift = NULL,
@@ -3315,18 +3275,17 @@ here_save(t2_vengeful_rumin_z_null, "t2_vengeful_rumin_z_null")
 
 
 
-# names_base_t2_pwb_your_health_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_pwb_your_health_z")
-# names_base_t2_pwb_your_health_z
+W_t2_pwb_your_health_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_your_health_z")
+names_base_t2_pwb_your_health_z
 
 
 # Your health.
 t2_pwb_your_health_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_health_z,
   outcome = "t2_pwb_your_health_z",
   cens = C,
   shift = gain_A,
@@ -3348,7 +3307,7 @@ here_save(t2_pwb_your_health_z, "t2_pwb_your_health_z")
 t2_pwb_your_health_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_health_z,
   outcome = "t2_pwb_your_health_z",
   cens = C,
   shift = loss_A,
@@ -3370,7 +3329,7 @@ here_save(t2_pwb_your_health_z_1, "t2_pwb_your_health_z_1")
 t2_pwb_your_health_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_health_z,
   outcome = "t2_pwb_your_health_z",
   cens = C,
   shift = NULL,
@@ -3390,18 +3349,17 @@ here_save(t2_pwb_your_health_z_null, "t2_pwb_your_health_z_null")
 
 # 
 # 
-# names_base_t2_pwb_your_future_security_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_pwb_your_future_security_z")
-# names_base_t2_pwb_your_future_security_z
+W_t2_pwb_your_future_security_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_your_future_security_z")
+names_base_t2_pwb_your_future_security_z
 
 
 # #Your future security.
 t2_pwb_your_future_security_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_future_security_z,
   outcome = "t2_pwb_your_future_security_z",
   cens = C,
   shift = gain_A,
@@ -3423,7 +3381,7 @@ here_save(t2_pwb_your_future_security_z,
 t2_pwb_your_future_security_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_future_security_z,
   outcome = "t2_pwb_your_future_security_z",
   cens = C,
   shift = loss_A,
@@ -3446,7 +3404,7 @@ here_save(t2_pwb_your_future_security_z_1,
 t2_pwb_your_future_security_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_future_security_z,
   outcome = "t2_pwb_your_future_security_z",
   cens = C,
   shift = NULL,
@@ -3465,18 +3423,17 @@ here_save(t2_pwb_your_future_security_z_null,
 
 
 # 
-# names_base_t2_pwb_your_relationships_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_pwb_your_relationships_z")
-# names_base_t2_pwb_your_relationships_z
+W_t2_pwb_your_relationships_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_your_relationships_z")
+W_t2_pwb_your_relationships_z
 
 
 # Your personal relationships.
 t2_pwb_your_relationships_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_relationships_z,
   outcome = "t2_pwb_your_relationships_z",
   cens = C,
   shift = gain_A,
@@ -3499,7 +3456,7 @@ here_save(t2_pwb_your_relationships_z, "t2_pwb_your_relationships_z")
 t2_pwb_your_relationships_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_relationships_z,
   outcome = "t2_pwb_your_relationships_z",
   cens = C,
   shift = loss_A,
@@ -3521,7 +3478,7 @@ here_save(t2_pwb_your_relationships_z_1, "t2_pwb_your_relationships_z_1")
 t2_pwb_your_relationships_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_your_relationships_z,
   outcome = "t2_pwb_your_relationships_z",
   cens = C,
   shift = NULL,
@@ -3541,18 +3498,17 @@ here_save(t2_pwb_your_relationships_z_null,
 
 
 # 
-# names_base_t2_pwb_standard_living_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_pwb_standard_living_z")
-# names_base_t2_pwb_standard_living_z
+W_t2_pwb_standard_living_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_pwb_standard_living_z")
+W_t2_pwb_standard_living_z
 
 
 # Your standard of living.
 t2_pwb_standard_living_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_standard_living_z,
   outcome = "t2_pwb_standard_living_z",
   cens = C,
   shift = gain_A,
@@ -3573,7 +3529,7 @@ here_save(t2_pwb_standard_living_z, "t2_pwb_standard_living_z")
 t2_pwb_standard_living_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_standard_living_z,
   outcome = "t2_pwb_standard_living_z",
   cens = C,
   shift = loss_A,
@@ -3594,7 +3550,7 @@ here_save(t2_pwb_standard_living_z_1, "t2_pwb_standard_living_z_1")
 t2_pwb_standard_living_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_pwb_standard_living_z,
   outcome = "t2_pwb_standard_living_z",
   cens = C,
   shift = NULL,
@@ -3668,16 +3624,15 @@ here_save(t2_pwb_standard_living_z_null,
 
 # My life has a clear sense of purpose.
 
-# names_base_t2_meaning_purpose_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_meaning_purpose_z")
-# names_base_t2_meaning_purpose_z
+W_t2_meaning_purpose_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_meaning_purpose_z")
+W_t2_meaning_purpose_z
 
 t2_meaning_purpose_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_meaning_purpose_z,
   outcome = "t2_meaning_purpose_z",
   cens = C,
   shift = gain_A,
@@ -3700,7 +3655,7 @@ here_save(t2_meaning_purpose_z, "t2_meaning_purpose_z")
 t2_meaning_purpose_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_meaning_purpose_z,
   outcome = "t2_meaning_purpose_z",
   cens = C,
   shift = loss_A,
@@ -3724,7 +3679,7 @@ here_save(t2_meaning_purpose_z_1, "t2_meaning_purpose_z_1")
 t2_meaning_purpose_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_meaning_purpose_z,
   outcome = "t2_meaning_purpose_z",
   cens = C,
   shift = NULL,
@@ -3745,18 +3700,17 @@ here_save(t2_meaning_purpose_z_null, "t2_meaning_purpose_z_null")
 # I have a good sense of what makes my life meaningful.
 
 
-# names_base_t2_meaning_sense_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_meaning_sense_z")
-# names_base_t2_meaning_sense_z
+W_t2_meaning_sense_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_meaning_sense_z")
+W_t2_meaning_sense_z
 
 # I have a good sense of what makes my life meaningful.
 
 t2_meaning_sense_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_meaning_sense_z,
   outcome = "t2_meaning_sense_z",
   cens = C,
   shift = gain_A,
@@ -3779,7 +3733,7 @@ here_save(t2_meaning_sense_z, "t2_meaning_sense_z")
 t2_meaning_sense_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_meaning_sense_z,
   outcome = "t2_meaning_sense_z",
   cens = C,
   shift = loss_A,
@@ -3802,7 +3756,7 @@ here_save(t2_meaning_sense_z_1, "t2_meaning_sense_z_1")
 t2_meaning_sense_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_meaning_sense_z,
   outcome = "t2_meaning_sense_z",
   cens = C,
   shift = NULL,
@@ -3824,11 +3778,10 @@ here_save(t2_meaning_sense_z_null, "t2_meaning_sense_z_null")
 
 # 
 # 
-# names_base_t2_lifesat_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_lifesat_z")
-# names_base_t2_lifesat_z
+W_t2_lifesat_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_lifesat_z")
+names_base_t2_lifesat_z
 
 
 # I am satisfied with my life.
@@ -3836,7 +3789,7 @@ here_save(t2_meaning_sense_z_null, "t2_meaning_sense_z_null")
 t2_lifesat_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_lifesat_z,
   outcome = "t2_lifesat_z",
   cens = C,
   shift = gain_A,
@@ -3856,7 +3809,7 @@ here_save(t2_lifesat_z, "t2_lifesat_z")
 t2_lifesat_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_lifesat_z,
   outcome = "t2_lifesat_z",
   cens = C,
   shift = loss_A,
@@ -3877,7 +3830,7 @@ here_save(t2_lifesat_z_1, "t2_lifesat_z_1")
 t2_lifesat_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_lifesat_z,
   outcome = "t2_lifesat_z",
   cens = C,
   shift = NULL,
@@ -3898,11 +3851,10 @@ here_save(t2_lifesat_z_null, "t2_lifesat_z_null")
 # social models -----------------------------------------------------------
 
 # 
-# names_base_t2_support_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_support_z")
-# names_base_t2_support_z
+W_t2_support_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_support_z")
+W_t2_support_z
 
 # There are people I can depend on to help me if I really need it.
 # There is no one I can turn to for guidance in times of stress (r)
@@ -3910,7 +3862,7 @@ here_save(t2_lifesat_z_null, "t2_lifesat_z_null")
 t2_support_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_support_z,
   outcome = "t2_support_z",
   cens = C,
   shift = gain_A,
@@ -3930,7 +3882,7 @@ here_save(t2_support_z, "t2_support_z")
 t2_support_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_support_z,
   outcome = "t2_support_z",
   cens = C,
   shift = loss_A,
@@ -3955,7 +3907,7 @@ here_save(t2_support_z_1, "t2_support_z_1")
 t2_support_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_support_z,
   outcome = "t2_support_z",
   cens = C,
   shift = NULL,
@@ -3974,17 +3926,16 @@ here_save(t2_support_z_null, "t2_support_z_null")
 
 # 
 # 
-# names_base_t2_neighbourhood_community_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_neighbourhood_community_z")
-# names_base_t2_neighbourhood_community_z
+W_t2_neighbourhood_community_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_neighbourhood_community_z")
+W_t2_neighbourhood_community_z
 
 # I feel a sense of community with others in my local neighbourhood.
 t2_neighbourhood_community_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_neighbourhood_community_z,
   outcome = "t2_neighbourhood_community_z",
   cens = C,
   shift = gain_A,
@@ -4005,7 +3956,7 @@ here_save(t2_neighbourhood_community_z,
 t2_neighbourhood_community_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_neighbourhood_community_z,
   outcome = "t2_neighbourhood_community_z",
   cens = C,
   shift = loss_A,
@@ -4027,7 +3978,7 @@ here_save(t2_neighbourhood_community_z_1,
 t2_neighbourhood_community_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_neighbourhood_community_z,
   outcome = "t2_neighbourhood_community_z",
   cens = C,
   shift = NULL,
@@ -4047,11 +3998,10 @@ here_save(t2_neighbourhood_community_z_null,
 
 
 # 
-# names_base_t2_belong_z <-
-#   select_and_rename_cols(names_base = names_base,
-#                          baseline_vars = baseline_vars,
-#                          outcome = "t2_belong_z")
-# names_base_t2_belong_z
+W_t2_belong_z <- select_and_rename_cols(names_base = W,
+                         baseline_vars = baseline_vars,
+                         outcome = "t2_belong_z")
+W_t2_belong_z
 
 # Know that people in my life accept and value me.
 # Feel like an outsider.
@@ -4059,7 +4009,7 @@ here_save(t2_neighbourhood_community_z_null,
 t2_belong_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_belong_z,
   outcome = "t2_belong_z",
   cens = C,
   shift = gain_A,
@@ -4080,7 +4030,7 @@ here_save(t2_belong_z, "t2_belong_z")
 t2_belong_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_belong_z,
   outcome = "t2_belong_z",
   cens = C,
   shift = loss_A,
@@ -4103,7 +4053,7 @@ here_save(t2_belong_z_1, "t2_belong_z_1")
 t2_belong_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W,
+  baseline = W_t2_belong_z,
   outcome = "t2_belong_z",
   cens = C,
   shift = NULL,
