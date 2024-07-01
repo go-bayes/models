@@ -225,17 +225,13 @@ dat_long_0 <- dat |>
     "male",
     "w_gend_age_euro",
     "year_measured",
+    "sample_origin_names_combined",
     "sample_frame_opt_in",
     "hlth_disability",
-    "religion_identification_level",
-    "religion_believe_spirit",
-    "religion_believe_god",   
     "born_nz",
     "male",
     "eth_cat",
-    #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
     "employed",
-    "sample_origin_names_combined",
     "education_level_coarsen",
     "household_inc",
     "nz_dep2018",
@@ -246,16 +242,18 @@ dat_long_0 <- dat |>
     "hours_children",
     "hours_work",
     "hours_housework",
-    "charity_donate",
     "hours_charity",
     "hours_exercise",
+    "religion_identification_level",
+    "religion_believe_spirit",
+    "religion_believe_god",   
+    "charity_donate",
     "agreeableness",
     "conscientiousness",
     "extraversion",
     "honesty_humility",
     "openness",
     "neuroticism",
-    # "modesty",
     "rural_gch_2018_l",
     "charity_donate",
     #How much money have you donated to charity in the last year?
@@ -264,56 +262,38 @@ dat_long_0 <- dat |>
     #"How often do you have a drink containing alcohol?"
     "alcohol_intensity",
     # How many drinks containing alcohol do you have on a typical day when drinking?
-    "hlth_bmi",
     "smoker",
     #Do you currently smoke?
-    "hlth_fatigue",
-    #During the last 30 days, how often did.... you feel exhausted?
-    "rumination",
-    # "kessler6_sum",
-    "kessler_latent_depression",
-    "kessler_latent_anxiety",
-    "hlth_sleep_hours",
-    # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
-    "gratitude",
-    ## I have much in my life to be thankful for. # When I look at the world, I don’t see much to be grateful for. # I am grateful to a wide variety of people
+    "hlth_bmi",
     "alcohol_frequency",
     #"How often do you have a drink containing alcohol?"
     "alcohol_intensity",
     # How many drinks containing alcohol do you have on a typical day when drinking?
-    "hlth_bmi",
-    # " What is your height? (metres)\nWhat is your weight? (kg)\nKg
+    "hlth_fatigue",
+    "rumination",
+    "kessler_latent_depression",
+    "kessler_latent_anxiety",
+    "sexual_satisfaction",
+    "hlth_sleep_hours",
     "hours_exercise",
     # Hours spent … exercising/physical activity
     "sfhealth",
     "hlth_sleep_hours",
-    "smoker",
-    "hlth_fatigue",
-    "rumination",
-    "kessler6_sum",
-    "kessler_latent_depression",
-    "kessler_latent_anxiety",
-    "sexual_satisfaction",
     "bodysat",
     ## Am satisfied with the appearance, size and shape of my body.
-    "vengeful_rumin",
-    # Sometimes I can't sleep because of thinking about past wrongs I have suffered.//# I can usually forgive and forget when someone does me wrong.# I find myself regularly thinking about past times that I have been wronged.
     "perfectionism",
-    #"power_no_control_composite",
+    #"power_no_control_composite", # phasing out
     "self_esteem",
     "self_control_have_lots",
-    #In general, I have a lot of self-control.
+    #In general, I have a lot of self-control. # phasing out
     "self_control_wish_more_reversed",
-   # "emotion_regulation_out_control",
-    "gratitude",
+   # "emotion_regulation_out_control", # phasing ou
+   "vengeful_rumin",
+   "gratitude",
     "pwb_your_health",
-    # #Your health.
     "pwb_your_relationships",
-    # #Your personal relationships.
     "pwb_your_future_security",
-    # #Your future security.
     "pwb_standard_living",
-    #Your standard of living.
     "lifesat",
     "meaning_purpose",
     "meaning_sense",
@@ -375,7 +355,7 @@ dat_long <- dat_long_0|>
       charity_donate,
       hours_housework,
       household_inc,
-   #  hours_exercise,
+      hours_exercise,
      # hours_community,
       hours_children,
       hours_charity,
@@ -408,7 +388,6 @@ dat_long <- dat_long_0|>
   data.frame()|>
   droplevels()
 
-
 head(dat_long)
 str(dat_long$rural_gch_2018_l)
 
@@ -437,10 +416,8 @@ baseline_vars = c(
   "age",
   "sample_frame_opt_in",
   "education_level_coarsen",
-  # factors
   "eth_cat",
-  #factor(EthCat, labels = c("Euro", "Maori", "Pacific", "Asian")),
-  #"bigger_doms", #religious denomination
+  #"bigger_doms", # religious denomination, sometimes useful, make sure to code as factor if used
   "sample_origin",
   "nz_dep2018",
   "nzsei_13_l",
@@ -453,19 +430,15 @@ baseline_vars = c(
   "support",
   "belong",
   "household_inc_log",
-  # added: measured with error but OK for imputations
   "partner",
   "parent", 
   "political_conservative",
   "hours_children_log",
-  # new
- # "hours_work_log",
-  # new
+ # "hours_work_log",  # THIS IS THE EXPOSURE, USE LOG IF NOT EXPOSURE
   "religion_believe_god",
   "religion_believe_spirit",
   "religion_identification_level",
   "hours_housework_log",
-  #new
   "hours_exercise_log",
   "agreeableness",
   "conscientiousness",
@@ -473,9 +446,9 @@ baseline_vars = c(
   "honesty_humility",
   "openness",
   "neuroticism",
- # "modesty", # phasing out 
+ # "modesty", # phasing out  -- overlaps with humiliy
   "sample_weights"
-  #"alert_level_combined_lead"
+  #"alert_level_combined_lead" # only needed for 2019/2020
 )
 
 
@@ -5020,7 +4993,7 @@ contrast_t2_gratitude_z <- lmtp_contrast(t2_gratitude_z,
                                          ref = t2_gratitude_z_null,
                                          type = "additive")
 tab_contrast_t2_gratitude_z <-
-  contrast_t2_gratitude_z(contrast_t2_gratitude_z,
+  margot::margot_lmtp_evalue(contrast_t2_gratitude_z,
                   scale = "RD",
                   new_name = "Gratitude")
 
@@ -5336,12 +5309,8 @@ contrast_t2_lifesat_z_1 <- lmtp_contrast(t2_lifesat_z_1,
                                          type = "additive")
 
 tab_contrast_t2_lifesat_z_1 <-
-  margot_lmtp_tab(contrast_t2_lifesat_z_1, scale = "RD", new_name = "Satisfaction with life")
+  margot::margot_lmtp_evalue(contrast_t2_lifesat_z_1, scale = "RD", new_name = "Satisfaction with life")
 
-
-tab_contrast_t2_lifesat_z_1 <-
-  lmtp_evalue_tab(tab_contrast_t2_lifesat_z_1,
-                  scale = c("RD"))
 
 tab_contrast_t2_lifesat_z_1
 
@@ -5357,12 +5326,7 @@ contrast_t2_support_z <- lmtp_contrast(t2_support_z,
                                        ref = t2_support_z_null,
                                        type = "additive")
 tab_contrast_t2_support_z <-
-  margot_lmtp_tab(contrast_t2_support_z, scale = "RD", new_name = "Social support")
-
-
-tab_contrast_t2_support_z <-
-  lmtp_evalue_tab(tab_contrast_t2_support_z,
-                  scale = c("RD"))
+  margot::margot_lmtp_evalue(contrast_t2_support_z, scale = "RD", new_name = "Social support")
 
 tab_contrast_t2_support_z
 
@@ -5371,12 +5335,7 @@ contrast_t2_support_z_1 <- lmtp_contrast(t2_support_z_1,
                                          ref = t2_support_z_null,
                                          type = "additive")
 tab_contrast_t2_support_z_1 <-
-  margot_lmtp_tab(contrast_t2_support_z_1, scale = "RD", new_name = "Social support")
-
-
-tab_contrast_t2_support_z_1 <-
-  lmtp_evalue_tab(tab_contrast_t2_support_z_1,
-                  scale = c("RD"))
+  margot::margot_lmtp_evalue(contrast_t2_support_z_1, scale = "RD", new_name = "Social support")
 
 tab_contrast_t2_support_z_1
 
@@ -5398,14 +5357,10 @@ contrast_t2_neighbourhood_community_z <-
                 type = "additive")
 
 tab_contrast_t2_neighbourhood_community_z <-
-  margot_lmtp_tab(contrast_t2_neighbourhood_community_z,
+  margot::margot_lmtp_evalue(contrast_t2_neighbourhood_community_z,
                   scale = "RD",
                   new_name = "Neighbourhood community")
 
-
-tab_contrast_t2_neighbourhood_community_z <-
-  lmtp_evalue_tab(tab_contrast_t2_neighbourhood_community_z,
-                  scale = c("RD"))
 
 tab_contrast_t2_neighbourhood_community_z
 
@@ -5416,14 +5371,9 @@ contrast_t2_neighbourhood_community_z_1 <-
                 type = "additive")
 
 tab_contrast_t2_neighbourhood_community_z_1 <-
-  margot_lmtp_tab(contrast_t2_neighbourhood_community_z_1,
+  margot::margot_lmtp_evalue(contrast_t2_neighbourhood_community_z_1,
                   scale = "RD",
                   new_name = "Neighbourhood community")
-
-
-tab_contrast_t2_neighbourhood_community_z_1 <-
-  lmtp_evalue_tab(tab_contrast_t2_neighbourhood_community_z_1,
-                  scale = c("RD"))
 
 tab_contrast_t2_neighbourhood_community_z_1
 
@@ -5439,13 +5389,8 @@ contrast_t2_belong_z <- lmtp_contrast(t2_belong_z,
 
 
 tab_contrast_t2_belong_z <-
-  margot_lmtp_tab(contrast_t2_belong_z, scale = "RD",
+  margot::margot_lmtp_evalue(contrast_t2_belong_z, scale = "RD",
                   new_name = "Social belonging")
-
-
-tab_contrast_t2_belong_z <-
-  lmtp_evalue_tab(tab_contrast_t2_belong_z,
-                  scale = c("RD"))
 
 tab_contrast_t2_belong_z
 
@@ -5456,13 +5401,9 @@ contrast_t2_belong_z_1 <- lmtp_contrast(t2_belong_z_1 ,
 
 
 tab_contrast_t2_belong_z_1  <-
-  margot_lmtp_tab(contrast_t2_belong_z_1 , scale = "RD",
+  margot::margot_lmtp_evalue(contrast_t2_belong_z_1 , scale = "RD",
                   new_name = "Social belonging")
 
-
-tab_contrast_t2_belong_z_1  <-
-  lmtp_evalue_tab(tab_contrast_t2_belong_z_1 ,
-                  scale = c("RD"))
 
 tab_contrast_t2_belong_z_1 
 
@@ -5470,9 +5411,6 @@ tab_contrast_t2_belong_z_1
 # make tables -------------------------------------------------------------
 
 # don't forget to report smoking
-
-
-f_1
 # bind individual tables
 
 tab_health_smoker <- rbind(
@@ -5509,9 +5447,9 @@ here_save(tab_body, "tab_body")
 
 tab_ego <- rbind(
   tab_contrast_t2_emotion_regulation_out_control_z,
-  tab_contrast_t2_permeability_individual_z,
+#  tab_contrast_t2_permeability_individual_z,
   tab_contrast_t2_perfectionism_z,
-  tab_contrast_t2_power_no_control_composite_z,
+ # tab_contrast_t2_power_no_control_composite_z,
   tab_contrast_t2_self_control_have_lots_z,
   tab_contrast_t2_self_control_wish_more_reversed_z,
   tab_contrast_t2_self_esteem_z
@@ -5530,7 +5468,7 @@ tab_reflective <- rbind(
   tab_contrast_t2_pwb_your_relationships_z,
   tab_contrast_t2_pwb_standard_living_z,
   tab_contrast_t2_lifesat_z
-  # tab_contrast_t2_vengeful_rumin_z
+  tab_contrast_t2_vengeful_rumin_z
 )
 tab_reflective
 
