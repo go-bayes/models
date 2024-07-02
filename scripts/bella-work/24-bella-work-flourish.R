@@ -93,7 +93,7 @@ dat <- haven::zap_widths(dat)
 
 
 # name of exposure
-name_exposure <-  "hours_work"
+name_exposure <-  "hours_work" # EXPOSURE VARIABLE
 
 # get names
 colnames(dat)
@@ -346,7 +346,7 @@ dat_long <- dat_long_0|>
   dplyr::mutate(
     #  friends_money = ifelse(friends_money < 0, 0, friends_money),
     # someone gave neg number
-    # hours_work_log = log(hours_work + 1),
+    # hours_work_log = log(hours_work + 1), #.  EXPOSURE VARIABLE
     hours_housework_log = log(hours_housework + 1),
     household_inc_log = log(household_inc + 1),
     hours_charity_log = log(hours_charity + 1),
@@ -438,7 +438,7 @@ baseline_vars = c(
   "parent",
   "political_conservative",
   "hours_children_log",
-  # "hours_work_log",  # THIS IS THE EXPOSURE, USE LOG IF NOT EXPOSURE
+  # "hours_work_log",  # THIS IS THE EXPOSURE, USE LOG IF NOT EXPOSURE 
   # "religion_believe_god",
   # "religion_believe_spirit",
   "religion_identification_level",
@@ -603,7 +603,7 @@ here_save(table_exposures, "table_exposures")
 
 # check
 table_exposures
-hist(selected_exposure_cols$hours_work)
+hist(selected_exposure_cols$hours_work) # EXPOSURE VARIABLE
 
 # outcome table -----------------------------------------------------------
 dt_baseline_outcome <- dat_long |>
@@ -712,7 +712,7 @@ median_exposure
 dt_positivity <- dat_long |>
   dplyr::filter(wave == baseline_wave |
                   wave == exposure_wave) |>
-  mutate(working = ifelse(hours_work > 0, 1, 0 )) |> 
+  mutate(working = ifelse(hours_work > 0, 1, 0 )) |>   # EXPOSURE VARIABLE
   dplyr::select(working, id, wave) |>
   droplevels()
 
@@ -904,10 +904,10 @@ df_clean <- df_wide_not_lost |>
         !t0_lost &
         !t0_smoker &
         !t0_sample_weights &
-        !t0_hours_work & ### EXPOSURE
+        !t0_hours_work & ### EXPOSURE  # EXPOSURE VARIABLE BASELINE
         !t0_sample_origin  &
         !t0_rural_gch_2018_l  &
-        !t1_hours_work & ### EXPOSURE
+        !t1_hours_work & ### EXPOSURE  # EXPOSURE VARIABLE
         !t1_not_lost & 
         !t2_smoker,
       .fns = ~ scale(.),
@@ -924,7 +924,7 @@ df_clean <- df_wide_not_lost |>
     t0_sample_weights,
     t0_sample_origin ,
     t0_rural_gch_2018_l  ,
-    t0_hours_work,
+    t0_hours_work,  # EXPOSURE VARIABLE BASELINE
     t0_not_lost,
     t1_hours_work, ### EXPOSURE
     t1_not_lost,
@@ -1147,10 +1147,7 @@ hist(df_clean$t0_combo_weights)
 # next remove those who were lost between t0 and t1
 df_clean_t1 <- df_clean |> filter(t0_lost == 0) |>
   select(
-    #-t1_hours_work, #### EXPOSURE 
-   # -t1_lost, 
     -t0_lost, 
-   # -t0_not_lost,
     -t0_sample_weights) |>
   relocate("t0_combo_weights", .before = starts_with("t1_"))
 
@@ -1173,7 +1170,7 @@ n_not_lost_sample
 
 # no one missing in exposure
 # check
-table(is.na(df_clean_t1$t1_hours_work)) # none
+table(is.na(df_clean_t1$t1_hours_work)) # none  # EXPOSURE VARIABLE
 table((df_clean_t1$t1_not_lost)) # none
 
 
@@ -1361,7 +1358,7 @@ n_cores <- parallel::detectCores() - 2
 
 #### SET VARIABLE NAMES
 #  model
-A <- c("t1_hours_work")
+A <- c("t1_hours_work").  # EXPOSURE VARIABLE
 C <- c("t1_not_lost")
 W <- set_final_names
 
@@ -1390,7 +1387,7 @@ df_final <- margot::here_read("df_final")
 # 
 # #  write function(s) for shift(s) ------------------------------------------------------
 # # get enpoints
-# max_data <- max(df_final$t1_hours_work, na.rm =TRUE)
+# max_data <- max(df_final$t1_hours_work, na.rm =TRUE)  # EXPOSURE VARIABLE
 # max_data
 
 gain_A <- function(data, trt) {
