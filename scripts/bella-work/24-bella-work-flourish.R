@@ -189,7 +189,6 @@ ids_baseline <- dat |>
 
 length(ids_baseline)
 # if you decide to include the exposure in the treatment wave,
-# if you decide to include the exposure in the treatment wave,
 # obtain ids for individuals who participated in 2019
 # ids_2019 <- df_nz |>
 # dplyr::filter(year_measured == 1, wave == 2019) |>
@@ -200,7 +199,6 @@ length(ids_baseline)
 # ids_2018_2019 <- intersect(ids_2018, ids_2019)
 dat$w_gend_age_euro
 table1::table1( ~ w_sample_weight| wave, data = dat)
-
 
 
 
@@ -235,7 +233,7 @@ dat_long_0 <- dat |>
     "born_nz",
     "male",
     "eth_cat",
-   # "employed",
+   # "employed",  # not needed
    # "emp_current_job_years", # too much missingness
     "emp_job_secure",
     "hours_commute",
@@ -248,7 +246,7 @@ dat_long_0 <- dat |>
     "political_conservative",
     "hours_children",
     "hours_work",
-  #  "hours_community",  NA
+  #  "hours_community",  NA. in these waves
     "hours_housework",
     "hours_charity",
     "hours_exercise",
@@ -315,7 +313,7 @@ dat_long <- dat_long_0|>
   rename(short_form_health = sfhealth) |> # better name
   mutate(male = as.numeric(male)) |>
   mutate(
-#    religion_church_binary = ifelse(religion_church > 0, 1, 0), # not in these data :(
+    #    religion_church_binary = ifelse(religion_church > 0, 1, 0), # not in these data :(
     not_lost = ifelse(lead(year_measured) == 1, 1, 0),
     not_lost = ifelse(is.na(not_lost) &
                         year_measured == 1, 1, not_lost),
@@ -334,8 +332,8 @@ dat_long <- dat_long_0|>
   #   )
   # ) |>
   arrange(id, wave) |>
- # mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
-#  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
+  # mutate(religion_church_round = round(ifelse(religion_church >= 8, 8, religion_church), 0)) |>
+  #  mutate(hours_community_round = round(ifelse(hours_community >= 24, 24, hours_community), 0)) |>
   mutate(
     #initialize 'not_lost'
     not_lost = ifelse(lead(year_measured) == 1, 1, 0),
@@ -356,11 +354,11 @@ dat_long <- dat_long_0|>
     hours_children_log = log(hours_children + 1),
     charity_donate_log = log(charity_donate + 1),
     hours_commute_log = log(hours_commute + 1)#,
-   # hours_community_log = log(hours_community + 1) NA
+    # hours_community_log = log(hours_community + 1) NA
   ) |>
   dplyr::select(
     -c(
-    #  religion_church,
+      #  religion_church,
       #  hours_work,
       charity_donate,
       hours_housework,
@@ -371,26 +369,28 @@ dat_long <- dat_long_0|>
       hours_children,
       hours_charity,
       charity_donate
-    )) |>
+    )
+  ) |>
   droplevels() |>
   dplyr::rename(sample_origin =  sample_origin_names_combined) |>
   dplyr::mutate(
-  #  rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
-  #  has_siblings = as.numeric(as.character(has_siblings)),
+    #  rural_gch_2018_l = as.numeric(as.character(rural_gch_2018_l)),
+    #  has_siblings = as.numeric(as.character(has_siblings)),
     parent = as.numeric(as.character(parent)),
     partner = as.numeric(as.character(partner)),
     born_nz = as.numeric(as.character(born_nz)),
     not_lost = as.numeric(as.character(not_lost)),
-   # employed = as.numeric(as.character(employed)),
+    # employed = as.numeric(as.character(employed)),
     hlth_disability = as.numeric(as.character(hlth_disability))
   ) |>
   droplevels() |>
   arrange(id, wave) |>
-  data.frame()|>
+  data.frame() |>
   droplevels()
 
 head(dat_long)
 str(dat_long$rural_gch_2018_l)
+
 
 n_participants <- skimr::n_unique(dat_long$id)
 
@@ -412,13 +412,14 @@ sort(colnames(dat_long))
 # set baseline variables --------------------------------------------------
 # for confounding control
 
+
 baseline_vars = c(
   "male",
   "age",
   "sample_frame_opt_in",
   "education_level_coarsen",
   "eth_cat",
-#  "emp_current_job_years",
+  #  "emp_current_job_years",
   "emp_job_secure",
   #"bigger_doms", # religious denomination, sometimes useful, make sure to code as factor if used
   "sample_origin",
@@ -434,10 +435,10 @@ baseline_vars = c(
   "belong",
   "household_inc_log",
   "partner",
-  "parent", 
+  "parent",
   "political_conservative",
   "hours_children_log",
- # "hours_work_log",  # THIS IS THE EXPOSURE, USE LOG IF NOT EXPOSURE
+  # "hours_work_log",  # THIS IS THE EXPOSURE, USE LOG IF NOT EXPOSURE
   # "religion_believe_god",
   # "religion_believe_spirit",
   "religion_identification_level",
@@ -450,11 +451,10 @@ baseline_vars = c(
   "charity_donate_log",
   "hours_charity_log",
   "hours_housework_log",
-   "hours_exercise_log", 
-    "hours_commute_log",
-  # "hours_community_log", 
-   "hours_children_log", 
- # "modesty", # phasing out  -- overlaps with humiliy
+  "hours_exercise_log",
+  "hours_commute_log",
+  # "hours_community_log",
+  # "modesty", # phasing out  -- overlaps with humiliy
   "sample_weights"
   #"alert_level_combined_lead" # only needed for 2019/2020
 )
@@ -487,22 +487,24 @@ outcome_vars = c(
   "sexual_satisfaction",
   "self_control_have_lots",
   "self_control_wish_more_reversed",
- # "emotion_regulation_out_control",
+  # "emotion_regulation_out_control",
   "vengeful_rumin",
   "gratitude",
   "short_form_health",
+  "pwb_your_health",
   "pwb_your_relationships",
   "pwb_your_future_security",
   "pwb_standard_living",
   "lifesat",
-  "meaning_purpose",# My life has a clear sense of purpose.
-  "meaning_sense", # I have a good sense of what makes my life meaningful.
- # "permeability_individual",
+  "meaning_purpose",
+  # My life has a clear sense of purpose.
+  "meaning_sense",
+  # I have a good sense of what makes my life meaningful.
+  # "permeability_individual",
   "neighbourhood_community",
   "belong",
   "support"
 )
-
 
 # 
 # # sample weights balanced male / female-------------------------------------# balance on gender weights
@@ -523,6 +525,7 @@ outcome_vars = c(
 # 
 # # we will upweight males and down weight non-males to obtain a balance of gender in the *target* population
 # table(round(dat_long$sample_weights, 3))
+
 
 
 # make your tables --------------------------------------------------------
@@ -574,9 +577,9 @@ dt_baseline_exposure <- dat_long |>
 
 
 # get vars.
-name_exposure # check 
+name_exposure # check
 
-# select exposure 
+# select exposure
 selected_exposure_cols <-
   dt_baseline_exposure |> select(c(name_exposure, "wave"))
 
@@ -600,7 +603,7 @@ here_save(table_exposures, "table_exposures")
 
 # check
 table_exposures
-hist( selected_exposure_cols$hours_work) 
+hist(selected_exposure_cols$hours_work)
 
 # outcome table -----------------------------------------------------------
 dt_baseline_outcome <- dat_long |>
@@ -651,7 +654,7 @@ table_outcomes <- selected_outcome_cols |>
   modify_header(label = "**Outcome Variables by Wave**") |>  # Update the column header
   bold_labels()
 
-str(dat_long$rural_gch_2018_l) 
+str(dat_long$rural_gch_2018_l)
 head(dat_long)
 
 # save
@@ -663,8 +666,6 @@ table_outcomes
 
 # histogram of the exposure -----------------------------------------------
 # select exposure wave
-
-
 dt_exposure_wave  <- dat_long |> dplyr::filter(wave == exposure_wave)
 
 # mean of exposure
@@ -836,8 +837,6 @@ df_impute_base <- margot::margot_wide_impute_baseline(
   outcome_vars = outcome_vars
 )
 
-
-
 # get sample weights back to data
 dt_baseline <- dat_long |> filter(wave == baseline_wave)
 
@@ -890,7 +889,6 @@ t0_na_condition <- rowSums(is.na(select(df_wide_not_lost, starts_with("t1_")))) 
 
 # used if you did not censor at exposure wave
 #t1_na_condition <- rowSums(is.na(select(df_wide_not_lost, starts_with("t2_")))) > 0
-
 df_clean <- df_wide_not_lost |>
   dplyr::mutate(t0_not_lost = ifelse(t0_na_condition, 0, t0_not_lost)) |>
   dplyr::mutate(t0_lost = 1 - t0_not_lost) |> 
@@ -956,11 +954,10 @@ table(df_clean$t0_not_lost)
 
 # checks
 test <- df_wide_not_lost |> filter(t0_not_lost == 1)
-nrow(test) # 28024
+nrow(test) # 14850
 
 #
 # df_impute_base$t1_perfectionism_z = scale(df_impute_base$t1_perfectionism)
-
 
 # checks
 str(df_clean)
@@ -1373,17 +1370,12 @@ W <- set_final_names
 # make data_final
 df_final <- df_clean_hot_t2
 
-
-# for later use
-
-
-
 # last checks
 colnames(df_final)
 naniar::vis_miss(df_final, warn_large_data = F)
 
 
-
+# Save 
 here_save(df_final, "df_final")
 here_save(W, "W")
 
@@ -1391,6 +1383,7 @@ here_save(W, "W")
 # really start here -------------------------------------------------------
 
 
+# ANALYSIS ----------------------------------------------------------------
 W <- margot::here_read("W")
 
 df_final <- margot::here_read("df_final")
@@ -1415,9 +1408,10 @@ loss_A <- function(data, trt) {
     (data[[trt]]  -  data[[trt]] * .2) <= 0, data[[trt]] -  data[[trt]] * .2, 
     0)
 }
-# 
-# 
-# 
+
+
+
+# examples of other shift functions 
 # # changing your function to be fixed at 7 if you like...
 # fixed_shift_to_7 <- function(data, trt) {
 #   ifelse(data[[trt]] != 7, 7, data[[trt]])
@@ -1429,14 +1423,17 @@ loss_A <- function(data, trt) {
 # }
 
 
+
 # set libraries
-sl_lib <- c("SL.glmnet", "SL.ranger", #
-            "SL.xgboost") #
+sl_lib <- c("SL.glmnet", "SL.ranger", "SL.xgboost") #
 
 # view superlearners
 listWrappers()
-
 # test data
+
+
+# testing data set
+
 df_clean_slice <- df_final |>
   slice_head(n = 1000) |>
   as.data.frame()
@@ -1447,6 +1444,9 @@ W
 names_base
 
 baseline_vars
+
+
+# trim baseline co-variates -- including all in all models tends to be over-kill
 
 W_1 <- margot::select_and_rename_cols(
   W,
@@ -1584,12 +1584,9 @@ t2_smoker_binary_1 <- lmtp_tmle(
   )
 
 #
-#
-#
 t2_smoker_binary_1
 here_save(t2_smoker_binary_1, "t2_smoker_binary_1")
-#
-#
+
 #
 #Do you currently smoke?
 t2_smoker_binary_null  <- lmtp_tmle(
@@ -1763,11 +1760,12 @@ here_save(t2_alcohol_intensity_z_null, "t2_alcohol_intensity_z_null")
 
 
 
+df_final$t0_short_form_health_z
 
-W_t2_short_form_health <- select_and_rename_cols(names_base = W,
+W_t2_short_form_health_z <- select_and_rename_cols(names_base = W,
                          baseline_vars = baseline_vars,
-                         outcome = "t2_short_form_health")
-W_t2_short_form_health
+                         outcome = "t2_short_form_health_z")
+W_t2_short_form_health_z
 
 # "In general, would you say your health is...
 # "I seem to get sick a little easier than other people."
@@ -1777,7 +1775,7 @@ W_t2_short_form_health
 t2_short_form_health_z <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W_t2_short_form_health,
+  baseline = W_t2_short_form_health_z,
   outcome = "t2_short_form_health_z",
   cens = C,
   shift = gain_A,
@@ -1787,7 +1785,6 @@ t2_short_form_health_z <- lmtp_tmle(
   weights = df_final$t0_sample_weights,
   learners_trt = sl_lib,
   learners_outcome = sl_lib
-
 )
 
 t2_short_form_health_z
@@ -1798,7 +1795,7 @@ here_save(t2_short_form_health_z, "t2_short_form_health_z")
 t2_short_form_health_z_1 <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W_t2_short_form_health,  
+  baseline = W_t2_short_form_health_z,  
   outcome = "t2_short_form_health_z",
   cens = C,
   shift = loss_A,
@@ -1811,14 +1808,14 @@ t2_short_form_health_z_1 <- lmtp_tmle(
 
 )
 
-t2_sfhealth_your_health_z_1
-here_save(t2_sfhealth_your_health_z_1, "t2_sfhealth_your_health_z_1")
+t2_short_form_health_z_1
+here_save(t2_short_form_health_z_1, "t2_short_form_health_z_1")
 
 
 t2_short_form_health_z_null <- lmtp_tmle(
   data = df_final,
   trt = A,
-  baseline = W_t2_short_form_health,
+  baseline = W_t2_short_form_health_z,
   outcome = "t2_short_form_health_z",
   cens = C,
   shift = NULL,
@@ -1832,7 +1829,7 @@ t2_short_form_health_z_null <- lmtp_tmle(
 )
 
 t2_short_form_health_z_null
-here_save(t2_sfhealth_your_health_z_null,
+here_save(t2_short_form_health_z_null,
           "t2_short_form_health_z_null")
 
 
@@ -2009,6 +2006,7 @@ t2_hlth_bmi_z
 here_save(t2_hlth_bmi_z, "t2_hlth_bmi_z")
 
 
+# yola
 
 # " What is your height? (metres)\nWhat is your weight? (kg)\nKg
 t2_hlth_bmi_z_1 <- lmtp_tmle(
